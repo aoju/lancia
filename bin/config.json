@@ -1,0 +1,6 @@
+{
+  "logs"                     : "/Volumes/Angela.Fang/Phoebe/uTorrent/logs",
+  "port"                     : 7003,
+  "debug"                    : true,
+  "token"                    : false
+}

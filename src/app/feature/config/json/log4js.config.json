@@ -1,0 +1,40 @@
+{
+  "appenders": {
+    "console": {
+      "type": "console"
+    },
+    "access": {
+      "type": "dateFile",
+      "filename": "access.log",
+      "pattern": "-yyyy-MM-dd",
+      "maxLogSize": 10485760,
+      "numBackups": 3,
+      "compress": true,
+      "encoding": "utf-8"
+    },
+    "errors": {
+      "type": "file",
+      "level": "ERROR",
+      "filename": "errors.log",
+      "compress": true,
+      "encoding": "utf-8",
+      "category": "errors"
+    }
+  },
+  "categories": {
+    "default": {
+      "appenders": [
+        "console",
+        "access"
+      ],
+      "level": "ALL"
+    },
+    "errors": {
+      "appenders": [
+        "errors"
+      ],
+      "level": "ERROR"
+    }
+  },
+  "pm2": true
+}

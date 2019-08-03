@@ -1,0 +1,10 @@
+{
+  "presets": [
+    "env"
+  ],
+  "plugins": [
+    "transform-decorators-legacy",
+    "transform-async-to-generator",
+    "syntax-async-functions"
+  ]
+}
