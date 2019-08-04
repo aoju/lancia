@@ -1,5 +1,5 @@
 import {HttpMethod}          from '../../frames/core/http.core.class';
-import Render                from "../../frames/core/render.core.class";
+import Render                from "../../shared/utils/render.utils.class";
 import Ionic                 from '../../shared/utils/ionic.utils.class';
 import Unify                 from '../../shared/utils/unify.utils.class';
 import _R                    from '../../shared/term/result.term.class';
@@ -61,6 +61,7 @@ export default class AbstractRestMatch {
 
         if (params.format === _C.FOTMAT_TYPE_PDF) {
             params = Render.getOptsFromQuery(ctx.query);
+            console.log(params);
             if (params.attachmentName) {
                 ctx.attachment(params.attachmentName);
             }

@@ -11,9 +11,11 @@ import KoaBetterBody         from 'koa-better-body';
 import DefaultConfig         from './feature/config/clazz/default.config.class';
 
 import Logger                from './frames/core/logger.core.class';
+import Service               from './frames/core/service.core.class';
 import Controller            from './frames/core/controller.core.class';
 import Router                from './frames/core/router.core.class';
 
+import AbstractService       from './frames/base/service.base.class';
 import AbstractController    from './frames/base/controller.base.class';
 import AbstractRouter        from './frames/base/router.base.class';
 import Unify                 from "./shared/utils/unify.utils.class";
@@ -34,6 +36,7 @@ export default class Bootstrap {
         this._xLogger();
         this._xHandle();
         this._xBetterBody();
+        this._xService();
         this._xController();
         this._xRouter();
         this._xResource();
@@ -44,6 +47,7 @@ export default class Bootstrap {
 
     _xConfig() {
         global.config = new DefaultConfig(this.opts.RootPath);
+        global.AbstractService = AbstractService;
         global.AbstractController = AbstractController;
         global.AbstractRouter = AbstractRouter;
         console.log('Finish Load Config');
@@ -54,6 +58,11 @@ export default class Bootstrap {
         this.koa.use(KoaLogger());
         logger.use(this.koa);
         logger.trace('Finish Load Logger');
+    }
+
+    _xService() {
+        global.service = new Service();
+        logger.trace('Finish Load Service');
     }
 
     _xController() {

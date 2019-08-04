@@ -145,7 +145,7 @@ output | string | pdf | 指定输出格式。可选值: `pdf` 、 `screenshot`.
 emulateScreenMedia | boolean | `true` | 模拟 `@media screen` 渲染 PDF.
 ignoreHttpsErrors | boolean | `false` | 忽略https错误.
 scrollPage | boolean | `false` | 启用滚动页面触发延迟加载元素，可选值： `true` 、 `false`.
-waitFor | number or string | - | 延迟加载超时时间.
+waitFor | number | - | 延迟加载超时时间.
 attachmentName | string | - | 设置 `content-disposition` 确保浏览器下载属性,按照给定的字符串作为下载名称.
 viewport.width | number | `1600` | 预览宽度.
 viewport.height | number | `1200` | 预览高度.

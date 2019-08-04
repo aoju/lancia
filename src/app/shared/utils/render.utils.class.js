@@ -35,6 +35,8 @@ export default class Render {
             opts.pdf.format = undefined;
         }
 
+        this.logOpts(opts);
+
         const browser = await puppeteer.launch({
             headless: config.debug,
             ignoreHTTPSErrors: opts.ignoreHttpsErrors,
@@ -43,10 +45,10 @@ export default class Render {
         });
         const page = await browser.newPage();
 
-        page.on('console', (...args) => logger.info('PAGE LOG:', ...args));
+        // page.on('console', (...args) =>  logger.error(`RENDER => 'PAGE LOG:`, ...args));
 
         page.on('error', (err) => {
-            logger.error(`Error event emitted: ${err}`);
+            logger.error(`RENDER => Error event emitted: ${err}`);
             logger.error(err.stack);
             browser.close();
         });
@@ -72,15 +74,15 @@ export default class Render {
 
         let data;
         try {
-            logger.info('Set browser viewport..');
+            logger.trace('RENDER => Set browser viewport ..');
             await page.setViewport(opts.viewport);
             if (opts.emulateScreenMedia) {
-                logger.info('Emulate @media screen..');
+                logger.trace('RENDER => Emulate @media screen ..');
                 await page.emulateMedia('screen');
             }
 
             if (opts.cookies && opts.cookies.length > 0) {
-                logger.info('Setting cookies..');
+                logger.trace('RENDER => Setting cookies ..');
 
                 const client = await page.target().createCDPSession();
 
@@ -89,21 +91,23 @@ export default class Render {
             }
 
             if (opts.html) {
-                logger.info('Set HTML ..');
+                logger.trace('RENDER => Set HTML ..');
                 await page.setContent(opts.html, opts.goto);
             } else {
-                logger.info(`Goto url ${opts.url} ..`);
+                logger.trace(`RENDER => Goto url ${opts.url} ..`);
                 await page.goto(opts.url, opts.goto);
             }
 
+            opts.attachmentName = await page.title();
+
             if (_.isNumber(opts.waitFor) || _.isString(opts.waitFor)) {
-                logger.info(`Wait for ${opts.waitFor} ..`);
+                logger.trace(`RENDER => Wait for ${opts.waitFor} ..`);
                 await page.waitFor(opts.waitFor);
             }
 
             if (opts.scrollPage) {
-                logger.info('Scroll page ..');
-                await scrollPage(page);
+                logger.trace('RENDER => Scroll page ..');
+                await this.scrollPage(page);
             }
 
             if (this.failedResponses.length) {
@@ -124,8 +128,10 @@ export default class Render {
                 err.status = 412;
                 throw err;
             }
+            logger.trace('RENDER => Rendering ..');
 
-            logger.info('Rendering ..');
+            let content = await page.content();
+            logger.trace(`RENDER <= Content size :${content.toString().length}`);
 
             if (opts.output === _C.FOTMAT_TYPE_PDF) {
                 data = await page.pdf(opts.pdf);
@@ -139,16 +145,15 @@ export default class Render {
                 data = await page.screenshot(screenshotOpts);
             }
         } catch (err) {
-            logger.error(`Error when rendering page: ${err}`);
+            logger.trace(`RENDER <= Error when rendering page: ${err}`);
             logger.error(err.stack);
             throw err;
         } finally {
-            logger.info('Closing browser..');
+            logger.trace('RENDER <= Closing browser..');
             if (!config.debug) {
                 await browser.close();
             }
         }
-
         return data;
     }
 
@@ -182,6 +187,16 @@ export default class Render {
         });
     }
 
+    static logOpts(opts) {
+        const supressedOpts = _.cloneDeep(opts);
+        if (opts.html) {
+            supressedOpts.html = '...';
+        }
+        logger.trace('RENDER => ' + JSON.stringify({
+            opts
+        }));
+    }
+
     static getMimeType(opts) {
         if (opts.output === _C.FOTMAT_TYPE_PDF) {
             return 'application/pdf';
@@ -204,7 +219,7 @@ export default class Render {
             scrollPage: query.scrollPage,
             emulateScreenMedia: query.emulateScreenMedia,
             ignoreHttpsErrors: query.ignoreHttpsErrors,
-            waitFor: query.waitFor,
+            waitFor: ~~query.waitFor,
             output: query.output || _C.FOTMAT_TYPE_PDF,
             viewport: {
                 width: query['viewport.width'],
@@ -225,7 +240,7 @@ export default class Render {
                 displayHeaderFooter: query['pdf.displayHeaderFooter'],
                 footerTemplate: query['pdf.footerTemplate'],
                 headerTemplate: query['pdf.headerTemplate'],
-                landscape: query['pdf.landscape'],
+                landscape: Boolean(query['pdf.landscape']),
                 pageRanges: query['pdf.pageRanges'],
                 format: query['pdf.format'],
                 width: query['pdf.width'],
@@ -252,53 +267,6 @@ export default class Render {
             }
         };
         return opts;
-    }
-
-    static getRender(ctx) {
-        const opts = this.getOptsFromQuery(req.query);
-        return this.render(opts)
-            .then((data) => {
-                if (opts.attachmentName) {
-                    res.attachment(opts.attachmentName);
-                }
-                res.set('content-type', this.getMimeType(opts));
-                res.body = data;
-                // res.send(data);
-            });
-    }
-
-    static postRender(req, res) {
-        const isBodyJson = req.headers['content-type'].includes('application/json');
-        if (isBodyJson) {
-            const hasContent = _.isString(_.get(req.body, 'url')) || _.isString(_.get(req.body, 'html'));
-            if (!hasContent) {
-                logger.error(400, 'Body must contain url or html');
-            }
-        } else if (_.isString(req.query.url)) {
-            logger.error(400, 'url query parameter is not allowed when body is HTML');
-        }
-
-        let opts;
-        if (isBodyJson) {
-            opts = _.merge({
-                output: 'pdf',
-                screenshot: {
-                    type: 'png'
-                }
-            }, req.body);
-        } else {
-            opts = this.getOptsFromQuery(req.query);
-            opts.html = req.body;
-        }
-
-        return this.render(opts)
-            .then((data) => {
-                if (opts.attachmentName) {
-                    res.attachment(opts.attachmentName);
-                }
-                res.set('content-type', this.getMimeType(opts));
-                res.send(data);
-            });
     }
 
 }
