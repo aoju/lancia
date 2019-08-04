@@ -36,8 +36,10 @@
 PDF可以以多种方式生成，但其中难点之一是转换HTML+CSS,大部分工具无法呈现期望的结果，这个服务就是弥补不足才做的。
 
 
-|调研对象 | 优点 | 缺点| 链接 |Link样式 |
-|----|----|---|---|----|----|----|
+
+
+|调研对象 | 优点 | 缺点| 链接 |Link样式 | 
+|----|:----|:----|----|----|
 |jsPDF|整个过程在客户端执行(不需要服务器参与)，调用简单|生成的pdf为图片形式，且内容失真|不支持|支持|
 |iText|1、功能基本可以实现，比较灵活2、生成pdf质量较高|1、对html标签严；格，少一个结束标签就会报错；2、后端实现复杂，服务器需要安装字体；3、图片渲染比较复杂(暂时还没解决)|支持|不支持|
 |wkhtmltopdf|1、调用方式简单(只需执行一行脚本)；2、生成pdf质量较高|1、服务器需要安装wkhtmltopdf环境；2、根据网址生成pdf，对于有权限控制的页面需要在拦截器进行处理|支持|不支持|
@@ -102,6 +104,30 @@ curl -o html.pdf -XPOST -d@page.html -H"content-type: text/html" http://xxx:7003
 ```
 
 ## API
+
+要理解API选项，需要了解[Puppeteer](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md)
+谷歌官方 Chrome node库。
+这个API在内部使用。(用来渲染html代码)(https://github.com/aoju/lancia/blob/master/src/app/frames/core/render.core.class.js)
+
+很简单，来看看。渲染流程::
+
+1. **`page.setViewport(options)`** 其中选项与 `viewport.*`匹配.
+2. *默认* **`page.emulateMedia('screen')`** 选项与 `emulateScreenMedia=true` 匹配使用.
+3. 渲染 URL **或** html.
+
+   如果定义了“url”，则调用 **`page.goto(url,options) `**，选项匹配' goto.* '。
+   否则,会从请求体获取html的地方调用 **`page.setContent(html, options)`** ，选项匹配' goto.* '。
+
+4. *默认* **`page.waitFor(num)`** 等待时间为： `waitFor=1000`.
+5. *默认* **`scrollPage=true`** 在页面渲染前会设置相关属性，如只需要第一页即可设置为false.
+
+    如果您想呈现一个延迟加载元素的页面，这个参数非常有用。
+
+6. 渲染输出
+
+  * 如果输出是 `pdf` 则使用 **`page.pdf(options)`** 完成输出,其中选项与`pdf.*`匹配.
+  * 如果输出是 `screenshot` 则使用 **`page.screenshot(options)`** 完成输出，其中选项与 `screenshot.*`匹配.
+
 
 
 ### 技术栈
