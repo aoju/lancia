@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/aoju/lancia.svg?branch=master)](https://travis-ci.org/aoju/lancia)
+
 ## Lancia
 
 > 网页转PDF渲染服务。提供收据、发票、报告或任何网页内容转PDF的微服务
