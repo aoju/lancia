@@ -8,7 +8,8 @@
   },
   "scripts": {
     "start": "node bin/app.js",
-    "build": "gulp npm:gulp"
+    "build": "gulp npm:gulp",
+    "test": " npm run build"
   },
   "repository": {
     "type": "git",
