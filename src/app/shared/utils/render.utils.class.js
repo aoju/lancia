@@ -141,7 +141,6 @@ export default class Render {
                 if (clipContainsSomething) {
                     screenshotOpts.clip = opts.screenshot.clip;
                 }
-
                 data = await page.screenshot(screenshotOpts);
             }
         } catch (err) {
@@ -150,9 +149,7 @@ export default class Render {
             throw err;
         } finally {
             logger.trace('RENDER <= Closing browser..');
-            if (!config.debug) {
-                await browser.close();
-            }
+            await browser.close();
         }
         return data;
     }

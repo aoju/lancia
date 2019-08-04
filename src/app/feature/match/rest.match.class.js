@@ -61,7 +61,6 @@ export default class AbstractRestMatch {
 
         if (params.format === _C.FOTMAT_TYPE_PDF) {
             params = Render.getOptsFromQuery(ctx.query);
-            console.log(params);
             if (params.attachmentName) {
                 ctx.attachment(params.attachmentName);
             }

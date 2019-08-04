@@ -14,12 +14,11 @@
     "type": "git",
     "url": "https://github.com/aoju/lancia.git"
   },
-  "author": "Aoju.org",
+  "author": "Kimi.Liu",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/aoju/lancia/issues"
   },
-  "author": "Kimi.Liu",
   "dependencies": {
     "babel-core": "^6.25.0",
     "babel-eslint": "^7.2.3",
@@ -41,13 +40,11 @@
     "knex": "^0.16.5",
     "log4js": "^3.0.6",
     "pify": "^3.0.0",
-    "request": "^2.81.0",
     "underscore": "^1.8.3",
     "xml2js": "^0.4.19",
     "crypto-js": "^3.1.8",
     "joi": "^11.1.1",
     "lodash": "^4.17.4",
-    "pdf-parse": "^1.1.1",
     "puppeteer": "^1.19.0"
   },
   "devDependencies": {
