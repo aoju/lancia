@@ -48,45 +48,45 @@ wkhtmltopdf|1、调用方式简单(只需执行一行脚本)；2、生成pdf质�
 
 **渲染baidu.com为PDF**
 
-http://xxx:7003/router/rest?url=http://baidu.com
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com
 
 **渲染baidu.com为PNG**
 
-http://xxx:7003/router/rest?url=http://baidu.com&output=screenshot
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&output=screenshot
 
 **使用默认的@media print而不是@media screen.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&emulateScreenMedia=false
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&emulateScreenMedia=false
 
 **使用scrollPage=true，显示所有延迟加载的元素。不完美，但总比没有好.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&scrollPage=true
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&scrollPage=true
 
 **只渲染第一页**
 
-http://xxx:7003/router/rest?url=http://baidu.com&pdf.pageRanges=1
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.pageRanges=1
 
 **横向渲染A5大小的PDF.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&pdf.format=A5&pdf.landscape=true
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.format=A5&pdf.landscape=true
 
 **在PDF中添加2cm的页边距.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&pdf.margin.right=2cm&pdf.margin.bottom=2cm&pdf.margin.left=2cm
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.margin.right=2cm&pdf.margin.bottom=2cm&pdf.margin.left=2cm
 
 **渲染超时时间为1000毫秒.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&waitFor=1000
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&waitFor=1000
 
 
 
 **下载带有指定附件名称的PDF**
 
-http://xxx:7003/router/rest?url=http://baidu.com&attachmentName=google.pdf
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&attachmentName=google.pdf
 
 **等待匹配`input`元素.**
 
-http://xxx:7003/router/rest?url=http://baidu.com&waitFor=input
+http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&waitFor=input
 
 **渲染json至html body**
 
