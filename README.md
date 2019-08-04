@@ -42,7 +42,7 @@ iText|1、功能基本可以实现，比较灵活2、生成pdf质量较高|1、�
 wkhtmltopdf|1、调用方式简单(只需执行一行脚本)；2、生成pdf质量较高|1、服务器需要安装wkhtmltopdf环境；2、根据网址生成pdf，对于有权限控制的页面需要在拦截器进行处理|Y|N
 
 
-## 示例
+## 使用示例
 
 *提示: 根据网站内容的大小，可设置响应的超时时间,必要时可设置为：30秒.*
 
@@ -217,7 +217,7 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
 * `npm start` 启动本地服务，启动前请修改相关参数信息，详见bin/config.json
 * 服务启动访问 http://127.0.0.1:7003 
 
-### 技术栈
+## 技术栈
 
 * Node 8+ (async, await), 需要ES7支持
 * [Koajs](https://github.com/koajs/koa) 很好的框架
