@@ -18,10 +18,9 @@
 * 支持可选的“X-Access-Toke”身份验证*
 
 
-* **默认情况下页面的 `@media print` CSS 规则将被忽略**.将Chrome设置为模拟
-  `@media screen`
-  ，使默认的pdf文件看起来更像实际站点。要获得更接近桌面Chrome的结果，请添加`&emulateScreenMedia=false`查询参数。更多信息请访问[Puppeteer API docs](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
-  API文档。 
+* 默认情况下页面的 `@media print` CSS 规则将被忽略.将Chrome设置为模拟 `@media
+  screen`，使默认的pdf文件看起来更像实际站点。要获得更接近桌面Chrome的结果，请添加`&emulateScreenMedia=false`查询参数。更多信息请访问[Puppeteer API docs](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions).
+  API文档。
   
 * Chrome启动时带有`--no-sandbox--disable-setuid-sandbox`标志，开启debian支持.
 
@@ -101,7 +100,7 @@ curl -o html.pdf -XPOST -d'{"html": "<body>test</body>"}' -H"content-type: appli
 curl -o html.pdf -XPOST -d@page.html -H"content-type: text/html" http://xxx:7003/router/rest
 ```
 
-## API
+## API介绍
 
 要理解API选项，需要了解[Puppeteer](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md)
 谷歌官方 Chrome node库。
@@ -190,7 +189,7 @@ screenshot.clip.y | number | - | 指定页面裁剪区域左上角的y坐标.
 screenshot.clip.width | number | - | 指定页剪切区域的宽度.
 screenshot.clip.height | number | - | 指定页剪切区域的高度.
 
-## Development
+## 技术开发
 
 
 
