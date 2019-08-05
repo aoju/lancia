@@ -1,7 +1,7 @@
 export default {
 
     '1.0': {
-        'org.aoju.render.get': {
+        'cc.hidoctor.render.get': {
             fun: 'C_Render.selectMethodByWhereOL'
         }
     }
