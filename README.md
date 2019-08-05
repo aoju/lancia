@@ -1,4 +1,10 @@
-[![Build Status](https://travis-ci.org/aoju/lancia.svg?branch=master)](https://travis-ci.org/aoju/lancia)
+
+
+[![MIT](https://img.shields.io/badge/license-MIT-green.svg)](https://www.mit-license.org)
+[![Nodejs](https://img.shields.io/badge/node-%3E=8.0.0-brightgreen.svg)](https://nodejs.org)
+[![NPM](https://img.shields.io/badge/npm-%3E=7.0.0-brightgreen.svg)](https://www.npmjs.com/)
+[![eslint](https://img.shields.io/badge/eslint-%5E3.0.0-brightgreen.svg)](https://eslint.org/)
+[![Travis](https://travis-ci.org/aoju/lancia.svg?branch=master)](https://travis-ci.org/aoju/lancia)
 
 ## Lancia
 
