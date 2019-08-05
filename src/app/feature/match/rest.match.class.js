@@ -43,7 +43,7 @@ export default class AbstractRestMatch {
     }
 
     static async internal(ctx, next, method, params) {
-        let isMethod = [params.method.split(".")[0], params.method.split(".")[1], params.method.split(".")[2], params.method.split(".")[3]];
+        let isMethod = [params.method.split(".")[0], params.method.split(".")[1], params.method.split(".")[2]];
         if (!Ionic.has(Restful, isMethod.join('.'))) {
             return ctx.body = Unify.isWrapper(ctx, _R.ERROR.EM_100103, params.format);
         }
