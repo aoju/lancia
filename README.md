@@ -1,11 +1,25 @@
+<p align="center">
+	<a target="_blank" href="https://www.mit-license.org">
+		<img src="https://img.shields.io/badge/license-MIT-green.svg">
+	</a>
+	<a target="_blank" href="https://nodejs.org">
+		<img src="https://img.shields.io/badge/node-%3E=8.0.0-brightgreen.svg">
+	</a>
+	<a target="_blank" href="https://www.npmjs.com">
+		<img src="https://img.shields.io/badge/npm-%3E=7.0.0-green.svg">
+	</a>
+		<a target="_blank" href="https://eslint.org">
+		<img src="https://img.shields.io/badge/eslint-%5E3.0.0-blue.svg">
+	</a>
+	<a target="_blank" href="https://travis-ci.org/aoju/lancia">
+		<img src="https://travis-ci.org/aoju/lancia.svg?branch=master">
+	</a>
+</p>
 
-
-[![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://www.mit-license.org)
-[![Nodejs](https://img.shields.io/badge/node-%3E=8.0.0-brightgreen.svg)](https://nodejs.org)
-[![NPM](https://img.shields.io/badge/npm-%3E=7.0.0-green.svg)](https://www.npmjs.com/)
-[![eslint](https://img.shields.io/badge/eslint-%5E3.0.0-blue.svg)](https://eslint.org/)
-[![Travis](https://travis-ci.org/aoju/lancia.svg?branch=master)](https://travis-ci.org/aoju/lancia)
-
+<p align="center">
+	-- QQ群①：<a href="https://shang.qq.com/wpa/qunwpa?idkey=17fadd02891457034c6536c984f0d7db29b73ea14c9b86bba39ce18ed7a90e18">839128</a> --
+	-- QQ群②：<a href="https://shang.qq.com/wpa/qunwpa?idkey=c207666cbc107d03d368bde8fc15605bb883ebc482e28d440de149e3e2217460">839120</a> --
+</p>
 ## Lancia
 
 > 网页转PDF渲染服务。提供收据、发票、报告或任何网页内容转PDF的微服务
@@ -209,13 +223,10 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
  ```
  yum install pango.x86_64 libXcomposite.x86_64 libXcursor.x86_64 libXdamage.x86_64 libXext.x86_64 libXi.x86_64 libXtst.x86_64 cups-libs.x86_64 libXScrnSaver.x86_64 libXrandr.x86_64 GConf2.x86_64 alsa-lib.x86_64 atk.x86_64 gtk3.x86_64 ipa-gothic-fonts xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc -y
  ```
- 
- 中文支持
-  ```
-   vi /etc/locale.conf
-    LANG="en_US.UTF-8"
-    LANG="zh_CN.UTF-8"
-   ```
+ 如果出现中文，需要安装相关字体
+ ```
+ yum groupinstall "fonts" -y
+ ```
  
 **WARNING:** *至少需要保证2GB左右的内存，一些新闻网站可能会更高甚至需要4GB内存.*
 
