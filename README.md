@@ -179,7 +179,7 @@ pdf.printBackground | boolean | `false`| 打印背景图形.
 pdf.displayHeaderFooter | boolean | `false` | 显示页眉和页脚.
 pdf.headerTemplate | string | - | HTML模板，用于作为PDF中每个页面的页眉.
 pdf.footerTemplate | string | - | HTML模板，用于作为PDF中每个页面的页脚.
-pdf.landscape | boolean | `false` | 页面放心.
+pdf.landscape | boolean | `false` | 页面方向.
 pdf.pageRanges | string | - | 可选页面信息，例如“1- 5,7,11 -13”。默认为空字符串，意味着输出所有页面.
 pdf.format | string | `A4` | 页面格式,如果设置，则优先于宽度或高度选项.
 pdf.width | string | - | 纸张宽度.
