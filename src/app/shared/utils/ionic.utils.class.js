@@ -420,10 +420,10 @@ export default class Ionic {
      */
     static isArray(obj) {
         if (this.isNull(obj)) return false;
-        var v1 = Object.prototype.toString.call(obj) === '[object Array]';
-        var v2 = obj instanceof Array;
-        var v3 = !this.isString(obj) && this.isNumber(obj.length) && this.isFunction(obj.splice);
-        var v4 = !this.isString(obj) && this.isNumber(obj.length) && obj[0];
+        let v1 = Object.prototype.toString.call(obj) === '[object Array]';
+        let v2 = obj instanceof Array;
+        let v3 = !this.isString(obj) && this.isNumber(obj.length) && this.isFunction(obj.splice);
+        let v4 = !this.isString(obj) && this.isNumber(obj.length) && obj[0];
         return v1 || v2 || v3 || v4;
     }
 
@@ -474,7 +474,7 @@ export default class Ionic {
      * @static
      */
     static toDate(val) {
-        var self = this;
+        let self = this;
         if (self.isNumber(val))
             return new Date(val);
         else if (self.isString(val))
@@ -497,14 +497,14 @@ export default class Ionic {
     static each(list, handler, scope) {
         if (this.isNull(list) || this.isNull(handler)) return;
         if (this.isArray(list)) {
-            var listLength = list.length;
-            for (var i = 0; i < listLength; i++) {
-                var rs = handler.call(scope || list[i], i, list[i]);
+            let listLength = list.length;
+            for (let i = 0; i < listLength; i++) {
+                let rs = handler.call(scope || list[i], i, list[i]);
                 if (!this.isNull(rs)) return rs;
             }
         } else {
-            for (var key in list) {
-                var rs = handler.call(scope || list[key], key, list[key]);
+            for (let key in list) {
+                let rs = handler.call(scope || list[key], key, list[key]);
                 if (!this.isNull(rs)) return rs;
             }
         }
@@ -524,7 +524,7 @@ export default class Ionic {
         if (this.isNull(format) || this.isNull(date)) return date;
         date = this.toDate(date);
         dict = dict || {};
-        var placeholder = {
+        let placeholder = {
             "M+": date.getMonth() + 1, //month
             "d+": date.getDate(), //day
             "h+": date.getHours(), //hour
@@ -537,9 +537,9 @@ export default class Ionic {
         if (/(y+)/.test(format)) {
             format = format.replace(RegExp.$1, (date.getFullYear() + "").substr(4 - RegExp.$1.length));
         }
-        for (var key in placeholder) {
+        for (let key in placeholder) {
             if (new RegExp("(" + key + ")").test(format)) {
-                var value = placeholder[key];
+                let value = placeholder[key];
                 value = dict[value] || value;
                 format = format.replace(RegExp.$1, RegExp.$1.length == 1
                     ? value : ("00" + value).substr(("" + value).length));
@@ -590,7 +590,7 @@ export default class Ionic {
             this.isDate(src)) {
             return src;
         }
-        var objClone = src;
+        let objClone = src;
         try {
             objClone = new src.constructor();
         } catch (ex) {
@@ -677,7 +677,7 @@ export default class Ionic {
      */
     static keys(obj) {
         if (Object.keys) return Object.keys(obj);
-        var keys = [];
+        let keys = [];
         this.each(obj, function (key) {
             keys.push(key);
         });
@@ -690,10 +690,10 @@ export default class Ionic {
      */
     static create(proto, props) {
         if (Object.create) return Object.create(proto, props);
-        var Cotr = function () {
+        let Cotr = function () {
         };
         Cotr.prototype = proto;
-        var obj = new Cotr();
+        let obj = new Cotr();
         if (props) this.copy(props, obj);
         return obj;
     }
@@ -730,12 +730,12 @@ export default class Ionic {
     static deepEqual(a, b) {
         if (a === b) return true;
         if (!this.isObject(a) || !this.isObject(b)) return false;
-        var aKeys = this.keys(a);
-        var bKeys = this.keys(b);
+        let aKeys = this.keys(a);
+        let bKeys = this.keys(b);
         if (aKeys.length !== bKeys.length) return false;
-        var allKeys = aKeys.concat(bKeys);
-        var checkedMap = this.create(null);
-        var result = true;
+        let allKeys = aKeys.concat(bKeys);
+        let checkedMap = this.create(null);
+        let result = true;
         this.each(allKeys, function (i, key) {
             if (checkedMap[key]) return;
             if (!this.deepEqual(a[key], b[key])) result = false;
@@ -757,9 +757,9 @@ export default class Ionic {
         if (!handler) handler = [step, step = handler][0];
         step = Math.abs(step || 1);
         if (fromNum < toNum) {
-            for (var i = fromNum; i <= toNum; i += step) handler(i);
+            for (let i = fromNum; i <= toNum; i += step) handler(i);
         } else {
-            for (var i = fromNum; i >= toNum; i -= step) handler(i);
+            for (let i = fromNum; i >= toNum; i -= step) handler(i);
         }
     }
 
@@ -771,7 +771,7 @@ export default class Ionic {
      * @static
      */
     static newGuid() {
-        var S4 = function () {
+        let S4 = function () {
             return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
         };
         return (S4() + S4() + "-" + S4() + "-" + S4() + "-" + S4() + "-" + S4() + S4() + S4());
@@ -782,7 +782,7 @@ export default class Ionic {
      * 对象变换
      **/
     static map(list, fn) {
-        var buffer = this.isArray(list) ? [] : {};
+        let buffer = this.isArray(list) ? [] : {};
         this.each(list, function (name, value) {
             buffer[name] = fn(name, value);
         });
@@ -835,7 +835,7 @@ export default class Ionic {
      **/
     static unique(array) {
         if (this.isNull(array)) return array;
-        var newArray = [];
+        let newArray = [];
         this.each(array, function (i, value) {
             if (newArray.indexOf(value) > -1) return;
             newArray.push(value);
@@ -849,8 +849,8 @@ export default class Ionic {
      **/
     static etFunctionArgumentNames(fn) {
         if (!fn) return [];
-        var src = fn.toString();
-        var parts = src.split(')')[0].split('=>')[0].split('(');
+        let src = fn.toString();
+        let parts = src.split(')')[0].split('=>')[0].split('(');
         return (parts[1] || parts[0]).split(',').map(function (name) {
             return name.trim();
         }).filter(function (name) {
@@ -865,8 +865,8 @@ export default class Ionic {
     static short(str, maxLength) {
         if (!str) return str;
         maxLength = maxLength || 40;
-        var strLength = str.length;
-        var trimLength = maxLength / 2;
+        let strLength = str.length;
+        let trimLength = maxLength / 2;
         return strLength > maxLength ? str.substr(0, trimLength) + '...' + str.substr(strLength - trimLength) : str;
     }
 
@@ -896,7 +896,7 @@ export default class Ionic {
     static parseDom(str) {
         this._PDD_ = this._PDD_ || document.createElement('div');
         this._PDD_.innerHTML = ntils.trim(str);
-        var firstNode = this._PDD_.childNodes[0];
+        let firstNode = this._PDD_.childNodes[0];
         //先 clone 一份再通过 innerHTML 清空
         //否则 IE9 下，清空时会导出返回的 DOM 没有子结点
         if (firstNode) firstNode = firstNode.cloneNode(true);

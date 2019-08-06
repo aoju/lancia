@@ -17,15 +17,15 @@ export default class Security {
     }
 
     static raw(args) {
-        var keys = Object.keys(args);
+        let keys = Object.keys(args);
         keys = keys.sort()
-        var newArgs = {};
+        let newArgs = {};
         keys.forEach(function (key) {
             newArgs[key.toLowerCase()] = args[key];
         });
 
-        var string = '';
-        for (var k in newArgs) {
+        let string = '';
+        for (let k in newArgs) {
             string += '&' + k + '=' + newArgs[k];
         }
         string = string.substr(1);
@@ -41,12 +41,12 @@ export default class Security {
      * @returns
      */
     static sign(timestamp, method, sign, version) {
-        var ret = {
+        let ret = {
             version: version,
             timestamp: timestamp,
             method: method
         };
-        var string = raw(ret);
+        let string = raw(ret);
         if (md5(string) == sign) {
             return true;
         } else {

@@ -12,9 +12,9 @@ export default class Logger {
     init() {
         const baseDir = Path.join(config.objConfig.logs);
         let objConfig = JSON.parse(Fs.readFileSync(Path.join(config.ConfigPath, 'log4js.config.json'), "utf8"));
-        for (var name in objConfig) {
-            var item = objConfig[name];
-            for (var key in item) {
+        for (let name in objConfig) {
+            let item = objConfig[name];
+            for (let key in item) {
                 if (baseDir != null) {
                     if (item[key].type === "file" || item[key].type === "dateFile") {
                         if (item[key].filename == null) {

@@ -1,6 +1,6 @@
-var MACHINE_ID = parseInt(Math.random() * 0xFFFFFF, 10);
-var index = ObjectID.index = parseInt(Math.random() * 0xFFFFFF, 10);
-var pid = (typeof process === 'undefined' || typeof process.pid !== 'number' ? Math.floor(Math.random() * 100000) : process.pid) % 0xFFFF;
+let MACHINE_ID = parseInt(Math.random() * 0xFFFFFF, 10);
+let index = ObjectID.index = parseInt(Math.random() * 0xFFFFFF, 10);
+let pid = (typeof process === 'undefined' || typeof process.pid !== 'number' ? Math.floor(Math.random() * 100000) : process.pid) % 0xFFFF;
 
 
 /**
@@ -15,7 +15,7 @@ function ObjectID(arg) {
     if (arg && ((arg instanceof ObjectID) || arg._bsontype === "ObjectID"))
         return arg;
 
-    var buf;
+    let buf;
 
     if (isBuffer(arg) || (Array.isArray(arg) && arg.length === 12)) {
         buf = Array.prototype.slice.call(arg);
@@ -98,7 +98,7 @@ ObjectID.isValid = function (objectid) {
  * @api public
  */
 ObjectID.setMachineID = function (arg) {
-    var machineID;
+    let machineID;
 
     if (typeof arg === "string") {
         // hex string
@@ -109,7 +109,7 @@ ObjectID.setMachineID = function (arg) {
             arg = ('000000' + arg).substr(-7, 6);
 
             machineID = "";
-            for (var i = 0; i < 6; i++) {
+            for (let i = 0; i < 6; i++) {
                 machineID += (arg.charCodeAt(i));
             }
         }
@@ -171,7 +171,7 @@ ObjectID.prototype = {
  * Determine if an object is Buffer
  *
  */
-var isBuffer = function (obj) {
+let isBuffer = function (obj) {
     return !!(
         obj != null &&
         obj.constructor &&
@@ -201,7 +201,7 @@ function hex(length, n) {
 }
 
 function buffer(str) {
-    var i = 0, out = [];
+    let i = 0, out = [];
 
     if (str.length === 24)
         for (; i < 24; out.push(parseInt(str[i] + str[i + 1], 16)), i += 2) ;

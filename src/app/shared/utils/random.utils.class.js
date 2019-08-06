@@ -1,7 +1,7 @@
 import Ionic                 from './ionic.utils.class';
 
 export function mt_rand(min, max) {
-    var argc = arguments.length;
+    let argc = arguments.length;
     if (argc === 0) {
         min = 0;
         max = 2147483647;
@@ -20,11 +20,11 @@ export function mt_rand(min, max) {
  * @returns {string}
  */
 export function create_random_number(length) {
-    chars = "0123456789";
-    str = "";
+    let chars = "0123456789";
+    let str = "";
 
-    for (i = 0; i < length; i++) {
-        r = mt_rand(0, chars.length - 1);
+    for (let i = 0; i < length; i++) {
+        let r = mt_rand(0, chars.length - 1);
         str = str + chars.substring(r, r + 1);
     }
     return str;
@@ -33,11 +33,11 @@ export function create_random_number(length) {
 
 
 export function create_noncestr(length) {
-    chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    str = "";
+    let chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let str = "";
 
-    for (i = 0; i < length; i++) {
-        r = mt_rand(0, chars.length - 1);
+    for (let i = 0; i < length; i++) {
+        let r = mt_rand(0, chars.length - 1);
         str = str + chars.substring(r, r + 1);
     }
     return str;
@@ -45,7 +45,7 @@ export function create_noncestr(length) {
 
 
 function random_amount(min, max) {
-    var argc = arguments.length;
+    let argc = arguments.length;
     if (argc === 0) {
         min = 1;
         max = 10;
@@ -90,7 +90,7 @@ export function ksort(inputArr, sort_flags) {
     //   example 2: $result = data
     //   returns 2: {1: 'Kevin', 2: 'van', 3: 'Zonneveld'}
 
-    var tmp_arr = {},
+    let tmp_arr = {},
         keys = [],
         sorter, i, k, that = this,
         strictForIn = false,
@@ -105,7 +105,7 @@ export function ksort(inputArr, sort_flags) {
             break;
         case 'SORT_LOCALE_STRING':
             // compare items as strings, original by the current locale (set with  i18n_loc_set_default() as of PHP6)
-            var loc = this.i18n_loc_get_default();
+            let loc = this.i18n_loc_get_default();
             sorter = this.php_js.i18nLocales[loc].sorting;
             break;
         case 'SORT_NUMERIC':
@@ -117,7 +117,7 @@ export function ksort(inputArr, sort_flags) {
         // case 'SORT_REGULAR': // compare items normally (don't change types)
         default:
             sorter = function (a, b) {
-                var aFloat = parseFloat(a),
+                let aFloat = parseFloat(a),
                     bFloat = parseFloat(b),
                     aNumeric = aFloat + '' === a,
                     bNumeric = bFloat + '' === b;
@@ -134,7 +134,7 @@ export function ksort(inputArr, sort_flags) {
     }
 
     // Make a list of key names
-    for (k in inputArr) {
+    for (let k in inputArr) {
         if (inputArr.hasOwnProperty(k)) {
             keys.push(k);
         }
@@ -169,15 +169,15 @@ export function ksort(inputArr, sort_flags) {
 
 
 export function format_query_string_for_sign(object) {
-    _buff = "";
-    var _sorted_object = ksort(object);
-    for (var _key in _sorted_object) {
+    let _buff = "";
+    let _sorted_object = ksort(object);
+    for (let _key in _sorted_object) {
         if (null !== _sorted_object[_key] && "null" != _sorted_object[_key] && 0 !==
             _sorted_object[_key].length && "id" != _key && "sign" != _key) {
             _buff = _buff + _key + "=" + _sorted_object[_key] + "&";
         }
     }
-    var _result = "";
+    let _result = "";
     if (_buff.length > 0) {
         _result = _buff.substring(0, _buff.length - 1);
     }
@@ -186,8 +186,8 @@ export function format_query_string_for_sign(object) {
 
 
 export function json_to_xml(object) {
-    xml = "<xml>";
-    for (var _key in object) {
+    let xml = "<xml>";
+    for (let _key in object) {
         if (!Ionic.isFunction(object[_key]) && null !== object[_key] && "null" !=
             object[_key] && 0 !== object[_key].length && "id" != _key) {
             if (Ionic.isNumber(object[_key])) {
@@ -223,20 +223,20 @@ export function strnatcmp(f_string1, f_string2, f_version) {
     //   example 5: strnatcmp('Version 12.15', 'Version 12.9', true);
     //   returns 5: 6
 
-    var i = 0;
+    let i = 0;
 
     if (f_version == undefined) {
         f_version = false;
     }
 
-    var __strnatcmp_split = function (f_string) {
-        var result = [];
-        var buffer = '';
-        var chr = '';
-        var i = 0,
+    let __strnatcmp_split = function (f_string) {
+        let result = [];
+        let buffer = '';
+        let chr = '';
+        let i = 0,
             f_stringl = 0;
 
-        var text = true;
+        let text = true;
 
         f_stringl = f_string.length;
         for (i = 0; i < f_stringl; i++) {
@@ -280,14 +280,14 @@ export function strnatcmp(f_string1, f_string2, f_version) {
         return result;
     };
 
-    var array1 = __strnatcmp_split(f_string1 + '');
-    var array2 = __strnatcmp_split(f_string2 + '');
+    let array1 = __strnatcmp_split(f_string1 + '');
+    let array2 = __strnatcmp_split(f_string2 + '');
 
-    var len = array1.length;
-    var text = true;
+    let len = array1.length;
+    let text = true;
 
-    var result = -1;
-    var r = 0;
+    let result = -1;
+    let r = 0;
 
     if (len > array2.length) {
         len = array2.length;
@@ -333,7 +333,7 @@ export function strnatcmp(f_string1, f_string2, f_version) {
 
 export function sort(inputArr, sort_flags) {
 
-    var valArr = [],
+    let valArr = [],
         keyArr = [],
         k = '',
         i = 0,
@@ -351,7 +351,7 @@ export function sort(inputArr, sort_flags) {
             break;
         case 'SORT_LOCALE_STRING':
             // compare items as strings, original by the current locale (set with  i18n_loc_set_default() as of PHP6)
-            var loc = this.i18n_loc_get_default();
+            let loc = this.i18n_loc_get_default();
             sorter = this.php_js.i18nLocales[loc].sorting;
             break;
         case 'SORT_NUMERIC':
@@ -364,7 +364,7 @@ export function sort(inputArr, sort_flags) {
         // compare items normally (don't change types)
         default:
             sorter = function (a, b) {
-                var aFloat = parseFloat(a),
+                let aFloat = parseFloat(a),
                     bFloat = parseFloat(b),
                     aNumeric = aFloat + '' === a,
                     bNumeric = bFloat + '' === b;
@@ -423,7 +423,7 @@ export function implode(glue, pieces) {
     //   example 2: implode(' ', {first:'Kevin', last: 'van Zonneveld'});
     //   returns 2: 'Kevin van Zonneveld'
 
-    var i = '',
+    let i = '',
         retVal = '',
         tGlue = '';
     if (arguments.length === 1) {
@@ -454,16 +454,16 @@ export function sha1(str) {
     //   example 1: sha1('Kevin van Zonneveld');
     //   returns 1: '54916d2e62f65b3afa6e192e6a601cdbe5cb5897'
 
-    var rotate_left = function (n, s) {
-        var t4 = (n << s) | (n >>> (32 - s));
+    let rotate_left = function (n, s) {
+        let t4 = (n << s) | (n >>> (32 - s));
         return t4;
     };
 
-    /*var lsb_hex = function (val) { // Not in use; needed?
-     var str="";
-     var i;
-     var vh;
-     var vl;
+    /*let lsb_hex = function (val) { // Not in use; needed?
+     let str="";
+     let i;
+     let vh;
+     let vl;
 
      for ( i=0; i<=6; i+=2 ) {
      vh = (val>>>(i*4+4))&0x0f;
@@ -473,10 +473,10 @@ export function sha1(str) {
      return str;
      };*/
 
-    var cvt_hex = function (val) {
-        var str = '';
-        var i;
-        var v;
+    let cvt_hex = function (val) {
+        let str = '';
+        let i;
+        let v;
 
         for (i = 7; i >= 0; i--) {
             v = (val >>> (i * 4)) & 0x0f;
@@ -485,21 +485,21 @@ export function sha1(str) {
         return str;
     };
 
-    var blockstart;
-    var i, j;
-    var W = new Array(80);
-    var H0 = 0x67452301;
-    var H1 = 0xEFCDAB89;
-    var H2 = 0x98BADCFE;
-    var H3 = 0x10325476;
-    var H4 = 0xC3D2E1F0;
-    var A, B, C, D, E;
-    var temp;
+    let blockstart;
+    let i, j;
+    let W = new Array(80);
+    let H0 = 0x67452301;
+    let H1 = 0xEFCDAB89;
+    let H2 = 0x98BADCFE;
+    let H3 = 0x10325476;
+    let H4 = 0xC3D2E1F0;
+    let A, B, C, D, E;
+    let temp;
 
     str = this.utf8_encode(str);
-    var str_len = str.length;
+    let str_len = str.length;
 
-    var word_array = [];
+    let word_array = [];
     for (i = 0; i < str_len - 3; i += 4) {
         j = str.charCodeAt(i) << 24 | str.charCodeAt(i + 1) << 16 | str.charCodeAt(
                 i + 2) << 8 | str.charCodeAt(i + 3);
@@ -600,16 +600,16 @@ export function sha1(str) {
 
 
 export function treeify(nodes) {
-    var indexed_nodes = {},
+    let indexed_nodes = {},
         tree_roots = [];
-    for (var i = 0; i < nodes.length; i += 1) {
+    for (let i = 0; i < nodes.length; i += 1) {
         nodes[i] = JSON.parse(nodes[i]);
 
         indexed_nodes[nodes[i].id] = nodes[i];
         indexed_nodes[nodes[i].id].children = [];
     }
 
-    for (var i = 0; i < nodes.length; i += 1) {
+    for (let i = 0; i < nodes.length; i += 1) {
         if (nodes[i].depth == '1' || nodes[i].depth == 1) {
             tree_roots.push(nodes[i]);
         } else {

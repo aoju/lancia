@@ -4,6 +4,11 @@ import _C                    from '../../shared/term/criteria.term.class';
 
 export default class Render {
 
+    /**
+     * 根据参数信息，获取内容，生成文件
+     *
+     * @param {_opts} options.
+     */
     static async render(_opts = {}) {
         const opts = _.merge({
             cookies: [],
@@ -35,7 +40,9 @@ export default class Render {
             opts.pdf.format = undefined;
         }
 
-        this.logOpts(opts);
+        logger.trace('RENDER => ' + JSON.stringify({
+            opts
+        }));
 
         const browser = await puppeteer.launch({
             headless: config.debug,
@@ -143,6 +150,7 @@ export default class Render {
                 }
                 data = await page.screenshot(screenshotOpts);
             }
+            data.title = opts.attachmentName;
         } catch (err) {
             logger.trace(`RENDER <= Error when rendering page: ${err}`);
             logger.error(err.stack);
@@ -154,8 +162,12 @@ export default class Render {
         return data;
     }
 
+    /**
+     * 滚动到页面末尾以触发延迟加载所有元素
+     *
+     * @param {page} Page.
+     */
     static async scrollPage(page) {
-        // Scroll to page end to trigger lazy loading elements
         await page.evaluate(() => {
             const scrollInterval = 100;
             const scrollStep = Math.floor(window.innerHeight / 2);
@@ -184,16 +196,12 @@ export default class Render {
         });
     }
 
-    static logOpts(opts) {
-        const supressedOpts = _.cloneDeep(opts);
-        if (opts.html) {
-            supressedOpts.html = '...';
-        }
-        logger.trace('RENDER => ' + JSON.stringify({
-            opts
-        }));
-    }
 
+    /**
+     * 获取媒体类型
+     *
+     * @param {opts} optinos.
+     */
     static getMimeType(opts) {
         if (opts.output === _C.FOTMAT_TYPE_PDF) {
             return 'application/pdf';
@@ -209,6 +217,11 @@ export default class Render {
         }
     }
 
+    /**
+     * 获取提交参数信息
+     *
+     * @param {query} request.
+     */
     static getOptsFromQuery(query) {
         const opts = {
             url: query.url,
