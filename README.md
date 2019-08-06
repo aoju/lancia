@@ -223,13 +223,10 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
  ```
  yum install pango.x86_64 libXcomposite.x86_64 libXcursor.x86_64 libXdamage.x86_64 libXext.x86_64 libXi.x86_64 libXtst.x86_64 cups-libs.x86_64 libXScrnSaver.x86_64 libXrandr.x86_64 GConf2.x86_64 alsa-lib.x86_64 atk.x86_64 gtk3.x86_64 ipa-gothic-fonts xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc -y
  ```
- 
- 中文支持
-  ```
-   vi /etc/locale.conf
-    LANG="en_US.UTF-8"
-    LANG="zh_CN.UTF-8"
-   ```
+ 如果出现中文，需要安装相关字体
+ ```
+ yum groupinstall "fonts" -y
+ ```
  
 **WARNING:** *至少需要保证2GB左右的内存，一些新闻网站可能会更高甚至需要4GB内存.*
 
