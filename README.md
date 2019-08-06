@@ -212,7 +212,7 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
  
  中文支持
   ```
-   vim /etc/locale.conf
+   vi /etc/locale.conf
     LANG="en_US.UTF-8"
     LANG="zh_CN.UTF-8"
    ```
