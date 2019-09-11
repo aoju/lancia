@@ -52,8 +52,6 @@ export default class Render {
         });
         const page = await browser.newPage();
 
-        // page.on('console', (...args) =>  logger.error(`RENDER => 'PAGE LOG:`, ...args));
-
         page.on('error', (err) => {
             logger.error(`RENDER => Error event emitted: ${err}`);
             logger.error(err.stack);

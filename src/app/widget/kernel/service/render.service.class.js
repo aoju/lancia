@@ -15,7 +15,6 @@ export default class RenderService extends AbstractService {
                 reject(err);
             });
         });
-        ;
     }
 
 }
