@@ -86,7 +86,8 @@ export default class Bootstrap {
     _xBetterBody() {
         // this.koa.use(new KoaBodyParser());
         this.koa.use(KoaConvert(KoaBetterBody({
-            multipart: true
+            multipart: true,
+            formLimit: '500kb'
         })));
         logger.trace('Finish Load Body Parser');
     }
