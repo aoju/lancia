@@ -107,7 +107,7 @@ export default class Render {
 
             if (_.isNumber(opts.waitFor) || _.isString(opts.waitFor)) {
                 logger.trace(`RENDER => Wait for ${opts.waitFor} ..`);
-                await page.waitFor(opts.waitFor);
+                await page.waitFor(parseInt(opts.waitFor));
             }
 
             if (opts.scrollPage) {

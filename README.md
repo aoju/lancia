@@ -40,7 +40,7 @@
 * 单页app (SPA)支持。在呈现之前，等待所有网络请求完成
 * Easy deployment to Heroku. We love Lambda but...Deploy to Heroku button.
 * 呈现延迟加载的元素 *(scrollPage 选项)*
-* 支持可选的“X-Access-Toke”身份验证*
+* 支持可选的“X-Access-Token”身份验证*
 
 
 * 默认情况下页面的 `@media print` CSS 规则将被忽略.将Chrome设置为模拟 `@media
