@@ -1,8 +1,28 @@
-import puppeteer             from 'puppeteer';
-import _                     from 'lodash';
-import _C                    from '../../shared/term/criteria.term.class';
+import puppeteer from 'puppeteer';
+import _ from 'lodash';
+import _C from '../../shared/term/criteria.term.class';
 
 export default class Render {
+
+    static async init() {
+        const browser = await puppeteer.launch({
+            headless: config.debug,
+            ignoreHTTPSErrors: config.ignore,
+            args: [
+                '--disable-gpu',
+                '--disable-dev-shm-usage',
+                '--disable-setuid-sandbox',
+                '--no-first-run',
+                '--no-sandbox',
+                '--no-zygote',
+                '--single-process',
+                "--proxy-server='direct://'",
+                '--proxy-bypass-list=*',
+            ],
+            sloMo: config.debug ? 250 : undefined
+        });
+        return browser.wsEndpoint();
+    }
 
     /**
      * 根据参数信息，获取内容，生成文件
@@ -44,18 +64,15 @@ export default class Render {
             opts
         }));
 
-        const browser = await puppeteer.launch({
-            headless: config.debug,
-            ignoreHTTPSErrors: opts.ignoreHttpsErrors,
-            args: ['--disable-gpu', '--no-sandbox', '--disable-setuid-sandbox'],
-            sloMo: config.debug ? 250 : undefined
-        });
-        const page = await browser.newPage();
+        let browserWSEndpoint = browser[Math.floor(Math.random() * config.size)];
+        const chrome = await puppeteer.connect({browserWSEndpoint});
+        logger.trace('RENDER => browserWSEndpoint  connect ...'+ Math.floor(Math.random() * config.size));
+        const page = await chrome.newPage();
 
         page.on('error', (err) => {
             logger.error(`RENDER => Error event emitted: ${err}`);
             logger.error(err.stack);
-            browser.close();
+            page.close();
         });
 
 
@@ -79,7 +96,7 @@ export default class Render {
 
         let data;
         try {
-            logger.trace('RENDER => Set browser viewport ..');
+            logger.trace('RENDER => Set chrome viewport ..');
             await page.setViewport(opts.viewport);
             if (opts.emulateScreenMedia) {
                 logger.trace('RENDER => Emulate @media screen ..');
@@ -154,8 +171,8 @@ export default class Render {
             logger.error(err.stack);
             throw err;
         } finally {
-            logger.trace('RENDER <= Closing browser..');
-            await browser.close();
+            logger.trace('RENDER <= Closing page..');
+            await page.close();
         }
         return data;
     }

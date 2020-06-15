@@ -9,7 +9,6 @@ export default class DefaultConfig {
         this.RootPath = rootPath + '/app';
         this.setPathConfig();
         this.setEnvConfig();
-        this.setDialectConfig();
         this.setServerConfig();
     }
 
@@ -34,12 +33,10 @@ export default class DefaultConfig {
         }
     }
 
-    setDialectConfig() {
-        this.dialect = this.objConfig.dialect;
-    }
-
     setServerConfig() {
         this.Port = this.objConfig.port;
+        this.size = this.objConfig.size;
+        this.ignore = this.objConfig.ignore;
     }
 
 }
