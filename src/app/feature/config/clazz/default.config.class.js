@@ -10,6 +10,7 @@ export default class DefaultConfig {
         this.setPathConfig();
         this.setEnvConfig();
         this.setServerConfig();
+        this.setBrowserConfig();
     }
 
     setPathConfig() {
@@ -35,6 +36,9 @@ export default class DefaultConfig {
 
     setServerConfig() {
         this.Port = this.objConfig.port;
+    }
+
+    setBrowserConfig() {
         this.size = this.objConfig.size;
         this.ignore = this.objConfig.ignore;
     }
