@@ -4,6 +4,27 @@ import _C                    from '../../shared/term/criteria.term.class';
 
 export default class Render {
 
+    static async init() {
+        const browser = await puppeteer.launch({
+            headless: config.debug,
+            ignoreHTTPSErrors: config.ignore,
+            devtools: false,
+            args: [
+                '--disable-gpu',
+                '--disable-dev-shm-usage',
+                '--disable-setuid-sandbox',
+                '--no-first-run',
+                '--no-sandbox',
+                '--no-zygote',
+                '--single-process',
+                "--proxy-server='direct://'",
+                '--proxy-bypass-list=*',
+            ],
+            sloMo: config.debug ? 250 : undefined
+        });
+        return browser.wsEndpoint();
+    }
+
     /**
      * 根据参数信息，获取内容，生成文件
      *
@@ -21,7 +42,7 @@ export default class Render {
                 height: 1200
             },
             goto: {
-                waitUntil: 'networkidle2'
+                waitUntil: 'networkidle0'
             },
             output: _C.FOTMAT_TYPE_PDF,
             pdf: {
@@ -32,7 +53,8 @@ export default class Render {
                 type: 'png',
                 fullPage: true
             },
-            failEarly: false
+            failEarly: false,
+            waitFor: 6000
         }, _opts);
 
         if (_.get(_opts, 'pdf.width') && _.get(_opts, 'pdf.height')) {
@@ -40,24 +62,20 @@ export default class Render {
             opts.pdf.format = undefined;
         }
 
-        logger.trace('RENDER => ' + JSON.stringify({
-            opts
-        }));
+        this.logOpts(opts);
 
-        const browser = await puppeteer.launch({
-            headless: config.debug,
-            ignoreHTTPSErrors: opts.ignoreHttpsErrors,
-            args: ['--disable-gpu', '--no-sandbox', '--disable-setuid-sandbox'],
-            sloMo: config.debug ? 250 : undefined
-        });
-        const page = await browser.newPage();
+        let browserWSEndpoint = browser[Math.floor(Math.random() * config.size)];
+        const chrome = await puppeteer.connect({browserWSEndpoint,ping_interval:'None',ping_timeout:'None'});
+        logger.trace('RENDER => browserWSEndpoint  connect ...'+ Math.floor(Math.random() * config.size));
+        const page = await chrome.newPage();
+
+        await page.setCacheEnabled(true);
 
         page.on('error', (err) => {
             logger.error(`RENDER => Error event emitted: ${err}`);
             logger.error(err.stack);
-            browser.close();
+            page.close();
         });
-
 
         this.failedResponses = [];
         page.on('requestfailed', (request) => {
@@ -95,7 +113,7 @@ export default class Render {
                 await client.send('Network.setCookies', {cookies: opts.cookies});
             }
 
-            if (opts.html) {
+            if (_.isString(opts.html)) {
                 logger.trace('RENDER => Set HTML ..');
                 await page.setContent(opts.html, opts.goto);
             } else {
@@ -107,7 +125,7 @@ export default class Render {
 
             if (_.isNumber(opts.waitFor) || _.isString(opts.waitFor)) {
                 logger.trace(`RENDER => Wait for ${opts.waitFor} ..`);
-                await page.waitFor(parseInt(opts.waitFor));
+                await page.waitFor(~~opts.waitFor);
             }
 
             if (opts.scrollPage) {
@@ -140,6 +158,8 @@ export default class Render {
 
             if (opts.output === _C.FOTMAT_TYPE_PDF) {
                 data = await page.pdf(opts.pdf);
+            }else if (opts.output === _C.FOTMAT_TYPE_HTML) {
+                data = await page.evaluate(() => document.body.innerHTML);
             } else {
                 const screenshotOpts = _.cloneDeep(_.omit(opts.screenshot, ['clip']));
                 const clipContainsSomething = _.some(opts.screenshot.clip, val => !_.isUndefined(val));
@@ -148,23 +168,17 @@ export default class Render {
                 }
                 data = await page.screenshot(screenshotOpts);
             }
-            data.title = opts.attachmentName;
         } catch (err) {
             logger.trace(`RENDER <= Error when rendering page: ${err}`);
             logger.error(err.stack);
             throw err;
         } finally {
-            logger.trace('RENDER <= Closing browser..');
-            await browser.close();
+            logger.trace('RENDER <= Closing page..');
+            await page.close();
         }
         return data;
     }
 
-    /**
-     * 滚动到页面末尾以触发延迟加载所有元素
-     *
-     * @param {page} Page.
-     */
     static async scrollPage(page) {
         await page.evaluate(() => {
             const scrollInterval = 100;
@@ -203,6 +217,8 @@ export default class Render {
     static getMimeType(opts) {
         if (opts.output === _C.FOTMAT_TYPE_PDF) {
             return 'application/pdf';
+        }else if (opts.output === _C.FOTMAT_TYPE_HTML) {
+            return 'text/html';
         }
         const type = _.get(opts, 'screenshot.type');
         switch (type) {
@@ -213,6 +229,16 @@ export default class Render {
             default:
                 throw new Error(`Unknown screenshot type: ${type}`);
         }
+    }
+
+    static logOpts(opts) {
+        const supressedOpts = _.cloneDeep(opts);
+        if (opts.html) {
+            supressedOpts.html = '...';
+        }
+        logger.trace('RENDER => ' + JSON.stringify({
+            opts
+        }));
     }
 
     /**
@@ -228,7 +254,7 @@ export default class Render {
             emulateScreenMedia: query.emulateScreenMedia,
             ignoreHttpsErrors: query.ignoreHttpsErrors,
             waitFor: ~~query.waitFor,
-            output: query.output || _C.FOTMAT_TYPE_PDF,
+            output: query.output || _C.FOTMAT_TYPE_PDF || _C.FOTMAT_TYPE_HTML,
             viewport: {
                 width: query['viewport.width'],
                 height: query['viewport.height'],

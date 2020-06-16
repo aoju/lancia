@@ -1,26 +1,26 @@
-import Net                   from 'net';
-import Path                  from 'path';
+import Net from 'net';
+import Path from 'path';
 
-import Koa                   from 'koa';
-import Cors                  from 'koa-cors';
-import KoaLogger             from 'koa-logger';
-import KoaConvert            from 'koa-convert';
-import KoaFavicon            from 'koa-favicon';
-import KoaBetterBody         from 'koa-better-body';
+import Koa from 'koa';
+import Cors from 'koa-cors';
+import KoaLogger from 'koa-logger';
+import KoaConvert from 'koa-convert';
+import KoaFavicon from 'koa-favicon';
+import KoaBetterBody from 'koa-better-body';
 
-import DefaultConfig         from './feature/config/clazz/default.config.class';
+import DefaultConfig from './feature/config/clazz/default.config.class';
 
-import Logger                from './frames/core/logger.core.class';
-import Service               from './frames/core/service.core.class';
-import Controller            from './frames/core/controller.core.class';
-import Router                from './frames/core/router.core.class';
+import Logger from './frames/core/logger.core.class';
+import Service from './frames/core/service.core.class';
+import Controller from './frames/core/controller.core.class';
+import Router from './frames/core/router.core.class';
 
-import AbstractService       from './frames/base/service.base.class';
-import AbstractController    from './frames/base/controller.base.class';
-import AbstractRouter        from './frames/base/router.base.class';
-import Unify                 from "./shared/utils/unify.utils.class";
-import Result                from "./shared/term/result.term.class";
-
+import AbstractService from './frames/base/service.base.class';
+import AbstractController from './frames/base/controller.base.class';
+import AbstractRouter from './frames/base/router.base.class';
+import Unify from "./shared/utils/unify.utils.class";
+import Render from "./shared/utils/render.utils.class";
+import Result from "./shared/term/result.term.class";
 
 export default class Bootstrap {
 
@@ -41,6 +41,7 @@ export default class Bootstrap {
         this._xRouter();
         this._xResource();
         this._xServer();
+        this._xBrowser();
         logger.trace('Server Start Total Cost : ' + (new Date() - this.startTime) + 'ms');
         logger.trace('Current Service Version : ' + config.Version);
     }
@@ -84,7 +85,6 @@ export default class Bootstrap {
     }
 
     _xBetterBody() {
-        // this.koa.use(new KoaBodyParser());
         this.koa.use(KoaConvert(KoaBetterBody({
             multipart: true,
             formLimit: '500kb'
@@ -149,6 +149,16 @@ export default class Bootstrap {
             })
         })
         logger.trace('Finish Load Handle');
+    }
+
+    async _xBrowser() {
+        logger.trace('Chromium start is : ' + config.size);
+        let render = [];
+        for (let i = 0; i < config.size; i++) {
+            render[i] = await Render.init();
+        }
+        global.browser = render;
+        logger.trace('Chromium start is : ' + config.size);
     }
 
 }
