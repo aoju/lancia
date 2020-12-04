@@ -156,8 +156,6 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
 
 ## 技术开发
 
-### 以下是使用依赖管理工具（如 maven 或 gradle）的简要指南。
-
 #### Maven
 
 要使用 maven,请将此依赖添加到pom.xml文件中：
@@ -280,7 +278,7 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
 
 #### 1. 环境要求
 
-1. 本地运行需要安装 Node 8+及以上版本支持 (async, await).
+1. 本地运行需要安装 Java 8+及以上版本支持
 2. CentOS(6.x及以下版本未测试) 需要安装如下LIB:
 
  ```
