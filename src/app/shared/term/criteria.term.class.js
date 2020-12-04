@@ -21,6 +21,7 @@ export default {
     "FOTMAT_TYPE_JSON": 'json',
     "FOTMAT_TYPE_PDF": 'pdf',
     "FOTMAT_TYPE_BINARY": 'binary',
+    "FOTMAT_TYPE_HTML": 'html',
     "CRYPTOJS_KEY": "www.aoju.org",
     "CRYPTOJS_IV": "www.aoju.org"
 }
