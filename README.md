@@ -17,8 +17,7 @@
 </p>
 
 <p align="center">
-	-- QQ群①：<a href="https://shang.qq.com/wpa/qunwpa?idkey=17fadd02891457034c6536c984f0d7db29b73ea14c9b86bba39ce18ed7a90e18">839128</a> --
-	-- QQ群②：<a href="https://shang.qq.com/wpa/qunwpa?idkey=c207666cbc107d03d368bde8fc15605bb883ebc482e28d440de149e3e2217460">839120</a> --
+	-- QQ群：<a href="https://shang.qq.com/wpa/qunwpa?idkey=17fadd02891457034c6536c984f0d7db29b73ea14c9b86bba39ce18ed7a90e18">839128</a> --
 </p>
 
 ---
@@ -65,65 +64,6 @@ Target | Good | Deficiency | Link| Style
 jsPDF|整个过程在客户端执行(不需要服务器参与)，调用简单|生成的pdf为图片形式，且内容失真|N|Y
 iText|1、功能基本可以实现，比较灵活2、生成pdf质量较高|1、对html标签严；格，少一个结束标签就会报错；2、后端实现复杂，服务器需要安装字体；3、图片渲染比较复杂(暂时还没解决)|Y|N
 wkhtmltopdf|1、调用方式简单(只需执行一行脚本)；2、生成pdf质量较高|1、服务器需要安装wkhtmltopdf环境；2、根据网址生成pdf，对于有权限控制的页面需要在拦截器进行处理|Y|N
-
-
-## 使用示例
-
-*提示: 根据网站内容的大小，可设置响应的超时时间,必要时可设置为：30秒或更大值.*
-
-**渲染baidu.com为PDF**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com
-
-**渲染baidu.com为PNG**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&output=screenshot
-
-**使用默认的@media print而不是@media screen.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&emulateScreenMedia=false
-
-**使用scrollPage=true，显示所有延迟加载的元素。不完美，但总比没有好.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&scrollPage=true
-
-**只渲染第一页**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.pageRanges=1
-
-**横向渲染A5大小的PDF.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.format=A5&pdf.landscape=true
-
-**在PDF中添加2cm的页边距.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&pdf.margin.right=2cm&pdf.margin.bottom=2cm&pdf.margin.left=2cm
-
-**渲染超时时间为1000毫秒.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&waitFor=1000
-
-
-
-**下载带有指定附件名称的PDF**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&attachmentName=google.pdf
-
-**等待匹配`input`元素.**
-
-http://xxx:7003/router/rest?method=org.aoju.render.get&v=1.0&format=pdf&url=http://baidu.com&waitFor=input
-
-**渲染json至html body**
-
-```bash
-curl -o html.pdf -XPOST -d'{"html": "<body>test</body>"}' -H"content-type: application/json"http://xxx:7003/router/rest
-```
-
-**渲染文本至HTML body**
-
-```bash
-curl -o html.pdf -XPOST -d@page.html -H"content-type: text/html" http://xxx:7003/router/rest
-```
 
 ## API介绍
 
@@ -216,32 +156,145 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
 
 ## 技术开发
 
+### 以下是使用依赖管理工具（如 maven 或 gradle）的简要指南。
 
+#### Maven
+
+要使用 maven,请将此依赖添加到pom.xml文件中：
+
+```xml
+
+<dependency>
+    <groupId>org.aoju</groupId>
+    <artifactId>lancia</artifactId>
+    <version>1.2.0</version>
+</dependency>
+```
+
+#### Logging
+
+该库使用 [SLF4J](https://www.slf4j.org/) 进行日志记录，并且不附带任何默认日志记录实现。
+
+调试程序将日志级别设置为 TRACE
+
+### 快速开始
+
+#### 1、启动浏览器
+
+```java
+        List<String> argList = new ArrayList<>();
+        Fetcher.on(null);
+        LaunchOption options = new LaunchBuilder().withArgs(argList).withHeadless(false).build();
+        argList.add("--no-sandbox");
+        argList.add("--disable-setuid-sandbox");
+        Puppeteer.launch(options);
+```
+
+在这个例子中，我们明确指明了启动路径，程序就会根据指明的路径启动对应的浏览器，如果没有明确指明路径，那么程序会尝试启动默认安装路径下的 Chrome 浏览器
+
+#### 2、导航至某个页面
+
+```java
+        Fetcher.on(null);
+
+        List<String> argList = new ArrayList<>();
+        LaunchOption options = new LaunchBuilder().withArgs(argList).withHeadless(false).build();
+        argList.add("--no-sandbox");
+        argList.add("--disable-setuid-sandbox");
+        Browser browser = Puppeteer.launch(options);
+        Browser browser2 = Puppeteer.launch(options);
+
+        Page page = browser.newPage();
+        page.goTo("http://news.baidu.com/");
+        browser.close();
+        Page page1 = browser2.newPage();
+        page1.goTo("http://news.baidu.com/");
+```
+
+这个例子中，浏览器导航到具体某个页面后关闭。在这里并没有指明启动路径。argList是放一些额外的命令行启动参数的，在下面资源章节中我会给出相关资料。
+
+#### 3、生成页面的 PDF
+
+```java
+        Fetcher.on(null);
+
+        List<String> argList = new ArrayList<>();
+        LaunchOption options = new LaunchBuilder().withArgs(argList).withHeadless(false).build();
+        argList.add("--no-sandbox");
+        argList.add("--disable-setuid-sandbox");
+        Browser browser = Puppeteer.launch(options);
+        Browser browser2 = Puppeteer.launch(options);
+
+        Page page = browser.newPage();
+        page.goTo("http://news.baidu.com/");
+        PDFOption pdfOptions = new PDFOption();
+        pdfOptions.setPath("test.pdf");
+        page.pdf(pdfOptions);
+        page.close();
+        browser.close();
+```
+
+在这个例子中，导航到某个页面后，将整个页面截图，并写成PDF文件。注意，生成PDF必须在headless模式下才能生效
+
+#### 4、TRACING 性能分析
+
+```java
+        Fetcher.on(null);
+
+        List<String> argList = new ArrayList<>();
+        LaunchOption options = new LaunchBuilder().withArgs(argList).withHeadless(false).build();
+        argList.add("--no-sandbox");
+        argList.add("--disable-setuid-sandbox");
+        Browser browser = Puppeteer.launch(options);
+
+        Page page = browser.newPage();
+        // 开启追踪
+        page.tracing().start("/Users/xxx/Desktop/trace.json");
+        page.goTo("http://news.baidu.com/");
+        page.tracing().stop();
+```
+
+在这个例子中，将在页面导航完成后，生成一个 json 格式的文件，里面包含页面性能的具体数据，可以用 Chrome 浏览器开发者工具打开该 json 文件，并分析性能。
+
+#### 5、页面截图
+
+```java
+        Fetcher.on(null);
+
+        List<String> arrayList = new ArrayList<>();
+        LaunchOption options = new LaunchBuilder().withArgs(arrayList).withHeadless(true).build();
+        arrayList.add("--no-sandbox");
+        arrayList.add("--disable-setuid-sandbox");
+        Browser browser = Puppeteer.launch(options);
+
+        Page page = browser.newPage();
+        page.goTo("http://news.baidu.com/");
+        ScreenshotOption screenshotOptions = new ScreenshotOption();
+        //设置截图范围
+        Clip clip = new Clip(1.0, 1.56, 400, 400);
+        screenshotOptions.setClip(clip);
+        //设置存放的路径
+        screenshotOptions.setPath("test.png");
+        page.screenshot(screenshotOptions);
+```
 
 #### 1. 环境要求
 
-
 1. 本地运行需要安装 Node 8+及以上版本支持 (async, await).
 2. CentOS(6.x及以下版本未测试) 需要安装如下LIB:
+
  ```
  yum install pango.x86_64 libXcomposite.x86_64 libXcursor.x86_64 libXdamage.x86_64 libXext.x86_64 libXi.x86_64 libXtst.x86_64 cups-libs.x86_64 libXScrnSaver.x86_64 libXrandr.x86_64 GConf2.x86_64 alsa-lib.x86_64 atk.x86_64 gtk3.x86_64 ipa-gothic-fonts xorg-x11-fonts-100dpi xorg-x11-fonts-75dpi xorg-x11-utils xorg-x11-fonts-cyrillic xorg-x11-fonts-Type1 xorg-x11-fonts-misc -y
  ```
- 如果出现中文，需要安装相关字体
+
+如果出现中文，需要安装相关字体
+
  ```
  yum groupinstall "fonts" -y
  ```
- 
+
+### 版本提示：
+
+ 本项目有java版本和nodejs版本，请切换分支获取不同版本内容
+
 **WARNING:** *至少需要保证2GB左右的内存，一些新闻网站可能会更高甚至需要4GB内存.*
-
-#### 2. 本地开发
-
-* `npm install` 安装node相关lib
-* `npm start` 启动本地服务，启动前请修改相关参数信息，详见bin/config.json
-* 服务启动访问 http://127.0.0.1:7003 
-
-## 技术栈
-
-* Node 8+ (async, await), 需要ES7支持
-* [Koajs](https://github.com/koajs/koa) 很好的框架
-* [Puppeteer](https://github.com/GoogleChrome/puppeteer) 谷歌官方 Chrome
-  node库
