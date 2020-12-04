@@ -28,13 +28,12 @@ package org.aoju.lancia.kernel.browser;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
+import org.aoju.bus.core.toolkit.ZipKit;
 import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.option.FetcherOption;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -52,8 +51,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * 用于下载chrome浏览器
@@ -427,7 +424,7 @@ public class Fetcher {
     }
 
     /**
-     * intall archive file: *.zip,*.tar.bz2,*.dmg
+     * intall archive file: *.zip,*.dmg
      *
      * @param archivePath zip路径
      * @param folderPath  存放的路径
@@ -437,9 +434,7 @@ public class Fetcher {
     private void install(String archivePath, String folderPath) throws IOException, InterruptedException {
         Logger.info("Installing " + archivePath + " to " + folderPath);
         if (archivePath.endsWith(".zip")) {
-            extractZip(archivePath, folderPath);
-        } else if (archivePath.endsWith(".tar.bz2")) {
-            extractTar(archivePath, folderPath);
+            ZipKit.unzip(archivePath, folderPath);
         } else if (archivePath.endsWith(".dmg")) {
             mkdirAsync(folderPath);
             installDMG(archivePath, folderPath);
@@ -579,84 +574,6 @@ public class Fetcher {
             process3.destroyForcibly();
         } finally {
             IoKit.close(reader);
-        }
-    }
-
-    /**
-     * 解压tar文件
-     *
-     * @param archivePath zip路径
-     * @param folderPath  存放路径
-     * @throws IOException 异常
-     */
-    private void extractTar(String archivePath, String folderPath) throws IOException {
-        BufferedOutputStream wirter = null;
-        BufferedInputStream reader = null;
-        TarArchiveInputStream tarArchiveInputStream = null;
-        try {
-            tarArchiveInputStream = new TarArchiveInputStream(new FileInputStream(archivePath));
-            ArchiveEntry nextEntry;
-            while ((nextEntry = tarArchiveInputStream.getNextEntry()) != null) {
-                String name = nextEntry.getName();
-                Path path = Paths.get(folderPath, name);
-                File file = path.toFile();
-                if (nextEntry.isDirectory()) {
-                    file.mkdirs();
-                } else {
-                    reader = new BufferedInputStream(tarArchiveInputStream);
-                    int bufferSize = 8192;
-                    int perReadcount;
-                    Builder.createNewFile(file);
-                    byte[] buffer = new byte[bufferSize];
-                    wirter = new BufferedOutputStream(new FileOutputStream(file));
-                    while ((perReadcount = reader.read(buffer, 0, bufferSize)) != -1) {
-                        wirter.write(buffer, 0, perReadcount);
-                    }
-                    wirter.flush();
-                }
-            }
-        } finally {
-            IoKit.close(wirter);
-            IoKit.close(reader);
-            IoKit.close(tarArchiveInputStream);
-        }
-    }
-
-    /**
-     * 解压zip文件
-     *
-     * @param archivePath zip路径
-     * @param folderPath  存放路径
-     * @throws IOException 异常
-     */
-    private void extractZip(String archivePath, String folderPath) throws IOException {
-        BufferedOutputStream wirter = null;
-        BufferedInputStream reader = null;
-        ZipFile zipFile = new ZipFile(archivePath);
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        try {
-            while (entries.hasMoreElements()) {
-                ZipEntry zipEntry = entries.nextElement();
-                String name = zipEntry.getName();
-                Path path = Paths.get(folderPath, name);
-                if (zipEntry.isDirectory()) {
-                    path.toFile().mkdirs();
-                } else {
-                    reader = new BufferedInputStream(zipFile.getInputStream(zipEntry));
-
-                    int perReadcount;
-                    byte[] buffer = new byte[Variables.DEFAULT_BUFFER_SIZE];
-                    wirter = new BufferedOutputStream(new FileOutputStream(path.toString()));
-                    while ((perReadcount = reader.read(buffer, 0, Variables.DEFAULT_BUFFER_SIZE)) != -1) {
-                        wirter.write(buffer, 0, perReadcount);
-                    }
-                    wirter.flush();
-                }
-            }
-        } finally {
-            IoKit.close(wirter);
-            IoKit.close(reader);
-            IoKit.close(zipFile);
         }
     }
 
