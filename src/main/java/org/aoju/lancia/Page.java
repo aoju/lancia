@@ -1220,7 +1220,6 @@ public class Page extends EventEmitter {
     private void handleException(ExceptionDetails exceptionDetails) {
         String message = Builder.getExceptionMessage(exceptionDetails);
         RuntimeException err = new RuntimeException(message);
-//        err.setStackTrace(null); // Don't report clientside error with a node stack attached
         this.emit(Variables.Event.PAGE_PageError.getName(), err);
     }
 

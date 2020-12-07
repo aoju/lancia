@@ -97,4 +97,5 @@ public class NavigateOption {
     public void setWaitUntil(List<String> waitUntil) {
         this.waitUntil = waitUntil;
     }
+
 }

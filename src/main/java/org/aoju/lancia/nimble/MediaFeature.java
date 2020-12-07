@@ -53,4 +53,5 @@ public class MediaFeature {
     public void setValue(String value) {
         this.value = value;
     }
+
 }
