@@ -75,8 +75,6 @@ public class Page extends EventEmitter {
     private static final ExecutorService reloadExecutor = Executors.newSingleThreadExecutor();
     private static final String ABOUT_BLANK = "about:blank";
     private static final Map<String, Double> unitToPixels = new HashMap<String, Double>() {
-        private static final long serialVersionUID = -4861220887908575532L;
-
         {
             put("px", 1.00);
             put("in", 96.00);
@@ -129,9 +127,6 @@ public class Page extends EventEmitter {
                 if (!"worker".equals(event.getTargetInfo().getType())) {
                     Map<String, Object> params = new HashMap<>();
                     params.put("sessionId", event.getSessionId());
-                        /*
-                          If we don't detach from service workers, they will never die
-                         */
                     client.send("Target.detachFromTarget", params, false);
                     return;
                 }
@@ -1278,7 +1273,6 @@ public class Page extends EventEmitter {
 
     /**
      * 导航到指定的url,因为goto是java的关键字，所以就采用了goTo方法名
-     * <p>
      * 以下情况此方法将报错：
      * 发生了 SSL 错误 (比如有些自签名的https证书).
      * 目标地址无效

@@ -62,12 +62,8 @@ import java.util.stream.Stream;
 public class Fetcher {
 
     public static final Map<String, Map<String, String>> downloadURLs = new HashMap<String, Map<String, String>>() {
-        private static final long serialVersionUID = -6918778699407093058L;
-
         {
             put("chrome", new HashMap<String, String>() {
-                private static final long serialVersionUID = 3441562966233820720L;
-
                 {
                     put("host", "https://npm.taobao.org/mirrors");
                     put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
@@ -77,8 +73,6 @@ public class Fetcher {
                 }
             });
             put("firefox", new HashMap<String, String>() {
-                private static final long serialVersionUID = 2053771138227029401L;
-
                 {
                     put("host", "https://github.com/puppeteer/juggler/releases");
                     put("linux", "%s/download/%s/%s.zip");

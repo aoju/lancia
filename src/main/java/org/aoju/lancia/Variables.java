@@ -50,7 +50,6 @@ public class Variables {
      * 连接超时设置
      */
     public static final int CONNECT_TIME_OUT = 10000;
-
     /**
      * 指定版本
      */
@@ -93,8 +92,6 @@ public class Variables {
      * 谷歌浏览器默认启动参数
      */
     public static final List<String> DEFAULT_ARGS = Collections.unmodifiableList(new ArrayList<String>() {
-        private static final long serialVersionUID = 1L;
-
         {
             addAll(Arrays.asList(
                     "--disable-background-networking",
@@ -121,8 +118,6 @@ public class Variables {
     });
 
     public static final Set<String> SUPPORTED_METRICS = new HashSet<String>() {
-        private static final long serialVersionUID = -5224857570151968464L;
-
         {
             add("Timestamp");
             add("Documents");
@@ -175,8 +170,6 @@ public class Variables {
      * 追踪信息的默认分类
      */
     public static final Set<String> DEFAULTCATEGORIES = new LinkedHashSet<String>() {
-        private static final long serialVersionUID = -5224857570151968464L;
-
         {
             add("-*");
             add("devtools.timeline");
