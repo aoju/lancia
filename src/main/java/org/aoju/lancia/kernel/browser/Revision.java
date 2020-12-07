@@ -25,6 +25,10 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.browser;
 
+import org.aoju.bus.core.lang.Assert;
+import org.aoju.bus.core.toolkit.StringKit;
+import org.aoju.bus.health.Platform;
+
 /**
  * @author Kimi Liu
  * @version 6.1.3
@@ -33,16 +37,30 @@ package org.aoju.lancia.kernel.browser;
 public class Revision {
 
     private String revision;
-
+    /**
+     * 介质路径
+     */
     private String executablePath;
-
+    /**
+     * 文件路径
+     */
     private String folderPath;
-
+    /**
+     * 是否本地
+     */
     private boolean local;
-
+    /**
+     * 访问URL
+     */
     private String url;
-
+    /**
+     * 介质信息
+     */
     private String product;
+    /**
+     * 介质运行平台
+     */
+    private String platform;
 
     public Revision() {
     }
@@ -103,4 +121,24 @@ public class Revision {
     public void setProduct(String product) {
         this.product = product;
     }
+
+    public String getPlatform() {
+        return platform;
+    }
+
+    public void setPlatform(String platform) {
+        if (StringKit.isNotEmpty(platform)) {
+            this.platform = platform;
+        } else {
+            if (Platform.isMac()) {
+                this.platform = "mac";
+            } else if (Platform.isLinux()) {
+                this.platform = "linux";
+            } else if (Platform.isWindows()) {
+                this.platform = Platform.is64Bit() ? "win64" : "win32";
+            }
+        }
+        Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
+    }
+
 }

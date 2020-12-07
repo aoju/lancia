@@ -67,13 +67,6 @@ public class LaunchOption extends BrowserOption {
      */
     private boolean handleSIGHUP = true;
     /**
-     * 将cheome的标准输出流输入流转换到java程序的标准输入输出,java默认已经将子进程的输入和错误流通过管道重定向了，现在这个参数暂时用不上
-     * Whether to pipe browser process stdout and stderr into process.stdout and
-     * process.stderr.
-     * 默认是 false
-     */
-    private boolean dumpio;
-    /**
      * ָSystem.getEnv()
      * Specify environment variables that will be visible to Chromium.
      * 默认是 `process.env`.
@@ -143,14 +136,6 @@ public class LaunchOption extends BrowserOption {
         this.handleSIGHUP = handleSIGHUP;
     }
 
-    public boolean getDumpio() {
-        return dumpio;
-    }
-
-    public void setDumpio(boolean dumpio) {
-        this.dumpio = dumpio;
-    }
-
     public Standard getEnv() {
         return env;
     }
@@ -174,6 +159,5 @@ public class LaunchOption extends BrowserOption {
     public void setProduct(String product) {
         this.product = product;
     }
-
 
 }

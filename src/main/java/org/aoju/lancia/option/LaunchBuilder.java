@@ -88,11 +88,6 @@ public class LaunchBuilder {
         return this;
     }
 
-    public LaunchBuilder withDumpio(boolean dumpio) {
-        options.setDumpio(dumpio);
-        return this;
-    }
-
     public LaunchBuilder withEnv(Standard env) {
         options.setEnv(env);
         return this;

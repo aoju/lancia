@@ -61,7 +61,7 @@ import java.util.stream.Stream;
  */
 public class Fetcher {
 
-    public static final Map<String, Map<String, String>> downloadURLs = new HashMap<String, Map<String, String>>() {
+    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<String, Map<String, String>>() {
         {
             put("chrome", new HashMap<String, String>() {
                 {
@@ -83,6 +83,7 @@ public class Fetcher {
             });
         }
     };
+
     /**
      * 下载的域名
      */
@@ -103,7 +104,7 @@ public class Fetcher {
     public Fetcher() {
         this.product = "chrome";
         this.downloadsFolder = Builder.join(System.getProperty("user.dir"), ".local-browser");
-        this.downloadHost = downloadURLs.get(this.product).get("host");
+        this.downloadHost = DOWNLOAD_URL.get(this.product).get("host");
         if (platform == null) {
             if (Platform.isMac()) {
                 this.platform = "mac";
@@ -114,7 +115,7 @@ public class Fetcher {
             }
             Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
         }
-        Assert.notNull(downloadURLs.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
+        Assert.notNull(DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
     }
 
     /**
@@ -127,7 +128,7 @@ public class Fetcher {
         this.product = (StringKit.isNotEmpty(options.getProduct()) ? options.getProduct() : "chrome").toLowerCase();
         Assert.isTrue("chrome".equals(product) || "firefox".equals(product), "Unkown product: " + options.getProduct());
         this.downloadsFolder = StringKit.isNotEmpty(options.getPath()) ? options.getPath() : Builder.join(projectRoot, ".local-browser");
-        this.downloadHost = StringKit.isNotEmpty(options.getHost()) ? options.getHost() : downloadURLs.get(this.product).get("host");
+        this.downloadHost = StringKit.isNotEmpty(options.getHost()) ? options.getHost() : DOWNLOAD_URL.get(this.product).get("host");
         this.platform = StringKit.isNotEmpty(options.getPlatform()) ? options.getPlatform() : null;
         if (platform == null) {
             if (Platform.isMac()) {
@@ -139,7 +140,7 @@ public class Fetcher {
             }
             Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
         }
-        Assert.notNull(downloadURLs.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
+        Assert.notNull(DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
     }
 
     /**
@@ -306,7 +307,7 @@ public class Fetcher {
     }
 
     private String fetchRevision() throws IOException {
-        String downloadUrl = downloadURLs.get(product).get(platform);
+        String downloadUrl = DOWNLOAD_URL.get(product).get(platform);
         URL urlSend = new URL(String.format(downloadUrl.substring(0, downloadUrl.length() - 9), this.downloadHost));
         URLConnection conn = urlSend.openConnection();
         conn.setConnectTimeout(Variables.CONNECT_TIME_OUT);
@@ -348,7 +349,7 @@ public class Fetcher {
             return new ArrayList<>();
         Path path = Paths.get(this.downloadsFolder);
         Stream<Path> fileNames = this.readdirAsync(path);
-        return fileNames.map(fileName -> parseFolderPath(this.product, fileName)).filter(entry -> entry != null && this.platform.equals(entry.getPlatform())).map(RevisionEntry::getRevision).collect(Collectors.toList());
+        return fileNames.map(fileName -> parseFolderPath(this.product, fileName)).filter(entry -> entry != null && this.platform.equals(entry.getPlatform())).map(Revision::getRevision).collect(Collectors.toList());
     }
 
     /**
@@ -368,16 +369,16 @@ public class Fetcher {
      *
      * @param product    win linux mac
      * @param folderPath 文件夹路径
-     * @return RevisionEntry RevisionEntry
+     * @return Revision Revision
      */
-    private RevisionEntry parseFolderPath(String product, Path folderPath) {
+    private Revision parseFolderPath(String product, Path folderPath) {
         Path fileName = folderPath.getFileName();
         String[] split = fileName.toString().split("-");
         if (split.length != 2)
             return null;
-        if (downloadURLs.get(product).get(split[0]) == null)
+        if (DOWNLOAD_URL.get(product).get(split[0]) == null)
             return null;
-        RevisionEntry entry = new RevisionEntry();
+        Revision entry = new Revision();
         entry.setPlatform(split[0]);
         entry.setProduct(product);
         entry.setRevision(split[1]);
@@ -670,7 +671,6 @@ public class Fetcher {
             if ("mac".equals(platform))
                 return "chrome-mac";
             if ("win32".equals(platform) || "win64".equals(platform)) {
-                // Windows archive name changed at r591479.
                 return Integer.parseInt(revision) > 591479 ? "chrome-win" : "chrome-win32";
             }
         } else if ("firefox".equals(product)) {
@@ -694,77 +694,7 @@ public class Fetcher {
      * @return 下载浏览器的url
      */
     public String downloadURL(String product, String platform, String host, String revision) {
-        return String.format(downloadURLs.get(product).get(platform), host, revision, archiveName(product, platform, revision));
-    }
-
-    public String host() {
-        return downloadHost;
-    }
-
-    public String platform() {
-        return platform;
-    }
-
-    public String getDownloadsFolder() {
-        return downloadsFolder;
-    }
-
-    public void setDownloadsFolder(String downloadsFolder) {
-        this.downloadsFolder = downloadsFolder;
-    }
-
-    public String product() {
-        return product;
-    }
-
-    /**
-     * 静态内部类，描述谷歌版本相关内容,在这里
-     * {@link Fetcher#parseFolderPath(java.lang.String, java.nio.file.Path)}用到
-     */
-    public static class RevisionEntry {
-
-        private String product;
-
-        private String platform;
-
-        private String revision;
-
-        public String getProduct() {
-            return product;
-        }
-
-        public void setProduct(String product) {
-            this.product = product;
-        }
-
-        public String getPlatform() {
-            return platform;
-        }
-
-        public void setPlatform(String platform) {
-            if (StringKit.isNotEmpty(platform)) {
-                this.platform = platform;
-                return;
-            }
-            if (platform == null) {
-                if (Platform.isMac()) {
-                    this.platform = "mac";
-                } else if (Platform.isLinux()) {
-                    this.platform = "linux";
-                } else if (Platform.isWindows()) {
-                    this.platform = Platform.is64Bit() ? "win64" : "win32";
-                }
-                Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
-            }
-        }
-
-        public String getRevision() {
-            return revision;
-        }
-
-        public void setRevision(String revision) {
-            this.revision = revision;
-        }
+        return String.format(DOWNLOAD_URL.get(product).get(platform), host, revision, archiveName(product, platform, revision));
     }
 
 }

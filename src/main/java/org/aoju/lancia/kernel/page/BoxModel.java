@@ -37,14 +37,10 @@ import java.util.List;
 public class BoxModel {
 
     private List<ClickablePoint> content;
-
     private List<ClickablePoint> padding;
-
     private List<ClickablePoint> border;
-
     private List<ClickablePoint> margin;
     private int width;
-
     private int height;
 
     public BoxModel(List<ClickablePoint> content, List<ClickablePoint> padding, List<ClickablePoint> border, List<ClickablePoint> margin, int width, int height) {

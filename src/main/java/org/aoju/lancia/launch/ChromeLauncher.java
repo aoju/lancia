@@ -116,10 +116,10 @@ public class ChromeLauncher implements Launcher {
         boolean usePipe = chromeArguments.contains("--remote-debugging-pipe");
 
         Logger.trace("Calling " + chromeExecutable + String.join(" ", chromeArguments));
-        Runner runner = new Runner(chromeExecutable, chromeArguments, temporaryUserDataDir);//
+        Runner runner = new Runner(chromeExecutable, chromeArguments, temporaryUserDataDir);
         try {
             runner.start(options);
-            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo(), options.getDumpio());
+            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo());
             Function<Object, Object> closeCallback = (s) -> {
                 runner.closeQuietly();
                 return null;

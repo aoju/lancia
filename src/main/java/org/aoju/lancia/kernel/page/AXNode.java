@@ -31,9 +31,7 @@ import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.nimble.AXProperty;
 import org.aoju.lancia.nimble.SerializedAXNode;
 
-import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
-import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -49,22 +47,22 @@ import java.util.function.Predicate;
  */
 public class AXNode {
 
-    public static final String[] tristateProperties = new String[]{
+    public static final String[] TRISTATE_PROPERTIES = new String[]{
             "checked",
             "pressed"
     };
-    public static final String[] tokenProperties = new String[]{
+    public static final String[] TOKEN_PROPERTIES = new String[]{
             "autocomplete",
             "haspopup",
             "invalid",
             "orientation"
     };
-    public static final String[] numericalProperties = new String[]{
+    public static final String[] NUMERICAL_PROPERTIES = new String[]{
             "level",
             "valuemax",
             "valuemin"
     };
-    private static final String[] userStringProperties = new String[]{
+    private static final String[] USERSTRING_PROPERTIES = new String[]{
             "name",
             "value",
             "description",
@@ -72,7 +70,7 @@ public class AXNode {
             "roledescription",
             "valuetext"
     };
-    private static final String[] booleanProperties = new String[]{"disabled",
+    private static final String[] BOOLEAN_PROPERTIES = new String[]{"disabled",
             "expanded",
             "focused",
             "modal",
@@ -272,9 +270,7 @@ public class AXNode {
         SerializedAXNode node = new SerializedAXNode();
         node.setRole(this.role);
 
-        BeanInfo beanInfo = Introspector.getBeanInfo(node.getClass());
-
-        for (String userStringProperty : userStringProperties) {
+        for (String userStringProperty : USERSTRING_PROPERTIES) {
             if (!properties.containsKey(userStringProperty)) {
                 continue;
             }
@@ -282,7 +278,7 @@ public class AXNode {
             propDesc.getWriteMethod().invoke(node, properties.get(userStringProperty));
         }
 
-        for (String booleanProperty : booleanProperties) {
+        for (String booleanProperty : BOOLEAN_PROPERTIES) {
             if ("focused".equals(booleanProperty) && "WebArea".equals(this.role)) {
                 continue;
             }
@@ -294,7 +290,7 @@ public class AXNode {
             propDesc.getWriteMethod().invoke(node, value);
         }
 
-        for (String tristateProperty : tristateProperties) {
+        for (String tristateProperty : TRISTATE_PROPERTIES) {
             if (!properties.containsKey(tristateProperty)) {
                 continue;
             }
@@ -303,7 +299,7 @@ public class AXNode {
         }
 
 
-        for (String numericalProperty : numericalProperties) {
+        for (String numericalProperty : NUMERICAL_PROPERTIES) {
             if (!properties.containsKey(numericalProperty)) {
                 continue;
             }
@@ -312,7 +308,7 @@ public class AXNode {
         }
 
 
-        for (String tokenProperty : tokenProperties) {
+        for (String tokenProperty : TOKEN_PROPERTIES) {
             Object value = properties.get(tokenProperty);
 
             if (value == null || "false".equals(value)) {

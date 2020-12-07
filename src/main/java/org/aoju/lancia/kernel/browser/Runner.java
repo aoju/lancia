@@ -220,15 +220,14 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * @param usePipe 是否是pipe连接
      * @param timeout 超时时间
      * @param slowMo  放慢频率
-     * @param dumpio  浏览器版本
      * @return 连接对象
      * @throws InterruptedException 打断异常
      */
-    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio) throws InterruptedException {
+    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo) throws InterruptedException {
         if (usePipe) {
             throw new InstrumentException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
         } else {
-            String waitForWSEndpoint = waitForWSEndpoint(timeout, dumpio);
+            String waitForWSEndpoint = waitForWSEndpoint(timeout);
             WebSocketTransport transport = TransportFactory.create(waitForWSEndpoint);
             this.connection = new Connection(waitForWSEndpoint, transport, slowMo);
             Logger.info("Connect to browser by websocket url: " + waitForWSEndpoint);
@@ -240,11 +239,10 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * 等待浏览器ws url
      *
      * @param timeout 等待超时时间
-     * @param dumpio  浏览器版本
      * @return ws url
      */
-    private String waitForWSEndpoint(int timeout, boolean dumpio) {
-        Runner.StreamReader reader = new Runner.StreamReader(timeout, dumpio, process.getInputStream());
+    private String waitForWSEndpoint(int timeout) {
+        Runner.StreamReader reader = new Runner.StreamReader(timeout, process.getInputStream());
         reader.start();
         return reader.getResult();
     }
@@ -308,6 +306,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * 注册钩子
      */
     public interface ShutdownHookRegistry {
+
         /**
          * 注册一个新的关闭钩子线程
          *
@@ -325,6 +324,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         default void remove(Thread thread) {
             Runtime.getRuntime().removeShutdownHook(thread);
         }
+
     }
 
     static class StreamReader {
@@ -334,14 +334,12 @@ public class Runner extends EventEmitter implements AutoCloseable {
         private final AtomicReference<String> chromeOutput = new AtomicReference<>(Normal.EMPTY);
 
         private final int timeout;
-        private final boolean dumpio;
         private final InputStream inputStream;
 
         private Thread readThread;
 
-        public StreamReader(int timeout, boolean dumpio, InputStream inputStream) {
+        public StreamReader(int timeout, InputStream inputStream) {
             this.timeout = timeout;
-            this.dumpio = dumpio;
             this.inputStream = inputStream;
         }
 
