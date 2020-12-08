@@ -27,6 +27,7 @@ package org.aoju.lancia.worker;
 
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.ObjectKit;
+import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -42,16 +43,13 @@ import java.util.function.Consumer;
  * @since JDK 1.8+
  */
 public class WebSocketTransport extends WebSocketClient implements Transport {
+//public class WebSocketTransport implements Transport {
 
     private Consumer<String> messageConsumer = null;
 
     private Connection connection = null;
 
-    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
-        super(URI.create(browserWSEndpoint));
-        super.setConnectionLostTimeout(0);
-        super.connectBlocking();
-    }
+    public CoverWebSocket socket;
 
     @Override
     public void onMessage(String message) {
@@ -78,10 +76,46 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
         Logger.error(e);
     }
 
+    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
+        super(URI.create(browserWSEndpoint));
+        super.setConnectionLostTimeout(0);
+        super.connectBlocking();
+    }
+
     @Override
     public void onOpen(ServerHandshake serverHandshake) {
         Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
     }
+
+   /* public WebSocketTransport(String browserWSEndpoint) {
+        Httpv httpv = Httpv.builder().build();
+        this.socket = httpv.webSocket(browserWSEndpoint).listen();
+    }
+
+    @Override
+    public void send(String message) {
+        Logger.debug(message);
+        this.socket.send(message);
+    }
+
+    @Override
+    public void close() {
+        if (ObjectKit.isNotEmpty(this.connection)) {
+            this.connection.dispose();
+        }
+    }
+
+    @Override
+    public void onMessage(String message) {
+        Assert.notNull(this.messageConsumer, "MessageConsumer must be initialized");
+        this.messageConsumer.accept(message);
+    }
+
+    @Override
+    public void onClose() {
+        this.close();
+    }*/
+
 
     public void addMessageConsumer(Consumer<String> consumer) {
         this.messageConsumer = consumer;
