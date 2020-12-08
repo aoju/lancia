@@ -56,6 +56,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
      * URL
      */
     private final String url;
+    private final Transport transport;
     /**
      * 单位是毫秒
      */
@@ -66,10 +67,15 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
     private boolean closed;
 
-    public Connection(String url, int delay) {
+    public Connection(String url, Transport transport, int delay) {
         super();
         this.url = url;
+        this.transport = transport;
         this.delay = delay;
+        if (this.transport instanceof WebSocketTransport) {
+            ((WebSocketTransport) this.transport).addMessageConsumer(this);
+            ((WebSocketTransport) this.transport).addConnection(this);
+        }
     }
 
     /**
@@ -279,8 +285,10 @@ public class Connection extends EventEmitter implements Consumer<String> {
         onMessage(t);
     }
 
+
     public void dispose() {
         this.onClose();
+        this.transport.close();
     }
 
     public void onClose() {
@@ -302,21 +310,6 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
     public boolean getClosed() {
         return closed;
-    }
-
-    /**
-     * 创建套接字传输客户端
-     *
-     * @param browserWSEndpoint 连接websocket的地址
-     * @return WebSocketTransport websocket客户端
-     * @throws InterruptedException 被打断异常
-     */
-    public static WebSocketTransport create(String browserWSEndpoint) throws InterruptedException {
-        // WebSocketTransport client = new WebSocketTransport(URI.create(browserWSEndpoint));
-        // 保持websokcet连接
-        // client.setConnectionLostTimeout(0);
-        // client.connectBlocking();
-        return null;
     }
 
 }

@@ -23,57 +23,23 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.launch;
-
-import org.aoju.lancia.Browser;
-import org.aoju.lancia.Launcher;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.LaunchOption;
-import org.aoju.lancia.worker.Transport;
-
-import java.util.List;
+package org.aoju.lancia.worker;
 
 /**
- * Firefox启动支持
+ * 网络传送
  *
  * @author Kimi Liu
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class FirefoxLauncher implements Launcher {
+public interface Transport {
 
-    private final boolean isPuppeteerCore;
+    void send(String message);
 
-    public FirefoxLauncher(boolean isPuppeteerCore) {
-        super();
-        this.isPuppeteerCore = isPuppeteerCore;
-    }
+    void onMessage(String message);
 
-    @Override
-    public Browser launch(LaunchOption options) {
-        return null;
-    }
+    void onClose();
 
-    @Override
-    public List<String> defaultArgs(ChromeOption options) {
-        return null;
-    }
-
-
-    @Override
-    public String resolveExecutablePath(String chromeExecutable) {
-        return null;
-    }
-
-    @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
-        return null;
-    }
-
-    @Override
-    public String executablePath() {
-        return null;
-    }
+    void close();
 
 }

@@ -23,57 +23,34 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.launch;
+package org.aoju.lancia.worker;
 
-import org.aoju.lancia.Browser;
-import org.aoju.lancia.Launcher;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.LaunchOption;
-import org.aoju.lancia.worker.Transport;
+import org.java_websocket.drafts.Draft_6455;
 
-import java.util.List;
+import java.net.URI;
 
 /**
- * Firefox启动支持
+ * 传输工厂
  *
  * @author Kimi Liu
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class FirefoxLauncher implements Launcher {
+public class TransportFactory {
 
-    private final boolean isPuppeteerCore;
-
-    public FirefoxLauncher(boolean isPuppeteerCore) {
-        super();
-        this.isPuppeteerCore = isPuppeteerCore;
-    }
-
-    @Override
-    public Browser launch(LaunchOption options) {
-        return null;
-    }
-
-    @Override
-    public List<String> defaultArgs(ChromeOption options) {
-        return null;
-    }
-
-
-    @Override
-    public String resolveExecutablePath(String chromeExecutable) {
-        return null;
-    }
-
-    @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
-        return null;
-    }
-
-    @Override
-    public String executablePath() {
-        return null;
+    /**
+     * 创建套接字传输客户端
+     *
+     * @param browserWSEndpoint 连接websocket的地址
+     * @return WebSocketTransport websocket客户端
+     * @throws InterruptedException 被打断异常
+     */
+    public static WebSocketTransport create(String browserWSEndpoint) throws InterruptedException {
+        WebSocketTransport client = new WebSocketTransport(URI.create(browserWSEndpoint), new Draft_6455());
+        // 保持websokcet连接
+        client.setConnectionLostTimeout(0);
+        client.connectBlocking();
+        return client;
     }
 
 }

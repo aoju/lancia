@@ -29,6 +29,7 @@ import org.aoju.lancia.kernel.Standard;
 import org.aoju.lancia.option.BrowserOption;
 import org.aoju.lancia.option.ChromeOption;
 import org.aoju.lancia.option.LaunchOption;
+import org.aoju.lancia.worker.Transport;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,7 +51,7 @@ public interface Launcher {
 
     String resolveExecutablePath(String chromeExecutable) throws IOException;
 
-    Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL);
+    Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport);
 
     String executablePath() throws IOException;
 

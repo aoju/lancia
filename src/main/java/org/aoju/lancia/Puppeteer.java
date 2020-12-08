@@ -31,6 +31,7 @@ import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.launch.ChromeLauncher;
 import org.aoju.lancia.launch.FirefoxLauncher;
 import org.aoju.lancia.option.*;
+import org.aoju.lancia.worker.Transport;
 
 import java.io.IOException;
 import java.util.List;
@@ -107,17 +108,18 @@ public class Puppeteer {
      *
      * @param options           连接的浏览器选项
      * @param browserWSEndpoint websocket http transport 三选一
-     * @param browserURL        websocket http transport 二选一
+     * @param browserURL        websocket http transport 三选一
+     * @param transport         websocket http transport 三选一
      * @param product           谷歌还是火狐
      * @return 浏览器实例
      */
-    public static Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, String product) {
+    public static Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport, String product) {
         Puppeteer puppeteer = new Puppeteer();
 
         if (StringKit.isNotEmpty(product))
             puppeteer.setProductName(product);
         adapterLauncher(puppeteer);
-        return puppeteer.getLauncher().connect(options, browserWSEndpoint, browserURL);
+        return puppeteer.getLauncher().connect(options, browserWSEndpoint, browserURL, transport);
     }
 
     /**
@@ -129,11 +131,12 @@ public class Puppeteer {
      *
      * @param options           连接的浏览器选项
      * @param browserWSEndpoint websocket http transport 三选一
-     * @param browserURL        websocket http transport 二选一
+     * @param browserURL        websocket http transport 三选一
+     * @param transport         websocket http transport 三选一
      * @return 浏览器实例
      */
-    public static Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL) {
-        return Puppeteer.connect(options, browserWSEndpoint, browserURL, null);
+    public static Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
+        return Puppeteer.connect(options, browserWSEndpoint, browserURL, transport, null);
     }
 
     /**
@@ -144,11 +147,12 @@ public class Puppeteer {
      * transport: 之前已经创建好的 ConnectionTransport
      *
      * @param browserWSEndpoint websocket http transport 三选一
-     * @param browserURL        websocket http transport 二选一
+     * @param browserURL        websocket http transport 三选一
+     * @param transport         websocket http transport 三选一
      * @return 浏览器实例
      */
-    public static Browser connect(String browserWSEndpoint, String browserURL) {
-        return Puppeteer.connect(new BrowserOption(), browserWSEndpoint, browserURL, null);
+    public static Browser connect(String browserWSEndpoint, String browserURL, Transport transport) {
+        return Puppeteer.connect(new BrowserOption(), browserWSEndpoint, browserURL, transport, null);
     }
 
     /**

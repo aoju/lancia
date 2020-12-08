@@ -23,57 +23,80 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.launch;
+package org.aoju.lancia.worker;
 
-import org.aoju.lancia.Browser;
-import org.aoju.lancia.Launcher;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.LaunchOption;
-import org.aoju.lancia.worker.Transport;
+import org.aoju.bus.core.lang.Assert;
+import org.aoju.bus.core.toolkit.ObjectKit;
+import org.aoju.bus.logger.Logger;
+import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.drafts.Draft;
+import org.java_websocket.handshake.ServerHandshake;
 
-import java.util.List;
+import java.net.URI;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * Firefox启动支持
+ * 网络套接字客户端
  *
  * @author Kimi Liu
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class FirefoxLauncher implements Launcher {
+public class WebSocketTransport extends WebSocketClient implements Transport {
 
-    private final boolean isPuppeteerCore;
+    private Consumer<String> messageConsumer = null;
 
-    public FirefoxLauncher(boolean isPuppeteerCore) {
-        super();
-        this.isPuppeteerCore = isPuppeteerCore;
+    private Connection connection = null;
+
+    public WebSocketTransport(URI serverUri, Draft draft) {
+        super(serverUri, draft);
+    }
+
+    public WebSocketTransport(URI serverURI) {
+        super(serverURI);
+    }
+
+    public WebSocketTransport(URI serverUri, Map<String, String> httpHeaders) {
+        super(serverUri, httpHeaders);
     }
 
     @Override
-    public Browser launch(LaunchOption options) {
-        return null;
+    public void onMessage(String message) {
+        Assert.notNull(this.messageConsumer, "MessageConsumer must be initialized");
+        this.messageConsumer.accept(message);
     }
 
     @Override
-    public List<String> defaultArgs(ChromeOption options) {
-        return null;
-    }
-
-
-    @Override
-    public String resolveExecutablePath(String chromeExecutable) {
-        return null;
+    public void onClose() {
+        this.close();
     }
 
     @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
-        return null;
+    public void onClose(int code, String reason, boolean remote) {
+        Logger.info("Connection closed by " + (remote ? "remote peer" : "us") + " Code: " + code + " Reason: " + reason);
+        this.onClose();
+        if (ObjectKit.isNotEmpty(this.connection)) {
+            this.connection.dispose();
+        }
     }
 
     @Override
-    public String executablePath() {
-        return null;
+    public void onError(Exception e) {
+        Logger.error(e);
+    }
+
+    @Override
+    public void onOpen(ServerHandshake serverHandshake) {
+        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
+    }
+
+    public void addMessageConsumer(Consumer<String> consumer) {
+        this.messageConsumer = consumer;
+    }
+
+    public void addConnection(Connection connection) {
+        this.connection = connection;
     }
 
 }
