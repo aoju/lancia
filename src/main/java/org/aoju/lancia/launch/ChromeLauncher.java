@@ -28,7 +28,6 @@ package org.aoju.lancia.launch;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.lang.Http;
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
@@ -45,9 +44,6 @@ import org.aoju.lancia.option.ChromeOption;
 import org.aoju.lancia.option.FetcherOption;
 import org.aoju.lancia.option.LaunchOption;
 import org.aoju.lancia.worker.Connection;
-import org.aoju.lancia.worker.Transport;
-import org.aoju.lancia.worker.TransportFactory;
-import org.aoju.lancia.worker.WebSocketTransport;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -247,20 +243,15 @@ public class ChromeLauncher implements Launcher {
     }
 
     @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
+    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL) {
         final Connection connection;
         try {
-            if (transport != null) {
-                connection = new Connection(Normal.EMPTY, transport, options.getSlowMo());
-            } else if (StringKit.isNotEmpty(browserWSEndpoint)) {
-                WebSocketTransport connectionTransport = TransportFactory.create(browserWSEndpoint);
-                connection = new Connection(browserWSEndpoint, connectionTransport, options.getSlowMo());
+            if (StringKit.isNotEmpty(browserWSEndpoint)) {
+                connection = new Connection(browserWSEndpoint, options.getSlowMo());
             } else if (StringKit.isNotEmpty(browserURL)) {
-                String connectionURL = getWSEndpoint(browserURL);
-                WebSocketTransport connectionTransport = TransportFactory.create(connectionURL);
-                connection = new Connection(connectionURL, connectionTransport, options.getSlowMo());
+                connection = new Connection(getWSEndpoint(browserURL), options.getSlowMo());
             } else {
-                throw new IllegalArgumentException("Exactly one of browserWSEndpoint, browserURL or transport must be passed to puppeteer.connect");
+                throw new IllegalArgumentException("Exactly one of browserWSEndpoint or browserURL must be passed to puppeteer.connect");
             }
             JsonNode result = connection.send("Target.getBrowserContexts", null, true);
 
@@ -273,7 +264,7 @@ public class ChromeLauncher implements Launcher {
 
             browserContextIds = Variables.OBJECTMAPPER.readerFor(javaType).readValue(result.get("browserContextIds"));
             return Browser.create(connection, browserContextIds, options.getIgnoreHTTPSErrors(), options.getViewport(), null, closeFunction);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
