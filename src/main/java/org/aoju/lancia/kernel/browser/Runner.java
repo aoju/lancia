@@ -33,10 +33,7 @@ import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.option.LaunchOption;
-import org.aoju.lancia.worker.BrowserListener;
-import org.aoju.lancia.worker.Connection;
-import org.aoju.lancia.worker.EventEmitter;
-import org.aoju.lancia.worker.ListenerWrapper;
+import org.aoju.lancia.worker.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -231,7 +228,8 @@ public class Runner extends EventEmitter implements AutoCloseable {
             throw new InstrumentException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
         } else {
             String waitForWSEndpoint = waitForWSEndpoint(timeout);
-            this.connection = new Connection(waitForWSEndpoint, slowMo);
+            WebSocketTransport transport = TransportFactory.create(waitForWSEndpoint);
+            this.connection = new Connection(waitForWSEndpoint, transport, slowMo);
             Logger.info("Connect to browser by websocket url: " + waitForWSEndpoint);
         }
         return this.connection;
