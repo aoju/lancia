@@ -275,7 +275,7 @@ public class Browser extends EventEmitter {
             }
             now = System.currentTimeMillis() - base;
         }
-        throw new InstrumentException("waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
+        throw new InstrumentException("Waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
     }
 
     /**

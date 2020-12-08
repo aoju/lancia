@@ -29,11 +29,9 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.logger.Logger;
 import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.drafts.Draft;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -49,16 +47,10 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
 
     private Connection connection = null;
 
-    public WebSocketTransport(URI serverUri, Draft draft) {
-        super(serverUri, draft);
-    }
-
-    public WebSocketTransport(URI serverURI) {
-        super(serverURI);
-    }
-
-    public WebSocketTransport(URI serverUri, Map<String, String> httpHeaders) {
-        super(serverUri, httpHeaders);
+    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
+        super(URI.create(browserWSEndpoint));
+        super.setConnectionLostTimeout(0);
+        super.connectBlocking();
     }
 
     @Override

@@ -25,10 +25,6 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import org.java_websocket.drafts.Draft_6455;
-
-import java.net.URI;
-
 /**
  * 传输工厂
  *
@@ -46,11 +42,7 @@ public class TransportFactory {
      * @throws InterruptedException 被打断异常
      */
     public static WebSocketTransport create(String browserWSEndpoint) throws InterruptedException {
-        WebSocketTransport client = new WebSocketTransport(URI.create(browserWSEndpoint), new Draft_6455());
-        // 保持websokcet连接
-        client.setConnectionLostTimeout(0);
-        client.connectBlocking();
-        return client;
+        return new WebSocketTransport(browserWSEndpoint);
     }
 
 }
