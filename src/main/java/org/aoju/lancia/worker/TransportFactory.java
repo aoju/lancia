@@ -41,7 +41,7 @@ public class TransportFactory {
      * @return WebSocketTransport websocket客户端
      * @throws InterruptedException 被打断异常
      */
-    public static WebSocketTransport create(String browserWSEndpoint) throws InterruptedException {
+    public static WebSocketTransport create(String browserWSEndpoint) {
         return new WebSocketTransport(browserWSEndpoint);
     }
 

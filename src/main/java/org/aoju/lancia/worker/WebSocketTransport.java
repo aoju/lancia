@@ -45,8 +45,9 @@ import java.util.function.Consumer;
 public class WebSocketTransport extends WebSocketClient implements Transport {
 //public class WebSocketTransport implements Transport {
 
-    public CoverWebSocket socket;
     private Consumer<String> messageConsumer = null;
+    public CoverWebSocket socket;
+    private Connection connection = null;
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
@@ -62,30 +63,34 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
         Logger.error(e);
     }
 
-
-   /* public WebSocketTransport(String browserWSEndpoint) {
-        Httpv httpv = Httpv.builder().build();
-        this.socket = httpv.webSocket(browserWSEndpoint).listen();
+    public WebSocketTransport(String browserWSEndpoint) {
+        super(URI.create(browserWSEndpoint));
+        try {
+            this.setConnectionLostTimeout(0);
+            this.connectBlocking();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
+
+    /* public WebSocketTransport(String browserWSEndpoint) {
+         Httpv httpv = Httpv.builder().build();
+         this.socket = httpv.webSocket(browserWSEndpoint).listen();
+     }
+
+     @Override
+     public void close() {
+         if (ObjectKit.isNotEmpty(this.connection)) {
+             this.connection.dispose();
+         }
+     }
+
+     */
 
     @Override
     public void send(String message) {
         Logger.debug(message);
-        this.socket.send(message);
-    }
-
-    @Override
-    public void close() {
-        if (ObjectKit.isNotEmpty(this.connection)) {
-            this.connection.dispose();
-        }
-    }*/
-   private Connection connection = null;
-
-    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
-        super(URI.create(browserWSEndpoint));
-        super.setConnectionLostTimeout(0);
-        super.connectBlocking();
+        super.send(message);
     }
 
     @Override

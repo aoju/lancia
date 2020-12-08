@@ -270,7 +270,7 @@ public class ChromeLauncher implements Launcher {
 
             browserContextIds = Variables.OBJECTMAPPER.readerFor(javaType).readValue(result.get("browserContextIds"));
             return Browser.create(connection, browserContextIds, options.getIgnoreHTTPSErrors(), options.getViewport(), null, closeFunction);
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
