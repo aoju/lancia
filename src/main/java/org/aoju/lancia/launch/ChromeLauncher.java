@@ -47,7 +47,6 @@ import org.aoju.lancia.option.LaunchOption;
 import org.aoju.lancia.worker.Connection;
 import org.aoju.lancia.worker.Transport;
 import org.aoju.lancia.worker.TransportFactory;
-import org.aoju.lancia.worker.WebSocketTransport;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -253,12 +252,10 @@ public class ChromeLauncher implements Launcher {
             if (transport != null) {
                 connection = new Connection(Normal.EMPTY, transport, options.getSlowMo());
             } else if (StringKit.isNotEmpty(browserWSEndpoint)) {
-                WebSocketTransport connectionTransport = TransportFactory.create(browserWSEndpoint);
-                connection = new Connection(browserWSEndpoint, connectionTransport, options.getSlowMo());
+                connection = new Connection(browserWSEndpoint, TransportFactory.create(browserWSEndpoint), options.getSlowMo());
             } else if (StringKit.isNotEmpty(browserURL)) {
                 String connectionURL = getWSEndpoint(browserURL);
-                WebSocketTransport connectionTransport = TransportFactory.create(connectionURL);
-                connection = new Connection(connectionURL, connectionTransport, options.getSlowMo());
+                connection = new Connection(connectionURL, TransportFactory.create(connectionURL), options.getSlowMo());
             } else {
                 throw new IllegalArgumentException("Exactly one of browserWSEndpoint, browserURL or transport must be passed to puppeteer.connect");
             }

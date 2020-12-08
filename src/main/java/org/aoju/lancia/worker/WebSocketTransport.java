@@ -45,22 +45,8 @@ import java.util.function.Consumer;
 public class WebSocketTransport extends WebSocketClient implements Transport {
 //public class WebSocketTransport implements Transport {
 
-    private Consumer<String> messageConsumer = null;
-
-    private Connection connection = null;
-
     public CoverWebSocket socket;
-
-    @Override
-    public void onMessage(String message) {
-        Assert.notNull(this.messageConsumer, "MessageConsumer must be initialized");
-        this.messageConsumer.accept(message);
-    }
-
-    @Override
-    public void onClose() {
-        this.close();
-    }
+    private Consumer<String> messageConsumer = null;
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
@@ -76,16 +62,6 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
         Logger.error(e);
     }
 
-    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
-        super(URI.create(browserWSEndpoint));
-        super.setConnectionLostTimeout(0);
-        super.connectBlocking();
-    }
-
-    @Override
-    public void onOpen(ServerHandshake serverHandshake) {
-        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
-    }
 
    /* public WebSocketTransport(String browserWSEndpoint) {
         Httpv httpv = Httpv.builder().build();
@@ -103,6 +79,18 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
         if (ObjectKit.isNotEmpty(this.connection)) {
             this.connection.dispose();
         }
+    }*/
+   private Connection connection = null;
+
+    public WebSocketTransport(String browserWSEndpoint) throws InterruptedException {
+        super(URI.create(browserWSEndpoint));
+        super.setConnectionLostTimeout(0);
+        super.connectBlocking();
+    }
+
+    @Override
+    public void onOpen(ServerHandshake serverHandshake) {
+        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
     }
 
     @Override
@@ -114,8 +102,7 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
     @Override
     public void onClose() {
         this.close();
-    }*/
-
+    }
 
     public void addMessageConsumer(Consumer<String> consumer) {
         this.messageConsumer = consumer;

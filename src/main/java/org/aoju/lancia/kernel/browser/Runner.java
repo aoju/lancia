@@ -228,8 +228,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
             throw new InstrumentException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
         } else {
             String waitForWSEndpoint = waitForWSEndpoint(timeout);
-            WebSocketTransport transport = TransportFactory.create(waitForWSEndpoint);
-            this.connection = new Connection(waitForWSEndpoint, transport, slowMo);
+            this.connection = new Connection(waitForWSEndpoint, TransportFactory.create(waitForWSEndpoint), slowMo);
             Logger.info("Connect to browser by websocket url: " + waitForWSEndpoint);
         }
         return this.connection;
