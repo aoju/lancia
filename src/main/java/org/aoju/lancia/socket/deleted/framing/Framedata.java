@@ -23,7 +23,7 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
+package org.aoju.lancia.socket.deleted.framing;
 
 import org.aoju.lancia.socket.HandshakeState;
 

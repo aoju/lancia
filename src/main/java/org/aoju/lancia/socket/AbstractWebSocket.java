@@ -26,7 +26,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.thread.NamedThreadFactory;
-import org.aoju.lancia.socket.framing.CloseFrame;
+import org.aoju.lancia.socket.deleted.framing.CloseFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,11 +179,7 @@ public abstract class AbstractWebSocket extends WebSocketAdapter {
         cancelConnectionLostTimer();
         connectionLostCheckerService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("connectionLostChecker"));
         Runnable connectionLostChecker = new Runnable() {
-
-            /**
-             * Keep the connections in a separate list to not cause deadlocks
-             */
-            private final ArrayList<WebSocket> connections = new ArrayList<WebSocket>();
+            private final ArrayList<WebSocket> connections = new ArrayList<>();
 
             @Override
             public void run() {

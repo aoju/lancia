@@ -23,20 +23,25 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
-
-import org.aoju.lancia.socket.HandshakeState;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
- * Class to represent a continuous frame
+ * The interface for building a handshake
  */
-public class ContinuousFrame extends DataFrame {
+public interface HandshakeBuilder extends Handshakedata {
 
     /**
-     * constructor which sets the opcode of this frame to continuous
+     * Setter for the content of the handshake
+     *
+     * @param content the content to set
      */
-    public ContinuousFrame() {
-        super(HandshakeState.Opcode.CONTINUOUS);
-    }
+    void setContent(byte[] content);
 
+    /**
+     * Adding a specific field with a specific value
+     *
+     * @param name  the http field
+     * @param value the value for this field
+     */
+    void put(String name, String value);
 }

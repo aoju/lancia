@@ -23,29 +23,20 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
+package org.aoju.lancia.socket.deleted.framing;
 
-import org.aoju.lancia.socket.Charsetfunctions;
 import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * Class to represent a text frames
+ * Class to represent a ping frame
  */
-public class TextFrame extends DataFrame {
+public class PingFrame extends ControlFrame {
 
     /**
-     * constructor which sets the opcode of this frame to text
+     * constructor which sets the opcode of this frame to ping
      */
-    public TextFrame() {
-        super(HandshakeState.Opcode.TEXT);
-    }
-
-    @Override
-    public void isValid() {
-        super.isValid();
-        if (!Charsetfunctions.isValidUTF8(getPayloadData())) {
-
-        }
+    public PingFrame() {
+        super(HandshakeState.Opcode.PING);
     }
 
 }

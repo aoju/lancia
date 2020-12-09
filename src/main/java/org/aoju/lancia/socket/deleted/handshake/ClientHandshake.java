@@ -23,40 +23,17 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
- * Implementation for a server handshake
+ * The interface for a client handshake
  */
-public class HandshakeImpl1Server extends HandshakedataImpl1 implements ServerHandshakeBuilder {
+public interface ClientHandshake extends Handshakedata {
 
     /**
-     * Attribute for the http status
+     * returns the HTTP Request-URI as defined by http://tools.ietf.org/html/rfc2616#section-5.1.2
+     *
+     * @return the HTTP Request-URI
      */
-    private short httpstatus;
-
-    /**
-     * Attribute for the http status message
-     */
-    private String httpstatusmessage;
-
-    @Override
-    public String getHttpStatusMessage() {
-        return httpstatusmessage;
-    }
-
-    @Override
-    public void setHttpStatusMessage(String message) {
-        this.httpstatusmessage = message;
-    }
-
-    @Override
-    public short getHttpStatus() {
-        return httpstatus;
-    }
-
-    @Override
-    public void setHttpStatus(short status) {
-        httpstatus = status;
-    }
+    String getResourceDescriptor();
 }

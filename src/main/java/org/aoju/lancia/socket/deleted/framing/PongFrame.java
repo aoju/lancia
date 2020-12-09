@@ -23,24 +23,30 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.framing;
+
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * Interface for the server handshake
+ * Class to represent a pong frame
  */
-public interface ServerHandshake extends Handshakedata {
+public class PongFrame extends ControlFrame {
 
     /**
-     * Get the http status code
-     *
-     * @return the http status code
+     * constructor which sets the opcode of this frame to pong
      */
-    short getHttpStatus();
+    public PongFrame() {
+        super(HandshakeState.Opcode.PONG);
+    }
 
     /**
-     * Get the http status message
+     * constructor which sets the opcode of this frame to ping copying over the payload of the ping
      *
-     * @return the http status message
+     * @param pingFrame the PingFrame which payload is to copy
      */
-    String getHttpStatusMessage();
+    public PongFrame(PingFrame pingFrame) {
+        super(HandshakeState.Opcode.PONG);
+        setPayload(pingFrame.getPayloadData());
+    }
+
 }

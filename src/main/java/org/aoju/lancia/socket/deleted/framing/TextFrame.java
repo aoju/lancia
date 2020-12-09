@@ -23,40 +23,25 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
+package org.aoju.lancia.socket.deleted.framing;
 
-import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.HandshakeState;
-import org.aoju.lancia.socket.InvalidDataException;
 
 /**
- * Abstract class to represent control frames
+ * Class to represent a text frames
  */
-public abstract class ControlFrame extends FramedataImpl1 {
+public class TextFrame extends DataFrame {
 
     /**
-     * Class to represent a control frame
-     *
-     * @param opcode the opcode to use
+     * constructor which sets the opcode of this frame to text
      */
-    public ControlFrame(HandshakeState.Opcode opcode) {
-        super(opcode);
+    public TextFrame() {
+        super(HandshakeState.Opcode.TEXT);
     }
 
     @Override
-    public void isValid() throws InvalidDataException {
-        if (!isFin()) {
-            throw new InstrumentException("Control frame cant have fin==false set");
-        }
-        if (isRSV1()) {
-            throw new InstrumentException("Control frame cant have rsv1==true set");
-        }
-        if (isRSV2()) {
-            throw new InstrumentException("Control frame cant have rsv2==true set");
-        }
-        if (isRSV3()) {
-            throw new InstrumentException("Control frame cant have rsv3==true set");
-        }
+    public void isValid() {
+        super.isValid();
     }
 
 }

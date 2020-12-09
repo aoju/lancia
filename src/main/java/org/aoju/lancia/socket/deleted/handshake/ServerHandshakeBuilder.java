@@ -23,7 +23,7 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
  * The interface for building a handshake for the server

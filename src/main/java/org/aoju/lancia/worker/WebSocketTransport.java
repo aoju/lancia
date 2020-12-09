@@ -30,7 +30,7 @@ import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.socket.WebSocketClient;
-import org.aoju.lancia.socket.handshake.ServerHandshake;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
 
 import java.net.URI;
 import java.util.function.Consumer;

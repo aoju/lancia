@@ -25,14 +25,13 @@
 
 package org.aoju.lancia.socket;
 
-import org.aoju.lancia.socket.drafts.Draft;
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
-import org.aoju.lancia.socket.handshake.ClientHandshake;
-import org.aoju.lancia.socket.handshake.Handshakedata;
-import org.aoju.lancia.socket.handshake.ServerHandshake;
-import org.aoju.lancia.socket.handshake.ServerHandshakeBuilder;
+import org.aoju.lancia.socket.deleted.framing.CloseFrame;
+import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.deleted.framing.PingFrame;
+import org.aoju.lancia.socket.deleted.handshake.ClientHandshake;
+import org.aoju.lancia.socket.deleted.handshake.Handshakedata;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshakeBuilder;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;

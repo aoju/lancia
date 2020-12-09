@@ -23,10 +23,10 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
+package org.aoju.lancia.socket.deleted.framing;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.Charsetfunctions;
+import org.aoju.lancia.socket.Base64;
 import org.aoju.lancia.socket.HandshakeState;
 import org.aoju.lancia.socket.InvalidDataException;
 
@@ -290,7 +290,7 @@ public class CloseFrame extends ControlFrame {
     private void validateUtf8(ByteBuffer payload, int mark) throws InvalidDataException {
         try {
             payload.position(payload.position() + 2);
-            reason = Charsetfunctions.stringUtf8(payload);
+            reason = Base64.stringUtf8(payload);
         } catch (IllegalArgumentException e) {
             throw new InvalidDataException(CloseFrame.NO_UTF8);
         } finally {
@@ -302,7 +302,7 @@ public class CloseFrame extends ControlFrame {
      * Update the payload to represent the close code and the reason
      */
     private void updatePayload() {
-        byte[] by = Charsetfunctions.utf8Bytes(reason);
+        byte[] by = Base64.utf8Bytes(reason);
         ByteBuffer buf = ByteBuffer.allocate(4);
         buf.putInt(code);
         buf.position(2);

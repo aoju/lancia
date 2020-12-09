@@ -23,15 +23,11 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.drafts;
+package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.Charsetfunctions;
-import org.aoju.lancia.socket.HandshakeState;
-import org.aoju.lancia.socket.InvalidDataException;
-import org.aoju.lancia.socket.WebSocketImpl;
-import org.aoju.lancia.socket.framing.*;
-import org.aoju.lancia.socket.handshake.*;
+import org.aoju.lancia.socket.deleted.framing.*;
+import org.aoju.lancia.socket.deleted.handshake.*;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -73,7 +69,7 @@ public abstract class Draft {
 
     public static String readStringLine(ByteBuffer buf) {
         ByteBuffer b = readLine(buf);
-        return b == null ? null : Charsetfunctions.stringAscii(b.array(), 0, b.limit());
+        return b == null ? null : Base64.stringAscii(b.array(), 0, b.limit());
     }
 
     public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf, HandshakeState.Role role) throws InstrumentException {
@@ -226,7 +222,7 @@ public abstract class Draft {
             bui.append("\r\n");
         }
         bui.append("\r\n");
-        byte[] httpheader = Charsetfunctions.asciiBytes(bui.toString());
+        byte[] httpheader = Base64.asciiBytes(bui.toString());
 
         byte[] content = withcontent ? handshakedata.getContent() : null;
         ByteBuffer bytebuffer = ByteBuffer.allocate((content == null ? 0 : content.length) + httpheader.length);

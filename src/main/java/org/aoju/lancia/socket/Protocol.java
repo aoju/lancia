@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  *
  * @since 1.3.7
  */
-public class Protocol implements IProtocol {
+public class Protocol {
 
     private static final Pattern patternSpace = Pattern.compile(" ");
     private static final Pattern patternComma = Pattern.compile(",");
@@ -54,7 +54,6 @@ public class Protocol implements IProtocol {
         this.providedProtocol = providedProtocol;
     }
 
-    @Override
     public boolean acceptProvidedProtocol(String inputProtocolHeader) {
         String protocolHeader = patternSpace.matcher(inputProtocolHeader).replaceAll("");
         String[] headers = patternComma.split(protocolHeader);
@@ -66,13 +65,11 @@ public class Protocol implements IProtocol {
         return false;
     }
 
-    @Override
     public String getProvidedProtocol() {
         return this.providedProtocol;
     }
 
-    @Override
-    public IProtocol copyInstance() {
+    public Protocol copyInstance() {
         return new Protocol(getProvidedProtocol());
     }
 

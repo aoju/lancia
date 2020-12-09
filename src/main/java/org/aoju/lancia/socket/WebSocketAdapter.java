@@ -25,14 +25,13 @@
 
 package org.aoju.lancia.socket;
 
-import org.aoju.lancia.socket.drafts.Draft;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
-import org.aoju.lancia.socket.framing.PongFrame;
-import org.aoju.lancia.socket.handshake.ClientHandshake;
-import org.aoju.lancia.socket.handshake.HandshakeImpl1Server;
-import org.aoju.lancia.socket.handshake.ServerHandshake;
-import org.aoju.lancia.socket.handshake.ServerHandshakeBuilder;
+import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.deleted.framing.PingFrame;
+import org.aoju.lancia.socket.deleted.framing.PongFrame;
+import org.aoju.lancia.socket.deleted.handshake.ClientHandshake;
+import org.aoju.lancia.socket.deleted.handshake.HandshakeImpl1Server;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshakeBuilder;
 
 /**
  * This class default implements all methods of the WebSocketListener that can be overridden optionally when advances functionalities is needed.<br>

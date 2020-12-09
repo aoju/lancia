@@ -23,64 +23,40 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.TreeMap;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
- * Implementation of a handshake builder
+ * Implementation for a server handshake
  */
-public class HandshakedataImpl1 implements HandshakeBuilder {
+public class HandshakeImpl1Server extends HandshakedataImpl1 implements ServerHandshakeBuilder {
 
     /**
-     * Attribute for the http fields and values
+     * Attribute for the http status
      */
-    private final TreeMap<String, String> map;
-    /**
-     * Attribute for the content of the handshake
-     */
-    private byte[] content;
+    private short httpstatus;
 
     /**
-     * Constructor for handshake implementation
+     * Attribute for the http status message
      */
-    public HandshakedataImpl1() {
-        map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    private String httpstatusmessage;
+
+    @Override
+    public String getHttpStatusMessage() {
+        return httpstatusmessage;
     }
 
     @Override
-    public Iterator<String> iterateHttpFields() {
-        return Collections.unmodifiableSet(map.keySet()).iterator();// Safety first
+    public void setHttpStatusMessage(String message) {
+        this.httpstatusmessage = message;
     }
 
     @Override
-    public String getFieldValue(String name) {
-        String s = map.get(name);
-        if (s == null) {
-            return "";
-        }
-        return s;
+    public short getHttpStatus() {
+        return httpstatus;
     }
 
     @Override
-    public byte[] getContent() {
-        return content;
-    }
-
-    @Override
-    public void setContent(byte[] content) {
-        this.content = content;
-    }
-
-    @Override
-    public void put(String name, String value) {
-        map.put(name, value);
-    }
-
-    @Override
-    public boolean hasFieldValue(String name) {
-        return map.containsKey(name);
+    public void setHttpStatus(short status) {
+        httpstatus = status;
     }
 }

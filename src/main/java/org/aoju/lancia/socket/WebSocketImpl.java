@@ -26,11 +26,10 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.drafts.Draft;
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
-import org.aoju.lancia.socket.handshake.*;
+import org.aoju.lancia.socket.deleted.framing.CloseFrame;
+import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.deleted.framing.PingFrame;
+import org.aoju.lancia.socket.deleted.handshake.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -347,7 +346,7 @@ public class WebSocketImpl implements WebSocket {
             default:
                 errorCodeDescription = "500 Internal Server Error";
         }
-        return ByteBuffer.wrap(Charsetfunctions.asciiBytes("HTTP/1.1 " + errorCodeDescription + "\r\nContent-Type: text/html\nServer: TooTallNate Java-WebSocket\r\nContent-Length: " + (48 + errorCodeDescription.length()) + "\r\n\r\n<html><head></head><body><h1>" + errorCodeDescription + "</h1></body></html>"));
+        return ByteBuffer.wrap(Base64.asciiBytes("HTTP/1.1 " + errorCodeDescription + "\r\nContent-Type: text/html\nServer: TooTallNate Java-WebSocket\r\nContent-Length: " + (48 + errorCodeDescription.length()) + "\r\n\r\n<html><head></head><body><h1>" + errorCodeDescription + "</h1></body></html>"));
     }
 
     public synchronized void close(int code, String message, boolean remote) {

@@ -18,7 +18,6 @@ public enum HandshakeState {
      */
     public enum Opcode {
         CONTINUOUS, TEXT, BINARY, PING, PONG, CLOSING
-        // more to come
     }
 
     /**
@@ -41,4 +40,5 @@ public enum HandshakeState {
     public enum CloseHandshakeType {
         NONE, ONEWAY, TWOWAY
     }
+
 }

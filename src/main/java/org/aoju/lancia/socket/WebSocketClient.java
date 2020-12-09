@@ -26,13 +26,11 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.drafts.Draft;
-import org.aoju.lancia.socket.drafts.Draft_6455;
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.handshake.HandshakeImpl1Client;
-import org.aoju.lancia.socket.handshake.Handshakedata;
-import org.aoju.lancia.socket.handshake.ServerHandshake;
+import org.aoju.lancia.socket.deleted.framing.CloseFrame;
+import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.deleted.handshake.HandshakeImpl1Client;
+import org.aoju.lancia.socket.deleted.handshake.Handshakedata;
+import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.*;

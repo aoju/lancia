@@ -23,42 +23,40 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.framing;
 
-import java.util.Iterator;
+import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.lancia.socket.HandshakeState;
+import org.aoju.lancia.socket.InvalidDataException;
 
 /**
- * The interface for the data of a handshake
+ * Abstract class to represent control frames
  */
-public interface Handshakedata {
+public abstract class ControlFrame extends FramedataImpl1 {
 
     /**
-     * Iterator for the http fields
+     * Class to represent a control frame
      *
-     * @return the http fields
+     * @param opcode the opcode to use
      */
-    Iterator<String> iterateHttpFields();
+    public ControlFrame(HandshakeState.Opcode opcode) {
+        super(opcode);
+    }
 
-    /**
-     * Gets the value of the field
-     *
-     * @param name The name of the field
-     * @return the value of the field or an empty String if not in the handshake
-     */
-    String getFieldValue(String name);
+    @Override
+    public void isValid() throws InvalidDataException {
+        if (!isFin()) {
+            throw new InstrumentException("Control frame cant have fin==false set");
+        }
+        if (isRSV1()) {
+            throw new InstrumentException("Control frame cant have rsv1==true set");
+        }
+        if (isRSV2()) {
+            throw new InstrumentException("Control frame cant have rsv2==true set");
+        }
+        if (isRSV3()) {
+            throw new InstrumentException("Control frame cant have rsv3==true set");
+        }
+    }
 
-    /**
-     * Checks if this handshake contains a specific field
-     *
-     * @param name The name of the field
-     * @return true, if it contains the field
-     */
-    boolean hasFieldValue(String name);
-
-    /**
-     * Get the content of the handshake
-     *
-     * @return the content as byte-array
-     */
-    byte[] getContent();
 }

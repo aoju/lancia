@@ -23,17 +23,20 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.framing;
+
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * The interface for building a handshake for the client
+ * Class to represent a binary frame
  */
-public interface ClientHandshakeBuilder extends HandshakeBuilder, ClientHandshake {
+public class BinaryFrame extends DataFrame {
 
     /**
-     * Set a specific resource descriptor
-     *
-     * @param resourceDescriptor the resource descriptior to set
+     * constructor which sets the opcode of this frame to binary
      */
-    void setResourceDescriptor(String resourceDescriptor);
+    public BinaryFrame() {
+        super(HandshakeState.Opcode.BINARY);
+    }
+
 }

@@ -23,12 +23,11 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.drafts;
+package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.*;
-import org.aoju.lancia.socket.framing.*;
-import org.aoju.lancia.socket.handshake.*;
+import org.aoju.lancia.socket.deleted.framing.*;
+import org.aoju.lancia.socket.deleted.handshake.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +95,7 @@ public class Draft_6455 extends Draft {
     /**
      * Attribute for all available protocols in this draft
      */
-    private final List<IProtocol> knownProtocols;
+    private final List<Protocol> knownProtocols;
     /**
      * Attribute for the maximum allowed size of a frame
      *
@@ -110,7 +109,7 @@ public class Draft_6455 extends Draft {
     /**
      * Attribute for the used protocol in this draft
      */
-    private IProtocol protocol;
+    private Protocol protocol;
     /**
      * Attribute for the current continuous frame
      */
@@ -146,7 +145,7 @@ public class Draft_6455 extends Draft {
      * @param inputProtocols  the protocols which should be used for this draft
      * @since 1.3.7
      */
-    public Draft_6455(List<DefaultExtension> inputExtensions, List<IProtocol> inputProtocols) {
+    public Draft_6455(List<DefaultExtension> inputExtensions, List<Protocol> inputProtocols) {
         this(inputExtensions, inputProtocols, Integer.MAX_VALUE);
     }
 
@@ -158,7 +157,7 @@ public class Draft_6455 extends Draft {
      * @param inputMaxFrameSize the maximum allowed size of a frame (the real payload size, decoded frames can be bigger)
      * @since 1.4.0
      */
-    public Draft_6455(List<DefaultExtension> inputExtensions, List<IProtocol> inputProtocols, int inputMaxFrameSize) {
+    public Draft_6455(List<DefaultExtension> inputExtensions, List<Protocol> inputProtocols, int inputMaxFrameSize) {
         if (inputExtensions == null || inputProtocols == null || inputMaxFrameSize < 1) {
             throw new IllegalArgumentException();
         }
@@ -210,7 +209,7 @@ public class Draft_6455 extends Draft {
      * @return MATCHED if it is matched, otherwise NOT_MATCHED
      */
     private HandshakeState containsRequestedProtocol(String requestedProtocol) {
-        for (IProtocol knownProtocol : knownProtocols) {
+        for (Protocol knownProtocol : knownProtocols) {
             if (knownProtocol.acceptProvidedProtocol(requestedProtocol)) {
                 protocol = knownProtocol;
                 log.trace("acceptHandshake - Matching protocol found: {}", protocol);
@@ -279,7 +278,7 @@ public class Draft_6455 extends Draft {
      * @return the protocol which is used or null, if handshake is not yet done or no valid protocols
      * @since 1.3.7
      */
-    public IProtocol getProtocol() {
+    public Protocol getProtocol() {
         return protocol;
     }
 
@@ -300,7 +299,7 @@ public class Draft_6455 extends Draft {
      * @return the protocols which are enabled for this draft
      * @since 1.3.7
      */
-    public List<IProtocol> getKnownProtocols() {
+    public List<Protocol> getKnownProtocols() {
         return knownProtocols;
     }
 
@@ -324,7 +323,7 @@ public class Draft_6455 extends Draft {
             request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
         }
         StringBuilder requestedProtocols = new StringBuilder();
-        for (IProtocol knownProtocol : knownProtocols) {
+        for (Protocol knownProtocol : knownProtocols) {
             if (knownProtocol.getProvidedProtocol().length() != 0) {
                 if (requestedProtocols.length() > 0) {
                     requestedProtocols.append(", ");
@@ -364,9 +363,9 @@ public class Draft_6455 extends Draft {
         for (DefaultExtension iExtension : getKnownExtensions()) {
             newExtensions.add(iExtension.copyInstance());
         }
-        ArrayList<IProtocol> newProtocols = new ArrayList<IProtocol>();
-        for (IProtocol iProtocol : getKnownProtocols()) {
-            newProtocols.add(iProtocol.copyInstance());
+        ArrayList<Protocol> newProtocols = new ArrayList<>();
+        for (Protocol Protocol : getKnownProtocols()) {
+            newProtocols.add(Protocol.copyInstance());
         }
         return new Draft_6455(newExtensions, newProtocols, maxFrameSize);
     }
@@ -441,9 +440,10 @@ public class Draft_6455 extends Draft {
         HandshakeState.Opcode optcode = toOpcode((byte) (b1 & 15));
 
         if (!(payloadlength >= 0 && payloadlength <= 125)) {
-            TranslatedPayloadMetaData payloadData = translateSingleFramePayloadLength(buffer, optcode, payloadlength, maxpacketsize, realpacketsize);
-            payloadlength = payloadData.getPayloadLength();
-            realpacketsize = payloadData.getRealPackageSize();
+            int[] array = {payloadlength, realpacketsize};
+            translateSingleFramePayloadLength(array, buffer, optcode, payloadlength, maxpacketsize, realpacketsize);
+            payloadlength = array[0];
+            realpacketsize = array[1];
         }
         translateSingleFrameCheckLengthLimit(payloadlength);
         realpacketsize += (mask ? 4 : 0);
@@ -485,10 +485,10 @@ public class Draft_6455 extends Draft {
      * @param maxpacketsize     the max packet size allowed
      * @param oldRealpacketsize the real packet size
      * @return the new payload data containing new payload length and new packet size
-     * @throws InstrumentException    thrown if a control frame has an invalid length
-     * @throws IncompleteException    if the maxpacketsize is smaller than the realpackagesize
+     * @throws InstrumentException thrown if a control frame has an invalid length
+     * @throws IncompleteException if the maxpacketsize is smaller than the realpackagesize
      */
-    private TranslatedPayloadMetaData translateSingleFramePayloadLength(ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException, IncompleteException {
+    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException, IncompleteException {
         int payloadlength = oldPayloadlength,
                 realpacketsize = oldRealpacketsize;
         if (optcode == HandshakeState.Opcode.PING || optcode == HandshakeState.Opcode.PONG || optcode == HandshakeState.Opcode.CLOSING) {
@@ -513,7 +513,9 @@ public class Draft_6455 extends Draft {
             translateSingleFrameCheckLengthLimit(length);
             payloadlength = (int) length;
         }
-        return new TranslatedPayloadMetaData(payloadlength, realpacketsize);
+
+        array[0] = payloadlength;
+        array[1] = realpacketsize;
     }
 
     /**
@@ -661,7 +663,7 @@ public class Draft_6455 extends Draft {
     @Override
     public List<Framedata> createFrames(String text, boolean mask) {
         TextFrame curframe = new TextFrame();
-        curframe.setPayload(ByteBuffer.wrap(Charsetfunctions.utf8Bytes(text)));
+        curframe.setPayload(ByteBuffer.wrap(Base64.utf8Bytes(text)));
         curframe.setTransferemasked(mask);
         curframe.isValid();
         return Collections.singletonList(curframe);
@@ -795,7 +797,7 @@ public class Draft_6455 extends Draft {
             throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
         }
         //Check if the whole payload is valid utf8, when the opcode indicates a text
-        if (curop == HandshakeState.Opcode.TEXT && !Charsetfunctions.isValidUTF8(frame.getPayloadData())) {
+        if (curop == HandshakeState.Opcode.TEXT && !Base64.isValidUTF8(frame.getPayloadData())) {
             log.error("Protocol error: Payload is not UTF8");
             throw new InvalidDataException(CloseFrame.NO_UTF8);
         }
@@ -838,7 +840,7 @@ public class Draft_6455 extends Draft {
      */
     private void processFrameText(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
         try {
-            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Charsetfunctions.stringUtf8(frame.getPayloadData()));
+            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Base64.stringUtf8(frame.getPayloadData()));
         } catch (RuntimeException e) {
             logRuntimeException(webSocketImpl, e);
         }
@@ -862,7 +864,7 @@ public class Draft_6455 extends Draft {
             ((FramedataImpl1) currentContinuousFrame).setPayload(getPayloadFromByteBufferList());
             ((FramedataImpl1) currentContinuousFrame).isValid();
             try {
-                webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Charsetfunctions.stringUtf8(currentContinuousFrame.getPayloadData()));
+                webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Base64.stringUtf8(currentContinuousFrame.getPayloadData()));
             } catch (RuntimeException e) {
                 logRuntimeException(webSocketImpl, e);
             }
@@ -1026,22 +1028,5 @@ public class Draft_6455 extends Draft {
         return totalSize;
     }
 
-    private class TranslatedPayloadMetaData {
-        private final int payloadLength;
-        private final int realPackageSize;
-
-        TranslatedPayloadMetaData(int newPayloadLength, int newRealPackageSize) {
-            this.payloadLength = newPayloadLength;
-            this.realPackageSize = newRealPackageSize;
-        }
-
-        private int getPayloadLength() {
-            return payloadLength;
-        }
-
-        private int getRealPackageSize() {
-            return realPackageSize;
-        }
-    }
 
 }

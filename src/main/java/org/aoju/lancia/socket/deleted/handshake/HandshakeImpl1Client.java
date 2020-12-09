@@ -23,17 +23,27 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.handshake;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
- * The interface for a client handshake
+ * Implementation for a client handshake
  */
-public interface ClientHandshake extends Handshakedata {
+public class HandshakeImpl1Client extends HandshakedataImpl1 implements ClientHandshakeBuilder {
 
     /**
-     * returns the HTTP Request-URI as defined by http://tools.ietf.org/html/rfc2616#section-5.1.2
-     *
-     * @return the HTTP Request-URI
+     * Attribute for the resource descriptor
      */
-    String getResourceDescriptor();
+    private String resourceDescriptor = "*";
+
+    @Override
+    public String getResourceDescriptor() {
+        return resourceDescriptor;
+    }
+
+    @Override
+    public void setResourceDescriptor(String resourceDescriptor) {
+        if (resourceDescriptor == null)
+            throw new IllegalArgumentException("http resource descriptor must not be null");
+        this.resourceDescriptor = resourceDescriptor;
+    }
 }

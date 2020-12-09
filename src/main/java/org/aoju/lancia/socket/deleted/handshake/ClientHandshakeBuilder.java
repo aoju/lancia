@@ -23,20 +23,17 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.framing;
-
-import org.aoju.lancia.socket.HandshakeState;
+package org.aoju.lancia.socket.deleted.handshake;
 
 /**
- * Class to represent a ping frame
+ * The interface for building a handshake for the client
  */
-public class PingFrame extends ControlFrame {
+public interface ClientHandshakeBuilder extends HandshakeBuilder, ClientHandshake {
 
     /**
-     * constructor which sets the opcode of this frame to ping
+     * Set a specific resource descriptor
+     *
+     * @param resourceDescriptor the resource descriptior to set
      */
-    public PingFrame() {
-        super(HandshakeState.Opcode.PING);
-    }
-
+    void setResourceDescriptor(String resourceDescriptor);
 }
