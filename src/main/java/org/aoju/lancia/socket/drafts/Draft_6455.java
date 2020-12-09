@@ -487,7 +487,6 @@ public class Draft_6455 extends Draft {
      * @return the new payload data containing new payload length and new packet size
      * @throws InstrumentException    thrown if a control frame has an invalid length
      * @throws IncompleteException    if the maxpacketsize is smaller than the realpackagesize
-     * @throws if the payload length is to big
      */
     private TranslatedPayloadMetaData translateSingleFramePayloadLength(ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException, IncompleteException {
         int payloadlength = oldPayloadlength,
@@ -521,7 +520,6 @@ public class Draft_6455 extends Draft {
      * Check if the frame size exceeds the allowed limit
      *
      * @param length the current payload length
-     * @throws if the payload length is to big
      */
     private void translateSingleFrameCheckLengthLimit(long length) {
         if (length > Integer.MAX_VALUE) {
@@ -945,8 +943,6 @@ public class Draft_6455 extends Draft {
 
     /**
      * Check the current size of the buffer and throw an exception if the size is bigger than the max allowed frame size
-     *
-     * @throws if the current size is bigger than the allowed size
      */
     private void checkBufferLimit() {
         long totalSize = getByteBufferListSize();
