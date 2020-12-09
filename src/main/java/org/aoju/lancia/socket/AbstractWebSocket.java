@@ -25,6 +25,7 @@
 
 package org.aoju.lancia.socket;
 
+import org.aoju.bus.core.thread.NamedThreadFactory;
 import org.aoju.lancia.socket.framing.CloseFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

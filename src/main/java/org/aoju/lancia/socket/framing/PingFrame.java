@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
  * Class to represent a ping frame
@@ -36,6 +36,7 @@ public class PingFrame extends ControlFrame {
      * constructor which sets the opcode of this frame to ping
      */
     public PingFrame() {
-        super(Opcode.PING);
+        super(HandshakeState.Opcode.PING);
     }
+
 }

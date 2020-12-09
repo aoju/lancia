@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
  * Class to represent a continuous frame
@@ -36,6 +36,7 @@ public class ContinuousFrame extends DataFrame {
      * constructor which sets the opcode of this frame to continuous
      */
     public ContinuousFrame() {
-        super(Opcode.CONTINUOUS);
+        super(HandshakeState.Opcode.CONTINUOUS);
     }
+
 }

@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
  * Abstract class to represent data frames
@@ -37,7 +37,7 @@ public abstract class DataFrame extends FramedataImpl1 {
      *
      * @param opcode the opcode to use
      */
-    public DataFrame(Opcode opcode) {
+    public DataFrame(HandshakeState.Opcode opcode) {
         super(opcode);
     }
 
@@ -45,4 +45,5 @@ public abstract class DataFrame extends FramedataImpl1 {
     public void isValid() {
 
     }
+
 }

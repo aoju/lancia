@@ -27,12 +27,9 @@ package org.aoju.lancia.socket.drafts;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.Charsetfunctions;
+import org.aoju.lancia.socket.HandshakeState;
 import org.aoju.lancia.socket.InvalidDataException;
 import org.aoju.lancia.socket.WebSocketImpl;
-import org.aoju.lancia.socket.enums.CloseHandshakeType;
-import org.aoju.lancia.socket.enums.HandshakeState;
-import org.aoju.lancia.socket.enums.Opcode;
-import org.aoju.lancia.socket.enums.Role;
 import org.aoju.lancia.socket.framing.*;
 import org.aoju.lancia.socket.handshake.*;
 
@@ -50,9 +47,9 @@ public abstract class Draft {
     /**
      * In some cases the handshake will be parsed different depending on whether
      */
-    protected Role role = null;
+    protected HandshakeState.Role role = null;
 
-    protected Opcode continuousFrameType = null;
+    protected HandshakeState.Opcode continuousFrameType = null;
 
     public static ByteBuffer readLine(ByteBuffer buf) {
         ByteBuffer sbuf = ByteBuffer.allocate(buf.remaining());
@@ -79,7 +76,7 @@ public abstract class Draft {
         return b == null ? null : Charsetfunctions.stringAscii(b.array(), 0, b.limit());
     }
 
-    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf, Role role) throws InstrumentException {
+    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf, HandshakeState.Role role) throws InstrumentException {
         HandshakeBuilder handshake;
 
         String line = readStringLine(buf);
@@ -157,8 +154,8 @@ public abstract class Draft {
      */
     public abstract void processFrame(WebSocketImpl webSocketImpl, Framedata frame) throws InstrumentException, InvalidDataException;
 
-    public List<Framedata> continuousFrame(Opcode op, ByteBuffer buffer, boolean fin) {
-        if (op != Opcode.BINARY && op != Opcode.TEXT) {
+    public List<Framedata> continuousFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin) {
+        if (op != HandshakeState.Opcode.BINARY && op != HandshakeState.Opcode.TEXT) {
             throw new IllegalArgumentException("Only Opcode.BINARY or  Opcode.TEXT are allowed");
         }
         DataFrame bui = null;
@@ -166,9 +163,9 @@ public abstract class Draft {
             bui = new ContinuousFrame();
         } else {
             continuousFrameType = op;
-            if (op == Opcode.BINARY) {
+            if (op == HandshakeState.Opcode.BINARY) {
                 bui = new BinaryFrame();
-            } else if (op == Opcode.TEXT) {
+            } else if (op == HandshakeState.Opcode.TEXT) {
                 bui = new TextFrame();
             }
         }
@@ -193,7 +190,7 @@ public abstract class Draft {
      * @deprecated use createHandshake without the role
      */
     @Deprecated
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, Role ownrole) {
+    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, HandshakeState.Role ownrole) {
         return createHandshake(handshakedata);
     }
 
@@ -205,7 +202,7 @@ public abstract class Draft {
      * @deprecated use createHandshake without the role since it does not have any effect
      */
     @Deprecated
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, Role ownrole, boolean withcontent) {
+    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, HandshakeState.Role ownrole, boolean withcontent) {
         return createHandshake(handshakedata, withcontent);
     }
 
@@ -247,7 +244,7 @@ public abstract class Draft {
 
     public abstract List<Framedata> translateFrame(ByteBuffer buffer) throws InstrumentException, InvalidDataException;
 
-    public abstract CloseHandshakeType getCloseHandshakeType();
+    public abstract HandshakeState.CloseHandshakeType getCloseHandshakeType();
 
     /**
      * Drafts must only be by one websocket at all. To prevent drafts to be used more than once the Websocket implementation should call this method in order to create a new usable version of a given draft instance.<br>
@@ -281,12 +278,8 @@ public abstract class Draft {
         return -1;
     }
 
-    public void setParseMode(Role role) {
+    public void setParseMode(HandshakeState.Role role) {
         this.role = role;
-    }
-
-    public Role getRole() {
-        return role;
     }
 
     public String toString() {

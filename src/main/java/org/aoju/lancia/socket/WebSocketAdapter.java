@@ -100,4 +100,5 @@ public abstract class WebSocketAdapter implements WebSocketListener {
 			pingFrame = new PingFrame();
 		return pingFrame;
 	}
+
 }

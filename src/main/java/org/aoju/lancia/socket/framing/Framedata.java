@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 import java.nio.ByteBuffer;
 
@@ -74,7 +74,7 @@ public interface Framedata {
      *
      * @return the interpretation as a Opcode
      */
-    Opcode getOpcode();
+    HandshakeState.Opcode getOpcode();
 
     /**
      * The "Payload data" which was sent in this frame
@@ -91,4 +91,5 @@ public interface Framedata {
      * @param nextframe the additional frame
      */
     void append(Framedata nextframe);
+
 }

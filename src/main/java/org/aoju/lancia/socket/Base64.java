@@ -903,7 +903,6 @@ public class Base64 {
             this(out, ENCODE);
         }   // end constructor
 
-
         /**
          * Constructs a {@link Base64.OutputStream} in
          * either ENCODE or DECODE mode.
@@ -935,7 +934,6 @@ public class Base64 {
             this.options = options;
             this.decodabet = getDecodabet(options);
         }   // end constructor
-
 
         /**
          * Writes the byte to the output stream after
@@ -1053,5 +1051,8 @@ public class Base64 {
             buffer = null;
             out = null;
         }   // end close
-    }   // end inner class OutputStream
-}   // end class Base64
+
+    }
+
+}
+

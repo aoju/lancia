@@ -57,4 +57,5 @@ public class IncompleteException extends Exception {
     public int getPreferredSize() {
         return preferredSize;
     }
+
 }

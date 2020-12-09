@@ -25,8 +25,8 @@
 
 package org.aoju.lancia.socket.framing;
 
+import org.aoju.lancia.socket.HandshakeState;
 import org.aoju.lancia.socket.InvalidDataException;
-import org.aoju.lancia.socket.enums.Opcode;
 
 import java.nio.ByteBuffer;
 
@@ -38,7 +38,7 @@ public abstract class FramedataImpl1 implements Framedata {
     /**
      * Defines the interpretation of the "Payload data".
      */
-    private final Opcode optcode;
+    private final HandshakeState.Opcode optcode;
     /**
      * Indicates that this is the final fragment in a message.
      */
@@ -73,7 +73,7 @@ public abstract class FramedataImpl1 implements Framedata {
      *
      * @param op the opcode to use
      */
-    public FramedataImpl1(Opcode op) {
+    public FramedataImpl1(HandshakeState.Opcode op) {
         optcode = op;
         unmaskedpayload = ByteBuffer.allocate(0);
         fin = true;
@@ -89,7 +89,7 @@ public abstract class FramedataImpl1 implements Framedata {
      * @param opcode the opcode representing the frame
      * @return the frame with a specific opcode
      */
-    public static FramedataImpl1 get(Opcode opcode) {
+    public static FramedataImpl1 get(HandshakeState.Opcode opcode) {
         if (opcode == null) {
             throw new IllegalArgumentException("Supplied opcode cannot be null");
         }
@@ -175,7 +175,7 @@ public abstract class FramedataImpl1 implements Framedata {
     }
 
     @Override
-    public Opcode getOpcode() {
+    public HandshakeState.Opcode getOpcode() {
         return optcode;
     }
 
@@ -269,4 +269,5 @@ public abstract class FramedataImpl1 implements Framedata {
         result = 31 * result + (rsv3 ? 1 : 0);
         return result;
     }
+
 }

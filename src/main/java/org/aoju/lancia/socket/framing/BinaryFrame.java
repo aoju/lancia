@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
  * Class to represent a binary frame
@@ -36,6 +36,7 @@ public class BinaryFrame extends DataFrame {
      * constructor which sets the opcode of this frame to binary
      */
     public BinaryFrame() {
-        super(Opcode.BINARY);
+        super(HandshakeState.Opcode.BINARY);
     }
+
 }

@@ -26,8 +26,8 @@
 package org.aoju.lancia.socket.framing;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.lancia.socket.HandshakeState;
 import org.aoju.lancia.socket.InvalidDataException;
-import org.aoju.lancia.socket.enums.Opcode;
 
 /**
  * Abstract class to represent control frames
@@ -39,7 +39,7 @@ public abstract class ControlFrame extends FramedataImpl1 {
      *
      * @param opcode the opcode to use
      */
-    public ControlFrame(Opcode opcode) {
+    public ControlFrame(HandshakeState.Opcode opcode) {
         super(opcode);
     }
 
@@ -58,4 +58,5 @@ public abstract class ControlFrame extends FramedataImpl1 {
             throw new InstrumentException("Control frame cant have rsv3==true set");
         }
     }
+
 }

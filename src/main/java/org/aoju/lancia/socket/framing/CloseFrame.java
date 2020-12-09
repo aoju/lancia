@@ -27,8 +27,8 @@ package org.aoju.lancia.socket.framing;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.Charsetfunctions;
+import org.aoju.lancia.socket.HandshakeState;
 import org.aoju.lancia.socket.InvalidDataException;
-import org.aoju.lancia.socket.enums.Opcode;
 
 import java.nio.ByteBuffer;
 
@@ -178,7 +178,7 @@ public class CloseFrame extends ControlFrame {
      * Using opcode closing and fin = true
      */
     public CloseFrame() {
-        super(Opcode.CLOSING);
+        super(HandshakeState.Opcode.CLOSING);
         setReason("");
         setCode(CloseFrame.NORMAL);
     }
@@ -339,4 +339,5 @@ public class CloseFrame extends ControlFrame {
         result = 31 * result + (reason != null ? reason.hashCode() : 0);
         return result;
     }
+
 }

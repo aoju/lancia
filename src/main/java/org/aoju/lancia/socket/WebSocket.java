@@ -26,8 +26,6 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.lancia.socket.drafts.Draft;
-import org.aoju.lancia.socket.enums.Opcode;
-import org.aoju.lancia.socket.enums.ReadyState;
 import org.aoju.lancia.socket.framing.Framedata;
 
 import java.net.InetSocketAddress;
@@ -119,7 +117,7 @@ public interface WebSocket {
      * @param buffer The buffer which contains the payload. It may have no bytes remaining.
      * @param fin    true means the current frame is the last in the sequence.
      **/
-    void sendFragmentedFrame(Opcode op, ByteBuffer buffer, boolean fin);
+    void sendFragmentedFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin);
 
     /**
      * Checks if the websocket has buffered data
@@ -185,7 +183,7 @@ public interface WebSocket {
      *
      * @return Returns '0 = CONNECTING', '1 = OPEN', '2 = CLOSING' or '3 = CLOSED'
      */
-    ReadyState getReadyState();
+    HandshakeState.ReadyState getReadyState();
 
     /**
      * Getter for the connection attachment.

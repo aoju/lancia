@@ -28,8 +28,6 @@ package org.aoju.lancia.socket;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.drafts.Draft;
 import org.aoju.lancia.socket.drafts.Draft_6455;
-import org.aoju.lancia.socket.enums.Opcode;
-import org.aoju.lancia.socket.enums.ReadyState;
 import org.aoju.lancia.socket.framing.CloseFrame;
 import org.aoju.lancia.socket.framing.Framedata;
 import org.aoju.lancia.socket.handshake.HandshakeImpl1Client;
@@ -589,7 +587,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
     /**
      * This represents the state of the connection.
      */
-    public ReadyState getReadyState() {
+    public HandshakeState.ReadyState getReadyState() {
         return engine.getReadyState();
     }
 
@@ -764,7 +762,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
     }
 
     @Override
-    public void sendFragmentedFrame(Opcode op, ByteBuffer buffer, boolean fin) {
+    public void sendFragmentedFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin) {
         engine.sendFragmentedFrame(op, buffer, fin);
     }
 

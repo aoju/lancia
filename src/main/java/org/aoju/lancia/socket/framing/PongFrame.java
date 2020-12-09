@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket.framing;
 
-import org.aoju.lancia.socket.enums.Opcode;
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
  * Class to represent a pong frame
@@ -36,7 +36,7 @@ public class PongFrame extends ControlFrame {
      * constructor which sets the opcode of this frame to pong
      */
     public PongFrame() {
-        super(Opcode.PONG);
+        super(HandshakeState.Opcode.PONG);
     }
 
     /**
@@ -45,7 +45,8 @@ public class PongFrame extends ControlFrame {
      * @param pingFrame the PingFrame which payload is to copy
      */
     public PongFrame(PingFrame pingFrame) {
-        super(Opcode.PONG);
+        super(HandshakeState.Opcode.PONG);
         setPayload(pingFrame.getPayloadData());
     }
+
 }
