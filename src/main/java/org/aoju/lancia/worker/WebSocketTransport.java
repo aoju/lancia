@@ -29,8 +29,8 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import org.aoju.lancia.socket.WebSocketClient;
+import org.aoju.lancia.socket.handshake.ServerHandshake;
 
 import java.net.URI;
 import java.util.function.Consumer;
@@ -43,7 +43,6 @@ import java.util.function.Consumer;
  * @since JDK 1.8+
  */
 public class WebSocketTransport extends WebSocketClient implements Transport {
-//public class WebSocketTransport implements Transport {
 
     private Consumer<String> messageConsumer = null;
     public CoverWebSocket socket;
