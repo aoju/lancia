@@ -151,7 +151,7 @@ public class WebSocketImpl implements WebSocket {
         }
         socketBuffer.mark();
 
-        HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
+        HandshakeBuilder tmphandshake = draft.translateHandshakeHttp(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
             Logger.trace("Closing due to protocol error: wrong http function");
             flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
@@ -370,7 +370,7 @@ public class WebSocketImpl implements WebSocket {
         resourceDescriptor = handshakedata.getResourceDescriptor();
         assert (resourceDescriptor != null);
 
-        write(draft.createHandshake(this.handshakerequest));
+        write(draft.createHandshake(this.handshakerequest, true));
     }
 
     private void write(ByteBuffer buf) {

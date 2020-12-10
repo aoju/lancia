@@ -80,7 +80,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     /**
      * The socket timeout value to be used in milliseconds.
      */
-    private final int connectTimeout;
+    private int connectTimeout;
 
     /**
      * DNS resolver that translates a URI to an InetAddress
@@ -140,16 +140,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
         setTcpNoDelay(false);
         setReuseAddr(false);
         this.engine = new WebSocketImpl(this, protocolDraft);
-    }
-
-    /**
-     * Returns the protocol version this channel uses.<br>
-     * For more infos see https://github.com/TooTallNate/Java-WebSocket/wiki/Drafts
-     *
-     * @return The draft used for this client
-     */
-    public Draft getDraft() {
-        return draft;
     }
 
     /**

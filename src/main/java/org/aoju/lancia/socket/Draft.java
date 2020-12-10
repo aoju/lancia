@@ -8,7 +8,10 @@ import org.aoju.bus.logger.Logger;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Implementation for the RFC 6455 websocket protocol
@@ -36,10 +39,6 @@ public class Draft {
      */
     private static final String CONNECTION = "Connection";
 
-    /**
-     * Attribute for the payload of the current continuous frame
-     */
-    private final List<ByteBuffer> byteBufferList;
     protected HandshakeState.Opcode opcode = null;
     /**
      * Attribute for the current incomplete frame
@@ -62,8 +61,6 @@ public class Draft {
         if (inputMaxBufferSize < 1) {
             throw new IllegalArgumentException();
         }
-
-        this.byteBufferList = new ArrayList<>();
         this.maxBufferSize = inputMaxBufferSize;
     }
 
@@ -77,7 +74,15 @@ public class Draft {
             throw new InstrumentException();
         }
 
-        HandshakeBuilder handshake = translateHandshakeHttpClient(firstLineTokens, line);
+        if (!"101".equals(firstLineTokens[1])) {
+            throw new InstrumentException(String.format("Invalid status code received: %s Status line: %s", firstLineTokens[1], line));
+        }
+        if (!"HTTP/1.1".equalsIgnoreCase(firstLineTokens[0])) {
+            throw new InstrumentException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
+        }
+        HandshakeBuilder handshake = new HandshakeBuilder();
+        handshake.setHttpStatus(Short.parseShort(firstLineTokens[1]));
+        handshake.setHttpStatusMessage(firstLineTokens[2]);
 
         line = BufferKit.readLine(buf, Charset.UTF_8);
         while (line != null && line.length() > 0) {
@@ -100,10 +105,6 @@ public class Draft {
     public ByteBuffer createBinaryFrame(Framedata framedata) {
         if (Logger.get().isTrace())
             Logger.trace("afterEnconding({}): {}", framedata.getPayloadData().remaining(), (framedata.getPayloadData().remaining() > 1000 ? "too big to display" : new String(framedata.getPayloadData().array())));
-        return createByteBufferFromFramedata(framedata);
-    }
-
-    private ByteBuffer createByteBufferFromFramedata(Framedata framedata) {
         ByteBuffer mes = framedata.getPayloadData();
         boolean mask = true;
         int sizebytes = getSizeBytes(mes);
@@ -169,7 +170,7 @@ public class Draft {
             payloadlength = array[0];
             realpacketsize = array[1];
         }
-        translateSingleFrameCheckLengthLimit(payloadlength);
+        // translateSingleFrameCheckLengthLimit(payloadlength);
         realpacketsize += (mask ? 4 : 0);
         realpacketsize += payloadlength;
         translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
@@ -228,12 +229,13 @@ public class Draft {
         } else {
             realpacketsize += 8; // additional length bytes
             translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
+
             byte[] bytes = new byte[8];
             for (int i = 0; i < 8; i++) {
                 bytes[i] = buffer.get( /*1 + i*/);
             }
             long length = new BigInteger(bytes).longValue();
-            translateSingleFrameCheckLengthLimit(length);
+            //  translateSingleFrameCheckLengthLimit(length);
             payloadlength = (int) length;
         }
 
@@ -310,32 +312,11 @@ public class Draft {
         return 8;
     }
 
-    /**
-     * Check if the frame size exceeds the allowed limit
-     *
-     * @param length the current payload length
-     */
-    private void translateSingleFrameCheckLengthLimit(long length) {
-        if (length > Integer.MAX_VALUE) {
-            Logger.trace("Limit exedeed: Payloadsize is to big...");
-            throw new InstrumentException("Payloadsize is to big...");
-        }
-        if (length > maxBufferSize) {
-            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxBufferSize, length);
-            throw new InstrumentException("Payload limit reached.", maxBufferSize);
-        }
-        if (length < 0) {
-            Logger.trace("Limit underflow: Payloadsize is to little...");
-            throw new InstrumentException("Payloadsize is to little...");
-        }
-    }
-
     public List<Framedata> translateFrame(ByteBuffer buffer) {
         while (true) {
             List<Framedata> frames = new LinkedList<>();
             Framedata cur;
             if (byteBuffer != null) {
-                // complete an incomplete frame
                 try {
                     buffer.mark();
                     int availableNextByteCount = buffer.remaining();// The number of bytes received
@@ -442,13 +423,6 @@ public class Draft {
         HandshakeState.Opcode curop = frame.getOpcode();
         if (curop == HandshakeState.Opcode.CLOSING) {
             processFrameClosing(webSocketImpl);
-        } else if (curop == HandshakeState.Opcode.PING) {
-            webSocketImpl.getWebSocketListener().onWebsocketPing(webSocketImpl, frame);
-        } else if (curop == HandshakeState.Opcode.PONG) {
-            webSocketImpl.updateLastPong();
-            // webSocketImpl.getWebSocketListener().onWebsocketPong(webSocketImpl, frame);
-        } else if (!frame.isFin() || curop == HandshakeState.Opcode.CONTINUOUS) {
-            processFrameContinuousAndNonFin(frame, curop);
         } else if (curop == HandshakeState.Opcode.TEXT) {
             processFrameText(webSocketImpl, frame);
         } else if (curop == HandshakeState.Opcode.BINARY) {
@@ -456,30 +430,6 @@ public class Draft {
         } else {
             Logger.error("non control or continious frame expected");
             throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "non control or continious frame expected");
-        }
-    }
-
-    /**
-     * Process the frame if it is a continuous frame or the fin bit is not set
-     *
-     * @param frame the current frame
-     * @param curop the current Opcode
-     * @throws InvalidDataException if there is a protocol error
-     */
-    private void processFrameContinuousAndNonFin(Framedata frame, HandshakeState.Opcode curop) throws InvalidDataException {
-        if (curop != HandshakeState.Opcode.CONTINUOUS) {
-            checkBufferLimit();
-        } else if (frame.isFin()) {
-            clearBufferList();
-        }
-        //Check if the whole payload is valid utf8, when the opcode indicates a text
-        if (curop == HandshakeState.Opcode.TEXT && !BufferKit.isValidUTF8(frame.getPayloadData(), 0)) {
-            Logger.error("Protocol error: Payload is not UTF8");
-            throw new InvalidDataException(Framedata.NO_UTF8);
-        }
-        //Checking if the current continuous frame contains a correct payload with the other frames combined
-        if (curop == HandshakeState.Opcode.CONTINUOUS) {
-            addToBufferList(frame.getPayloadData());
         }
     }
 
@@ -542,79 +492,12 @@ public class Draft {
         }
     }
 
-    /**
-     * Clear the current bytebuffer list
-     */
-    private void clearBufferList() {
-        synchronized (byteBufferList) {
-            byteBufferList.clear();
-        }
-    }
-
-    /**
-     * Add a payload to the current bytebuffer list
-     *
-     * @param payloadData the new payload
-     */
-    private void addToBufferList(ByteBuffer payloadData) {
-        synchronized (byteBufferList) {
-            byteBufferList.add(payloadData);
-        }
-    }
-
     public void reset() {
         byteBuffer = null;
     }
 
     public HandshakeState.CloseHandshakeType getCloseHandshakeType() {
         return HandshakeState.CloseHandshakeType.TWOWAY;
-    }
-
-    /**
-     * Get the current size of the resulting bytebuffer in the bytebuffer list
-     *
-     * @return the size as long (to not get an integer overflow)
-     */
-    private long getByteBufferListSize() {
-        long totalSize = 0;
-        synchronized (byteBufferList) {
-            for (ByteBuffer buffer : byteBufferList) {
-                totalSize += buffer.limit();
-            }
-        }
-        return totalSize;
-    }
-
-    /**
-     * Check the current size of the buffer and throw an exception if the size is bigger than the max allowed frame size
-     */
-    private void checkBufferLimit() {
-        long totalSize = getByteBufferListSize();
-        if (totalSize > maxBufferSize) {
-            clearBufferList();
-            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxBufferSize, totalSize);
-            throw new InstrumentException("" + maxBufferSize);
-        }
-    }
-
-    /**
-     * Checking the handshake for the role as client
-     *
-     * @param firstLineTokens the token of the first line split as as an string array
-     * @param line            the whole line
-     * @return a handshake
-     */
-    private static HandshakeBuilder translateHandshakeHttpClient(String[] firstLineTokens, String line) throws InstrumentException {
-        if (!"101".equals(firstLineTokens[1])) {
-            throw new InstrumentException(String.format("Invalid status code received: %s Status line: %s", firstLineTokens[1], line));
-        }
-        if (!"HTTP/1.1".equalsIgnoreCase(firstLineTokens[0])) {
-            throw new InstrumentException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
-        }
-        HandshakeBuilder serverhandshake = new HandshakeBuilder();
-        serverhandshake.setHttpStatus(Short.parseShort(firstLineTokens[1]));
-        serverhandshake.setHttpStatusMessage(firstLineTokens[2]);
-        return serverhandshake;
     }
 
     public Draft copyInstance() {
@@ -647,10 +530,6 @@ public class Draft {
         return Collections.singletonList(bui);
     }
 
-    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder) {
-        return createHandshake(HandshakeBuilder, true);
-    }
-
     public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {
         StringBuilder bui = new StringBuilder(100);
         if (HandshakeBuilder instanceof HandshakeBuilder) {
@@ -671,20 +550,15 @@ public class Draft {
             bui.append("\r\n");
         }
         bui.append("\r\n");
-        byte[] httpheader = bui.toString().getBytes(Charset.US_ASCII);
-
+        byte[] httpHeader = bui.toString().getBytes(Charset.US_ASCII);
         byte[] content = withcontent ? HandshakeBuilder.getContent() : null;
-        ByteBuffer bytebuffer = ByteBuffer.allocate((content == null ? 0 : content.length) + httpheader.length);
-        bytebuffer.put(httpheader);
+        ByteBuffer bytebuffer = ByteBuffer.allocate((content == null ? 0 : content.length) + httpHeader.length);
+        bytebuffer.put(httpHeader);
         if (content != null) {
             bytebuffer.put(content);
         }
         bytebuffer.flip();
         return Collections.singletonList(bytebuffer);
-    }
-
-    public HandshakeBuilder translateHandshake(ByteBuffer buf) throws InstrumentException {
-        return translateHandshakeHttp(buf);
     }
 
     public int checkAlloc(int bytecount) throws InstrumentException {
