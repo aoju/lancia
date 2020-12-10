@@ -247,13 +247,6 @@ public class WebSocketImpl implements WebSocket {
                 }
                 if (draft.getCloseHandshakeType() != HandshakeState.CloseHandshakeType.NONE) {
                     try {
-                        if (!remote) {
-                            try {
-                                wsl.onWebsocketCloseInitiated(this, code, message);
-                            } catch (RuntimeException e) {
-                                wsl.onWebsocketError(this, e);
-                            }
-                        }
                         if (isOpen()) {
                             Framedata framedata = new Framedata(HandshakeState.Opcode.CLOSING);
                            /* closeFrame.setReason(message);
@@ -339,12 +332,6 @@ public class WebSocketImpl implements WebSocket {
         flushandclosestate = true;
 
         wsl.onWriteDemand(this); // ensures that all outgoing frames are flushed before closing the connection
-        try {
-            wsl.onWebsocketClosing(this, code, message, remote);
-        } catch (RuntimeException e) {
-            Logger.error("Exception in onWebsocketClosing", e);
-            wsl.onWebsocketError(this, e);
-        }
         if (draft != null)
             draft.reset();
         handshakerequest = null;

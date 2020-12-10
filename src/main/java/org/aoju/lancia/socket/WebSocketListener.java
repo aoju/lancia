@@ -50,25 +50,6 @@ public interface WebSocketListener {
     void onWebsocketClose(WebSocket ws, int code, String reason, boolean remote);
 
     /**
-     * Called as soon as no further frames are accepted
-     *
-     * @param ws     The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param code   The codes can be looked up here: {@link Framedata}
-     * @param reason Additional information string
-     * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
-     */
-    void onWebsocketClosing(WebSocket ws, int code, String reason, boolean remote);
-
-    /**
-     * send when this peer sends a close handshake
-     *
-     * @param ws     The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param code   The codes can be looked up here: {@link Framedata}
-     * @param reason Additional information string
-     */
-    void onWebsocketCloseInitiated(WebSocket ws, int code, String reason);
-
-    /**
      * Called if an exception worth noting occurred.
      * If an error causes the connection to fail onClose will be called additionally afterwards.
      *

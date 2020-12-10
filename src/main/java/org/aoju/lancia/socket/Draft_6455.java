@@ -109,7 +109,6 @@ public class Draft_6455 extends Draft {
         }
 
         knownProtocols = new ArrayList<>(inputProtocols.size());
-        boolean hasDefault = false;
         byteBufferList = new ArrayList<>();
 
 
@@ -117,22 +116,6 @@ public class Draft_6455 extends Draft {
         maxFrameSize = inputMaxFrameSize;
     }
 
-    @Override
-    public HandshakeState acceptHandshakeAsServer(HandshakeBuilder handshakedata) {
-        int v = readVersion(handshakedata);
-        if (v != 13) {
-            Logger.trace("acceptHandshakeAsServer - Wrong websocket version.");
-            return HandshakeState.NOT_MATCHED;
-        }
-        HandshakeState extensionState = HandshakeState.NOT_MATCHED;
-
-        HandshakeState protocolState = containsRequestedProtocol(handshakedata.getFieldValue(SEC_WEB_SOCKET_PROTOCOL));
-        if (protocolState == HandshakeState.MATCHED && extensionState == HandshakeState.MATCHED) {
-            return HandshakeState.MATCHED;
-        }
-        Logger.trace("acceptHandshakeAsServer - No matching extension or protocol found.");
-        return HandshakeState.NOT_MATCHED;
-    }
 
     /**
      * Check if the requested protocol is part of this draft
@@ -236,26 +219,6 @@ public class Draft_6455 extends Draft {
             request.put(SEC_WEB_SOCKET_PROTOCOL, requestedProtocols.toString());
         }
         return request;
-    }
-
-    @Override
-    public HandshakeBuilder postProcessHandshakeResponseAsServer(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException {
-        response.put(UPGRADE, "websocket");
-        response.put(CONNECTION, request.getFieldValue(CONNECTION)); // to respond to a Connection keep alives
-        String seckey = request.getFieldValue(SEC_WEB_SOCKET_KEY);
-        if (seckey == null)
-            throw new InstrumentException("missing Sec-WebSocket-Key");
-        response.put(SEC_WEB_SOCKET_ACCEPT, generateFinalKey(seckey));
-        if ("".length() != 0) {
-            response.put(SEC_WEB_SOCKET_EXTENSIONS, "");
-        }
-        if (getProtocol() != null && getProtocol().getProvidedProtocol().length() != 0) {
-            response.put(SEC_WEB_SOCKET_PROTOCOL, getProtocol().getProvidedProtocol());
-        }
-        response.setHttpStatusMessage("Web Socket Protocol Handshake");
-        response.put("Server", "TooTallNate Java-WebSocket");
-        response.put("Date", getServerTime());
-        return response;
     }
 
     @Override

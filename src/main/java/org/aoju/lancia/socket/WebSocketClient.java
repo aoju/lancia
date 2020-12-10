@@ -3,7 +3,9 @@ package org.aoju.lancia.socket;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 
 import javax.net.SocketFactory;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -443,15 +445,6 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
                 socket = factory.createSocket(socket, uri.getHost(), getPort(), true);
             }
 
-            if (socket instanceof SSLSocket) {
-                SSLSocket sslSocket = (SSLSocket) socket;
-                SSLParameters sslParameters = sslSocket.getSSLParameters();
-                // Make sure we perform hostname validation
-                sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
-                onSetSSLParameters(sslParameters);
-                sslSocket.setSSLParameters(sslParameters);
-            }
-
             istream = socket.getInputStream();
             ostream = socket.getOutputStream();
 
@@ -490,14 +483,6 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
             engine.closeConnection(Framedata.ABNORMAL_CLOSE, e.getMessage());
         }
         connectReadThread = null;
-    }
-
-    /**
-     * Apply specific SSLParameters
-     *
-     * @param sslParameters the SSLParameters which will be used for the SSLSocket
-     */
-    protected void onSetSSLParameters(SSLParameters sslParameters) {
     }
 
     /**
@@ -608,37 +593,6 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
         // nothing to do
     }
 
-    @Override
-    public void onWebsocketCloseInitiated(WebSocket conn, int code, String reason) {
-        onCloseInitiated(code, reason);
-    }
-
-    @Override
-    public void onWebsocketClosing(WebSocket conn, int code, String reason, boolean remote) {
-        onClosing(code, reason, remote);
-    }
-
-    /**
-     * Send when this peer sends a close handshake
-     *
-     * @param code   The codes can be looked up here: {@link Framedata}
-     * @param reason Additional information string
-     */
-    public void onCloseInitiated(int code, String reason) {
-        //To overwrite
-    }
-
-    /**
-     * Called as soon as no further frames are accepted
-     *
-     * @param code   The codes can be looked up here: {@link Framedata}
-     * @param reason Additional information string
-     * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
-     */
-    public void onClosing(int code, String reason, boolean remote) {
-        //To overwrite
-    }
-
     /**
      * Getter for the engine
      *
@@ -655,7 +609,6 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
         return null;
     }
 
-    // ABTRACT METHODS /////////////////////////////////////////////////////////
 
     @Override
     public InetSocketAddress getRemoteSocketAddress(WebSocket conn) {

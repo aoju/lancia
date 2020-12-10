@@ -280,10 +280,6 @@ public class Framedata {
         return optcode;
     }
 
-    public boolean getTransfereMasked() {
-        return transferemasked;
-    }
-
     public ByteBuffer getPayloadData() {
         return unmaskedpayload;
     }

@@ -87,16 +87,13 @@ public abstract class Draft {
         if (!"HTTP/1.1".equalsIgnoreCase(firstLineTokens[0])) {
             throw new InstrumentException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
         }
-        HandshakeBuilder handshake = new HandshakeBuilder();
-        HandshakeBuilder serverhandshake = handshake;
+        HandshakeBuilder serverhandshake = new HandshakeBuilder();
         serverhandshake.setHttpStatus(Short.parseShort(firstLineTokens[1]));
         serverhandshake.setHttpStatusMessage(firstLineTokens[2]);
-        return handshake;
+        return serverhandshake;
     }
 
     public abstract HandshakeState acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException;
-
-    public abstract HandshakeState acceptHandshakeAsServer(HandshakeBuilder handshakedata) throws InstrumentException;
 
     protected boolean basicAccept(HandshakeBuilder HandshakeBuilder) {
         return HandshakeBuilder.getFieldValue("Upgrade").equalsIgnoreCase("websocket") && HandshakeBuilder.getFieldValue("Connection").toLowerCase(Locale.ENGLISH).contains("upgrade");
@@ -187,8 +184,6 @@ public abstract class Draft {
     }
 
     public abstract HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) throws InstrumentException;
-
-    public abstract HandshakeBuilder postProcessHandshakeResponseAsServer(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException;
 
     public abstract List<Framedata> translateFrame(ByteBuffer buffer) throws InstrumentException, InvalidDataException;
 

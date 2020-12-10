@@ -57,19 +57,6 @@ public abstract class AbstractWebSocket extends WebSocketAdapter {
     private boolean websocketRunning = false;
 
     /**
-     * Get the interval checking for lost connections
-     * Default is 60 seconds
-     *
-     * @return the interval in seconds
-     * @since 1.3.4
-     */
-    public int getConnectionLostTimeout() {
-        synchronized (syncConnectionLost) {
-            return (int) TimeUnit.NANOSECONDS.toSeconds(connectionLostTimeout);
-        }
-    }
-
-    /**
      * Setter for the interval checking for lost connections
      * A value lower or equal 0 results in the check to be deactivated
      *
@@ -88,7 +75,7 @@ public abstract class AbstractWebSocket extends WebSocketAdapter {
                 Logger.trace("Connection lost timer restarted");
                 //Reset all the pings
                 try {
-                    ArrayList<WebSocket> connections = new ArrayList<WebSocket>(getConnections());
+                    ArrayList<WebSocket> connections = new ArrayList<>(getConnections());
                     WebSocketImpl webSocketImpl;
                     for (WebSocket conn : connections) {
                         if (conn instanceof WebSocketImpl) {
