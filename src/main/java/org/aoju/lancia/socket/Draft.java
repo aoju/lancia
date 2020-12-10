@@ -1,32 +1,6 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.framing.*;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -148,22 +122,22 @@ public abstract class Draft {
         if (op != HandshakeState.Opcode.BINARY && op != HandshakeState.Opcode.TEXT) {
             throw new IllegalArgumentException("Only Opcode.BINARY or  Opcode.TEXT are allowed");
         }
-        DataFrame bui = null;
+        Framedata bui = null;
         if (continuousFrameType != null) {
-            bui = new ContinuousFrame();
+            bui = new Framedata(HandshakeState.Opcode.CONTINUOUS);
         } else {
             continuousFrameType = op;
             if (op == HandshakeState.Opcode.BINARY) {
-                bui = new BinaryFrame();
+                bui = new Framedata(HandshakeState.Opcode.BINARY);
             } else if (op == HandshakeState.Opcode.TEXT) {
-                bui = new TextFrame();
+                bui = new Framedata(HandshakeState.Opcode.TEXT);
             }
         }
         bui.setPayload(buffer);
         bui.setFin(fin);
         try {
             bui.isValid();
-        } catch (InstrumentException e) {
+        } catch (InstrumentException | InvalidDataException e) {
             throw new IllegalArgumentException(e); // can only happen when one builds close frames(Opcode.Close)
         }
         if (fin) {
@@ -234,7 +208,7 @@ public abstract class Draft {
 
     public int checkAlloc(int bytecount) throws InstrumentException {
         if (bytecount < 0)
-            throw new InstrumentException("Negative count:" + CloseFrame.PROTOCOL_ERROR);
+            throw new InstrumentException("Negative count:" + Framedata.PROTOCOL_ERROR);
         return bytecount;
     }
 

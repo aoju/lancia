@@ -1,32 +1,6 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.framing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -392,7 +366,7 @@ public class Draft_6455 extends Draft {
             buffer.position(buffer.position() + payload.limit());
         }
 
-        FramedataImpl1 frame = FramedataImpl1.get(optcode);
+        Framedata frame = Framedata.get(optcode);
         frame.setFin(fin);
         frame.setRSV1(rsv1);
         frame.setRSV2(rsv2);
@@ -583,19 +557,27 @@ public class Draft_6455 extends Draft {
 
     @Override
     public List<Framedata> createFrames(ByteBuffer binary, boolean mask) {
-        BinaryFrame curframe = new BinaryFrame();
+        Framedata curframe = new Framedata(HandshakeState.Opcode.BINARY);
         curframe.setPayload(binary);
         curframe.setTransferemasked(mask);
-        curframe.isValid();
+        try {
+            curframe.isValid();
+        } catch (InvalidDataException e) {
+            e.printStackTrace();
+        }
         return Collections.singletonList(curframe);
     }
 
     @Override
     public List<Framedata> createFrames(String text, boolean mask) {
-        TextFrame curframe = new TextFrame();
+        Framedata curframe = new Framedata(HandshakeState.Opcode.TEXT);
         curframe.setPayload(ByteBuffer.wrap(Base64.utf8Bytes(text)));
         curframe.setTransferemasked(mask);
-        curframe.isValid();
+        try {
+            curframe.isValid();
+        } catch (InvalidDataException e) {
+            e.printStackTrace();
+        }
         return Collections.singletonList(curframe);
     }
 
@@ -697,14 +679,14 @@ public class Draft_6455 extends Draft {
             processFrameContinuousAndNonFin(webSocketImpl, frame, curop);
         } else if (currentContinuousFrame != null) {
             log.error("Protocol error: Continuous frame sequence not completed.");
-            throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "Continuous frame sequence not completed.");
+            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence not completed.");
         } else if (curop == HandshakeState.Opcode.TEXT) {
             processFrameText(webSocketImpl, frame);
         } else if (curop == HandshakeState.Opcode.BINARY) {
             processFrameBinary(webSocketImpl, frame);
         } else {
             log.error("non control or continious frame expected");
-            throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "non control or continious frame expected");
+            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "non control or continious frame expected");
         }
     }
 
@@ -723,12 +705,12 @@ public class Draft_6455 extends Draft {
             processFrameIsFin(webSocketImpl, frame);
         } else if (currentContinuousFrame == null) {
             log.error("Protocol error: Continuous frame sequence was not started.");
-            throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
+            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
         }
         //Check if the whole payload is valid utf8, when the opcode indicates a text
         if (curop == HandshakeState.Opcode.TEXT && !Base64.isValidUTF8(frame.getPayloadData())) {
             log.error("Protocol error: Payload is not UTF8");
-            throw new InvalidDataException(CloseFrame.NO_UTF8);
+            throw new InvalidDataException(Framedata.NO_UTF8);
         }
         //Checking if the current continuous frame contains a correct payload with the other frames combined
         if (curop == HandshakeState.Opcode.CONTINUOUS && currentContinuousFrame != null) {
@@ -785,21 +767,21 @@ public class Draft_6455 extends Draft {
     private void processFrameIsFin(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
         if (currentContinuousFrame == null) {
             log.trace("Protocol error: Previous continuous frame sequence not completed.");
-            throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
+            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
         }
         addToBufferList(frame.getPayloadData());
         checkBufferLimit();
         if (currentContinuousFrame.getOpcode() == HandshakeState.Opcode.TEXT) {
-            ((FramedataImpl1) currentContinuousFrame).setPayload(getPayloadFromByteBufferList());
-            ((FramedataImpl1) currentContinuousFrame).isValid();
+            currentContinuousFrame.setPayload(getPayloadFromByteBufferList());
+            currentContinuousFrame.isValid();
             try {
                 webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Base64.stringUtf8(currentContinuousFrame.getPayloadData()));
             } catch (RuntimeException e) {
                 logRuntimeException(webSocketImpl, e);
             }
         } else if (currentContinuousFrame.getOpcode() == HandshakeState.Opcode.BINARY) {
-            ((FramedataImpl1) currentContinuousFrame).setPayload(getPayloadFromByteBufferList());
-            ((FramedataImpl1) currentContinuousFrame).isValid();
+            currentContinuousFrame.setPayload(getPayloadFromByteBufferList());
+            currentContinuousFrame.isValid();
             try {
                 webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, currentContinuousFrame.getPayloadData());
             } catch (RuntimeException e) {
@@ -819,7 +801,7 @@ public class Draft_6455 extends Draft {
     private void processFrameIsNotFin(Framedata frame) throws InvalidDataException {
         if (currentContinuousFrame != null) {
             log.trace("Protocol error: Previous continuous frame sequence not completed.");
-            throw new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "Previous continuous frame sequence not completed.");
+            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Previous continuous frame sequence not completed.");
         }
         currentContinuousFrame = frame;
         addToBufferList(frame.getPayloadData());
@@ -833,12 +815,12 @@ public class Draft_6455 extends Draft {
      * @param frame         the frame
      */
     private void processFrameClosing(WebSocketImpl webSocketImpl, Framedata frame) {
-        int code = CloseFrame.NOCODE;
+        int code = Framedata.NOCODE;
         String reason = "";
-        if (frame instanceof CloseFrame) {
-            CloseFrame cf = (CloseFrame) frame;
+        if (frame instanceof Framedata) {
+           /* CloseFrame cf = (CloseFrame) frame;
             code = cf.getCloseCode();
-            reason = cf.getMessage();
+            reason = cf.getMessage();*/
         }
         if (webSocketImpl.getReadyState() == HandshakeState.ReadyState.CLOSING) {
             // complete the close handshake by disconnecting

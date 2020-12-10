@@ -1,40 +1,11 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
-
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
-import org.aoju.lancia.socket.framing.PongFrame;
 
 /**
  * This class default implements all methods of the WebSocketListener that can be overridden optionally when advances functionalities is needed.<br>
  **/
 public abstract class WebSocketAdapter implements WebSocketListener {
 
-    private PingFrame pingFrame;
+    private Framedata pingFrame;
 
     /**
      * This default implementation does not do anything. Go ahead and overwrite it.
@@ -57,7 +28,7 @@ public abstract class WebSocketAdapter implements WebSocketListener {
      * @see WebSocketListener#onWebsocketHandshakeSentAsClient(WebSocket, HandshakeBuilder)
      */
     @Override
-    public void onWebsocketHandshakeSentAsClient(WebSocket conn, HandshakeBuilder request) throws InvalidDataException {
+    public void onWebsocketHandshakeSentAsClient(WebSocket conn, HandshakeBuilder request) {
         //To overwrite
     }
 
@@ -69,7 +40,7 @@ public abstract class WebSocketAdapter implements WebSocketListener {
      */
     @Override
     public void onWebsocketPing(WebSocket conn, Framedata f) {
-        conn.sendFrame(new PongFrame((PingFrame) f));
+        conn.sendFrame(f);
     }
 
     /**
@@ -90,9 +61,9 @@ public abstract class WebSocketAdapter implements WebSocketListener {
      * @see WebSocketListener#onPreparePing(WebSocket)
      */
     @Override
-    public PingFrame onPreparePing(WebSocket conn) {
+    public Framedata onPreparePing(WebSocket conn) {
         if (pingFrame == null)
-            pingFrame = new PingFrame();
+            pingFrame = new Framedata(HandshakeState.Opcode.PING);
         return pingFrame;
     }
 

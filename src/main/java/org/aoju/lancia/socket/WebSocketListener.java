@@ -1,33 +1,4 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
-
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -106,7 +77,7 @@ public interface WebSocketListener {
      * other end of the WebSocket connection is closed.
      *
      * @param ws     The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
      */
@@ -116,7 +87,7 @@ public interface WebSocketListener {
      * Called as soon as no further frames are accepted
      *
      * @param ws     The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
      */
@@ -126,7 +97,7 @@ public interface WebSocketListener {
      * send when this peer sends a close handshake
      *
      * @param ws     The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      */
     void onWebsocketCloseInitiated(WebSocket ws, int code, String reason);
@@ -156,7 +127,7 @@ public interface WebSocketListener {
      * @param conn The <tt>WebSocket</tt> connection from which the ping frame will be sent.
      * @return PingFrame to be sent.
      */
-    PingFrame onPreparePing(WebSocket conn);
+    Framedata onPreparePing(WebSocket conn);
 
     /**
      * Called when a pong frame is received.

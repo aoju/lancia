@@ -1,33 +1,6 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
@@ -339,7 +312,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
             }
         } catch (Exception e) {
             onError(e);
-            engine.closeConnection(CloseFrame.ABNORMAL_CLOSE, e.getMessage());
+            engine.closeConnection(Framedata.ABNORMAL_CLOSE, e.getMessage());
             return;
         }
         connectLatch = new CountDownLatch(1);
@@ -389,7 +362,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
      */
     public void close() {
         if (writeThread != null) {
-            engine.close(CloseFrame.NORMAL);
+            engine.close(Framedata.NORMAL);
         }
     }
 
@@ -485,14 +458,14 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
             sendHandshake();
         } catch ( /*IOException | SecurityException | UnresolvedAddressException | InstrumentException | ClosedByInterruptException | SocketTimeoutException */Exception e) {
             onWebsocketError(engine, e);
-            engine.closeConnection(CloseFrame.NEVER_CONNECTED, e.getMessage());
+            engine.closeConnection(Framedata.NEVER_CONNECTED, e.getMessage());
             return;
         } catch (InternalError e) {
             // https://bugs.openjdk.java.net/browse/JDK-8173620
             if (e.getCause() instanceof InvocationTargetException && e.getCause().getCause() instanceof IOException) {
                 IOException cause = (IOException) e.getCause().getCause();
                 onWebsocketError(engine, cause);
-                engine.closeConnection(CloseFrame.NEVER_CONNECTED, cause.getMessage());
+                engine.closeConnection(Framedata.NEVER_CONNECTED, cause.getMessage());
                 return;
             }
             throw e;
@@ -514,7 +487,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
         } catch (RuntimeException e) {
             // this catch case covers internal errors only and indicates a bug in this websocket implementation
             onError(e);
-            engine.closeConnection(CloseFrame.ABNORMAL_CLOSE, e.getMessage());
+            engine.closeConnection(Framedata.ABNORMAL_CLOSE, e.getMessage());
         }
         connectReadThread = null;
     }
@@ -648,7 +621,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
     /**
      * Send when this peer sends a close handshake
      *
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      */
     public void onCloseInitiated(int code, String reason) {
@@ -658,7 +631,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
     /**
      * Called as soon as no further frames are accepted
      *
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
      */
@@ -709,7 +682,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
     /**
      * Called after the websocket connection has been closed.
      *
-     * @param code   The codes can be looked up here: {@link CloseFrame}
+     * @param code   The codes can be looked up here: {@link Framedata}
      * @param reason Additional information string
      * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
      **/

@@ -1,34 +1,6 @@
-/*
- * Copyright (c) 2010-2020 Nathan Rajlich
- *
- *  Permission is hereby granted, free of charge, to any person
- *  obtaining a copy of this software and associated documentation
- *  files (the "Software"), to deal in the Software without
- *  restriction, including without limitation the rights to use,
- *  copy, modify, merge, publish, distribute, sublicense, and/or sell
- *  copies of the Software, and to permit persons to whom the
- *  Software is furnished to do so, subject to the following
- *  conditions:
- *
- *  The above copyright notice and this permission notice shall be
- *  included in all copies or substantial portions of the Software.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *  OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.framing.CloseFrame;
-import org.aoju.lancia.socket.framing.Framedata;
-import org.aoju.lancia.socket.framing.PingFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,7 +161,7 @@ public class WebSocketImpl implements WebSocket {
         HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
             log.trace("Closing due to protocol error: wrong http function");
-            flushAndClose(CloseFrame.PROTOCOL_ERROR, "wrong http function", false);
+            flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
             return false;
         }
         HandshakeBuilder handshake = tmphandshake;
@@ -204,14 +176,14 @@ public class WebSocketImpl implements WebSocket {
             } catch (RuntimeException e) {
                 log.error("Closing since client was never connected", e);
                 wsl.onWebsocketError(this, e);
-                flushAndClose(CloseFrame.NEVER_CONNECTED, e.getMessage(), false);
+                flushAndClose(Framedata.NEVER_CONNECTED, e.getMessage(), false);
                 return false;
             }
             open(handshake);
             return true;
         } else {
             log.trace("Closing due to protocol error: draft {} refuses handshake", draft);
-            close(CloseFrame.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
+            close(Framedata.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
         }
 
         return false;
@@ -249,7 +221,7 @@ public class WebSocketImpl implements WebSocket {
      */
     private void closeConnectionDueToInternalServerError(RuntimeException exception) {
         write(generateHttpResponseDueToError(500));
-        flushAndClose(CloseFrame.NEVER_CONNECTED, exception.getMessage(), false);
+        flushAndClose(Framedata.NEVER_CONNECTED, exception.getMessage(), false);
     }
 
     /**
@@ -274,7 +246,7 @@ public class WebSocketImpl implements WebSocket {
     public synchronized void close(int code, String message, boolean remote) {
         if (readyState != HandshakeState.ReadyState.CLOSING && readyState != HandshakeState.ReadyState.CLOSED) {
             if (readyState == HandshakeState.ReadyState.OPEN) {
-                if (code == CloseFrame.ABNORMAL_CLOSE) {
+                if (code == Framedata.ABNORMAL_CLOSE) {
                     assert (!remote);
                     readyState = HandshakeState.ReadyState.CLOSING;
                     flushAndClose(code, message, false);
@@ -290,26 +262,26 @@ public class WebSocketImpl implements WebSocket {
                             }
                         }
                         if (isOpen()) {
-                            CloseFrame closeFrame = new CloseFrame();
-                            closeFrame.setReason(message);
-                            closeFrame.setCode(code);
-                            closeFrame.isValid();
-                            sendFrame(closeFrame);
+                            Framedata framedata = new Framedata(HandshakeState.Opcode.CLOSING);
+                           /* closeFrame.setReason(message);
+                            closeFrame.setCode(code);*/
+                            framedata.isValid();
+                            sendFrame(framedata);
                         }
                     } catch (InvalidDataException e) {
                         log.error("generated frame is invalid", e);
                         wsl.onWebsocketError(this, e);
-                        flushAndClose(CloseFrame.ABNORMAL_CLOSE, "generated frame is invalid", false);
+                        flushAndClose(Framedata.ABNORMAL_CLOSE, "generated frame is invalid", false);
                     }
                 }
                 flushAndClose(code, message, remote);
-            } else if (code == CloseFrame.FLASHPOLICY) {
+            } else if (code == Framedata.FLASHPOLICY) {
                 assert (remote);
-                flushAndClose(CloseFrame.FLASHPOLICY, message, true);
-            } else if (code == CloseFrame.PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
+                flushAndClose(Framedata.FLASHPOLICY, message, true);
+            } else if (code == Framedata.PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
                 flushAndClose(code, message, remote);
             } else {
-                flushAndClose(CloseFrame.NEVER_CONNECTED, message, false);
+                flushAndClose(Framedata.NEVER_CONNECTED, message, false);
             }
             readyState = HandshakeState.ReadyState.CLOSING;
             tmpHandshakeBytes = null;
@@ -339,7 +311,7 @@ public class WebSocketImpl implements WebSocket {
         }
         //Methods like eot() call this method without calling onClose(). Due to that reason we have to adjust the ReadyState manually
         if (readyState == HandshakeState.ReadyState.OPEN) {
-            if (code == CloseFrame.ABNORMAL_CLOSE) {
+            if (code == Framedata.ABNORMAL_CLOSE) {
                 readyState = HandshakeState.ReadyState.CLOSING;
             }
         }
@@ -387,15 +359,15 @@ public class WebSocketImpl implements WebSocket {
 
     public void eot() {
         if (readyState == HandshakeState.ReadyState.NOT_YET_CONNECTED) {
-            closeConnection(CloseFrame.NEVER_CONNECTED, true);
+            closeConnection(Framedata.NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
             closeConnection(closecode, closemessage, closedremotely);
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.NONE) {
-            closeConnection(CloseFrame.NORMAL, true);
+            closeConnection(Framedata.NORMAL, true);
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.ONEWAY) {
-                closeConnection(CloseFrame.NORMAL, true);
+            closeConnection(Framedata.NORMAL, true);
         } else {
-            closeConnection(CloseFrame.ABNORMAL_CLOSE, true);
+            closeConnection(Framedata.ABNORMAL_CLOSE, true);
         }
     }
 
@@ -467,7 +439,7 @@ public class WebSocketImpl implements WebSocket {
 
     public void sendPing() throws NullPointerException {
         // Gets a PingFrame from WebSocketListener(wsl) and sends it.
-        PingFrame pingFrame = wsl.onPreparePing(this);
+        Framedata pingFrame = wsl.onPreparePing(this);
         if (pingFrame == null)
             throw new NullPointerException("onPreparePing(WebSocket) returned null. PingFrame to sent can't be null.");
         sendFrame(pingFrame);
@@ -578,7 +550,7 @@ public class WebSocketImpl implements WebSocket {
 
     @Override
     public void close() {
-        close(CloseFrame.NORMAL);
+        close(Framedata.NORMAL);
     }
 
     /**
