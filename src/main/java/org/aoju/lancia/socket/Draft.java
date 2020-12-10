@@ -1,12 +1,11 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.toolkit.RandomKit;
 import org.aoju.bus.logger.Logger;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 /**
@@ -20,11 +19,6 @@ public class Draft {
      * Handshake specific field for the key
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
-
-    /**
-     * Handshake specific field for the extension
-     */
-    private static final String SEC_WEB_SOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
 
     /**
      * Handshake specific field for the accept
@@ -45,10 +39,6 @@ public class Draft {
      * Attribute for the payload of the current continuous frame
      */
     private final List<ByteBuffer> byteBufferList;
-    /**
-     * Attribute for the reusable random instance
-     */
-    private final Random reuseableRandom = new Random();
 
     /**
      * Attribute for the maximum allowed size of a frame
@@ -57,10 +47,6 @@ public class Draft {
      */
     private final int maxFrameSize;
 
-    /**
-     * Attribute for the current continuous frame
-     */
-    private Framedata currentContinuousFrame;
     /**
      * Attribute for the current incomplete frame
      */
@@ -108,16 +94,10 @@ public class Draft {
 
     public HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) {
         request.put(UPGRADE, "websocket");
-        request.put(CONNECTION, UPGRADE); // to respond to a Connection keep alives
-        byte[] random = new byte[16];
-        reuseableRandom.nextBytes(random);
-        request.put(SEC_WEB_SOCKET_KEY, org.aoju.lancia.socket.Base64.encodeBytes(random));
-        request.put("Sec-WebSocket-Version", "13");// overwriting the previous
-        StringBuilder requestedExtensions = new StringBuilder();
+        request.put(CONNECTION, UPGRADE);
+        request.put(SEC_WEB_SOCKET_KEY, RandomKit.randomString(16));
+        request.put("Sec-WebSocket-Version", "13");
 
-        if (requestedExtensions.length() != 0) {
-            request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
-        }
         return request;
     }
 
@@ -164,7 +144,6 @@ public class Draft {
         }
         if (mask) {
             ByteBuffer maskkey = ByteBuffer.allocate(4);
-            maskkey.putInt(reuseableRandom.nextInt());
             buf.put(maskkey.array());
             for (int i = 0; mes.hasRemaining(); i++) {
                 buf.put((byte) (mes.get() ^ maskkey.get(i % 4)));
@@ -424,24 +403,6 @@ public class Draft {
         incompleteframe = null;
     }
 
-    /**
-     * Generate a final key from a input string
-     *
-     * @param in the input string
-     * @return a final key
-     */
-    private String generateFinalKey(String in) {
-        String seckey = in.trim();
-        String acc = seckey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-        MessageDigest sh1;
-        try {
-            sh1 = MessageDigest.getInstance("SHA1");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-        return org.aoju.lancia.socket.Base64.encodeBytes(sh1.digest(acc.getBytes()));
-    }
-
     private byte[] toByteArray(long val, int bytecount) {
         byte[] buffer = new byte[bytecount];
         int highest = 8 * bytecount - 8;
@@ -496,10 +457,7 @@ public class Draft {
             webSocketImpl.updateLastPong();
             // webSocketImpl.getWebSocketListener().onWebsocketPong(webSocketImpl, frame);
         } else if (!frame.isFin() || curop == HandshakeState.Opcode.CONTINUOUS) {
-            processFrameContinuousAndNonFin(webSocketImpl, frame, curop);
-        } else if (currentContinuousFrame != null) {
-            Logger.error("Protocol error: Continuous frame sequence not completed.");
-            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence not completed.");
+            processFrameContinuousAndNonFin(frame, curop);
         } else if (curop == HandshakeState.Opcode.TEXT) {
             processFrameText(webSocketImpl, frame);
         } else if (curop == HandshakeState.Opcode.BINARY) {
@@ -513,19 +471,15 @@ public class Draft {
     /**
      * Process the frame if it is a continuous frame or the fin bit is not set
      *
-     * @param webSocketImpl the websocket implementation to use
-     * @param frame         the current frame
-     * @param curop         the current Opcode
+     * @param frame the current frame
+     * @param curop the current Opcode
      * @throws InvalidDataException if there is a protocol error
      */
-    private void processFrameContinuousAndNonFin(WebSocketImpl webSocketImpl, Framedata frame, HandshakeState.Opcode curop) throws InvalidDataException {
+    private void processFrameContinuousAndNonFin(Framedata frame, HandshakeState.Opcode curop) throws InvalidDataException {
         if (curop != HandshakeState.Opcode.CONTINUOUS) {
-            processFrameIsNotFin(frame);
+            checkBufferLimit();
         } else if (frame.isFin()) {
-            processFrameIsFin(webSocketImpl, frame);
-        } else if (currentContinuousFrame == null) {
-            Logger.error("Protocol error: Continuous frame sequence was not started.");
-            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
+            clearBufferList();
         }
         //Check if the whole payload is valid utf8, when the opcode indicates a text
         if (curop == HandshakeState.Opcode.TEXT && !Base64.isValidUTF8(frame.getPayloadData())) {
@@ -533,7 +487,7 @@ public class Draft {
             throw new InvalidDataException(Framedata.NO_UTF8);
         }
         //Checking if the current continuous frame contains a correct payload with the other frames combined
-        if (curop == HandshakeState.Opcode.CONTINUOUS && currentContinuousFrame != null) {
+        if (curop == HandshakeState.Opcode.CONTINUOUS) {
             addToBufferList(frame.getPayloadData());
         }
     }
@@ -575,57 +529,6 @@ public class Draft {
         } catch (RuntimeException e) {
             logRuntimeException(webSocketImpl, e);
         }
-    }
-
-    /**
-     * Process the frame if it is the last frame
-     *
-     * @param webSocketImpl the websocket impl
-     * @param frame         the frame
-     * @throws InvalidDataException if there is a protocol error
-     */
-    private void processFrameIsFin(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
-        if (currentContinuousFrame == null) {
-            Logger.trace("Protocol error: Previous continuous frame sequence not completed.");
-            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Continuous frame sequence was not started.");
-        }
-        addToBufferList(frame.getPayloadData());
-        checkBufferLimit();
-        if (currentContinuousFrame.getOpcode() == HandshakeState.Opcode.TEXT) {
-            currentContinuousFrame.setPayload(getPayloadFromByteBufferList());
-            currentContinuousFrame.isValid();
-            try {
-                webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Base64.stringUtf8(currentContinuousFrame.getPayloadData()));
-            } catch (RuntimeException e) {
-                logRuntimeException(webSocketImpl, e);
-            }
-        } else if (currentContinuousFrame.getOpcode() == HandshakeState.Opcode.BINARY) {
-            currentContinuousFrame.setPayload(getPayloadFromByteBufferList());
-            currentContinuousFrame.isValid();
-            try {
-                webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, currentContinuousFrame.getPayloadData());
-            } catch (RuntimeException e) {
-                logRuntimeException(webSocketImpl, e);
-            }
-        }
-        currentContinuousFrame = null;
-        clearBufferList();
-    }
-
-    /**
-     * Process the frame if it is not the last frame
-     *
-     * @param frame the frame
-     * @throws InvalidDataException if there is a protocol error
-     */
-    private void processFrameIsNotFin(Framedata frame) throws InvalidDataException {
-        if (currentContinuousFrame != null) {
-            Logger.trace("Protocol error: Previous continuous frame sequence not completed.");
-            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "Previous continuous frame sequence not completed.");
-        }
-        currentContinuousFrame = frame;
-        addToBufferList(frame.getPayloadData());
-        checkBufferLimit();
     }
 
     /**
@@ -789,14 +692,7 @@ public class Draft {
             return HandshakeState.NOT_MATCHED;
         }
 
-        String seckeyAnswer = response.getFieldValue(SEC_WEB_SOCKET_ACCEPT);
-        String seckeyChallenge = request.getFieldValue(SEC_WEB_SOCKET_KEY);
-        seckeyChallenge = generateFinalKey(seckeyChallenge);
 
-        if (!seckeyChallenge.equals(seckeyAnswer)) {
-            Logger.trace("acceptHandshakeAsClient - Wrong key for Sec-WebSocket-Key.");
-            return HandshakeState.NOT_MATCHED;
-        }
         return HandshakeState.MATCHED;
     }
 
@@ -833,7 +729,6 @@ public class Draft {
         }
         return Collections.singletonList(bui);
     }
-
 
     public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder) {
         return createHandshake(HandshakeBuilder, true);
