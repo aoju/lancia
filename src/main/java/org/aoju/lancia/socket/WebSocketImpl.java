@@ -438,11 +438,6 @@ public class WebSocketImpl implements WebSocket {
     }
 
     @Override
-    public String toString() {
-        return super.toString(); // its nice to be able to set breakpoints here
-    }
-
-    @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return wsl.getRemoteSocketAddress(this);
     }

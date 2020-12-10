@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * A subclass must implement at least <var>onOpen</var>, <var>onClose</var>, and <var>onMessage</var> to be
@@ -81,7 +80,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     /**
      * The socket timeout value to be used in milliseconds.
      */
-    private int connectTimeout = 0;
+    private int connectTimeout;
 
     /**
      * DNS resolver that translates a URI to an InetAddress
@@ -119,32 +118,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      * specified URI. The channel does not attampt to connect automatically. The connection
      * will be established once you call <var>connect</var>.
      *
-     * @param serverUri   the server URI to connect to
-     * @param httpHeaders Additional HTTP-Headers
-     */
-    public WebSocketClient(URI serverUri, Map<String, String> httpHeaders) {
-        this(serverUri, new Draft(), httpHeaders);
-    }
-
-    /**
-     * Constructs a WebSocketClient instance and sets it to the connect to the
-     * specified URI. The channel does not attampt to connect automatically. The connection
-     * will be established once you call <var>connect</var>.
-     *
-     * @param serverUri     the server URI to connect to
-     * @param protocolDraft The draft which should be used for this connection
-     * @param httpHeaders   Additional HTTP-Headers
-     * @since 1.3.8
-     */
-    public WebSocketClient(URI serverUri, Draft protocolDraft, Map<String, String> httpHeaders) {
-        this(serverUri, protocolDraft, httpHeaders, 0);
-    }
-
-    /**
-     * Constructs a WebSocketClient instance and sets it to the connect to the
-     * specified URI. The channel does not attampt to connect automatically. The connection
-     * will be established once you call <var>connect</var>.
-     *
      * @param serverUri      the server URI to connect to
      * @param protocolDraft  The draft which should be used for this connection
      * @param httpHeaders    Additional HTTP-Headers
@@ -167,15 +140,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
         setTcpNoDelay(false);
         setReuseAddr(false);
         this.engine = new WebSocketImpl(this, protocolDraft);
-    }
-
-    /**
-     * Returns the URI that this WebSocketClient is connected to.
-     *
-     * @return the URI connected to
-     */
-    public URI getURI() {
-        return uri;
     }
 
     /**
@@ -214,52 +178,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     }
 
     /**
-     * @param key   Name of the header to add.
-     * @param value Value of the header to add.
-     * @since 1.4.1
-     * Adds an additional header to be sent in the handshake.<br>
-     * If the connection is already made, adding headers has no effect,
-     * unless reconnect is called, which then a new handshake is sent.<br>
-     * If a header with the same key already exists, it is overridden.
-     */
-    public void addHeader(String key, String value) {
-        if (headers == null)
-            headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-        headers.put(key, value);
-    }
-
-    /**
-     * @param key Name of the header to remove.
-     * @return the previous value associated with key, or
-     * null if there was no mapping for key.
-     * @since 1.4.1
-     * Removes a header from the handshake to be sent, if header key exists.<br>
-     */
-    public String removeHeader(String key) {
-        if (headers == null)
-            return null;
-        return headers.remove(key);
-    }
-
-    /**
-     * @since 1.4.1
-     * Clears all previously put headers.
-     */
-    public void clearHeaders() {
-        headers = null;
-    }
-
-    /**
-     * Sets a custom DNS resolver.
-     *
-     * @param dnsResolver The DnsResolver to use.
-     * @since 1.4.1
-     */
-    public void setDnsResolver(DnsResolver dnsResolver) {
-        this.dnsResolver = dnsResolver;
-    }
-
-    /**
      * Reinitiates the websocket connection. This method does not block.
      *
      * @since 1.3.8
@@ -267,18 +185,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     public void reconnect() {
         reset();
         connect();
-    }
-
-    /**
-     * Same as <code>reconnect</code> but blocks until the websocket reconnected or failed to do so.<br>
-     *
-     * @return Returns whether it succeeded or not.
-     * @throws InterruptedException Thrown when the threads get interrupted
-     * @since 1.3.8
-     */
-    public boolean reconnectBlocking() throws InterruptedException {
-        reset();
-        return connectBlocking();
     }
 
     /**
@@ -337,19 +243,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
         connect();
         connectLatch.await();
         return engine.isOpen();
-    }
-
-    /**
-     * Same as <code>connect</code> but blocks with a timeout until the websocket connected or failed to do so.<br>
-     *
-     * @param timeout  The connect timeout
-     * @param timeUnit The timeout time unit
-     * @return Returns whether it succeeded or not.
-     * @throws InterruptedException Thrown when the threads get interrupted
-     */
-    public boolean connectBlocking(long timeout, TimeUnit timeUnit) throws InterruptedException {
-        connect();
-        return connectLatch.await(timeout, timeUnit) && engine.isOpen();
     }
 
     /**
@@ -652,28 +545,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      **/
     public void onMessage(ByteBuffer bytes) {
         //To overwrite
-    }
-
-    /**
-     * Method to set a proxy for this connection
-     *
-     * @param proxy the proxy to use for this websocket client
-     */
-    public void setProxy(Proxy proxy) {
-        if (proxy == null)
-            throw new IllegalArgumentException();
-        this.proxy = proxy;
-    }
-
-    /**
-     * Accepts a SocketFactory.<br>
-     * This method must be called before <code>connect</code>.
-     * The socket will be bound to the uri specified in the constructor.
-     *
-     * @param socketFactory The socket factory which should be used for the connection.
-     */
-    public void setSocketFactory(SocketFactory socketFactory) {
-        this.socketFactory = socketFactory;
     }
 
     @Override
