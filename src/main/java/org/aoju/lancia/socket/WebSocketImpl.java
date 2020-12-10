@@ -448,11 +448,6 @@ public class WebSocketImpl implements WebSocket {
     }
 
     @Override
-    public Draft getDraft() {
-        return draft;
-    }
-
-    @Override
     public void close() {
         close(Framedata.NORMAL);
     }

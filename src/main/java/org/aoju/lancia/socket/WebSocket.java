@@ -142,13 +142,6 @@ public interface WebSocket {
     boolean isClosed();
 
     /**
-     * Getter for the draft
-     *
-     * @return the used draft
-     */
-    Draft getDraft();
-
-    /**
      * Retrieve the WebSocket 'ReadyState'.
      * This represents the state of the connection.
      * It returns a numerical value, as per W3C WebSockets specs.
