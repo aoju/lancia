@@ -26,8 +26,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.deleted.framing.*;
-import org.aoju.lancia.socket.deleted.handshake.*;
+import org.aoju.lancia.socket.framing.*;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -39,11 +38,6 @@ import java.util.Locale;
  * websocket规范中不常见的所有东西的基类，比如读取握手或传输帧的方式
  */
 public abstract class Draft {
-
-    /**
-     * In some cases the handshake will be parsed different depending on whether
-     */
-    protected HandshakeState.Role role = null;
 
     protected HandshakeState.Opcode continuousFrameType = null;
 
@@ -72,7 +66,7 @@ public abstract class Draft {
         return b == null ? null : Base64.stringAscii(b.array(), 0, b.limit());
     }
 
-    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf, HandshakeState.Role role) throws InstrumentException {
+    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf) throws InstrumentException {
         HandshakeBuilder handshake;
 
         String line = readStringLine(buf);
@@ -119,19 +113,19 @@ public abstract class Draft {
         if (!"HTTP/1.1".equalsIgnoreCase(firstLineTokens[0])) {
             throw new InstrumentException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
         }
-        HandshakeBuilder handshake = new HandshakeImpl1Server();
-        ServerHandshakeBuilder serverhandshake = (ServerHandshakeBuilder) handshake;
+        HandshakeBuilder handshake = new HandshakeBuilder();
+        HandshakeBuilder serverhandshake = handshake;
         serverhandshake.setHttpStatus(Short.parseShort(firstLineTokens[1]));
         serverhandshake.setHttpStatusMessage(firstLineTokens[2]);
         return handshake;
     }
 
-    public abstract HandshakeState acceptHandshakeAsClient(ClientHandshake request, ServerHandshake response) throws InstrumentException;
+    public abstract HandshakeState acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException;
 
-    public abstract HandshakeState acceptHandshakeAsServer(ClientHandshake handshakedata) throws InstrumentException;
+    public abstract HandshakeState acceptHandshakeAsServer(HandshakeBuilder handshakedata) throws InstrumentException;
 
-    protected boolean basicAccept(Handshakedata handshakedata) {
-        return handshakedata.getFieldValue("Upgrade").equalsIgnoreCase("websocket") && handshakedata.getFieldValue("Connection").toLowerCase(Locale.ENGLISH).contains("upgrade");
+    protected boolean basicAccept(HandshakeBuilder HandshakeBuilder) {
+        return HandshakeBuilder.getFieldValue("Upgrade").equalsIgnoreCase("websocket") && HandshakeBuilder.getFieldValue("Connection").toLowerCase(Locale.ENGLISH).contains("upgrade");
     }
 
     public abstract ByteBuffer createBinaryFrame(Framedata framedata);
@@ -186,36 +180,36 @@ public abstract class Draft {
      * @deprecated use createHandshake without the role
      */
     @Deprecated
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, HandshakeState.Role ownrole) {
-        return createHandshake(handshakedata);
+    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, HandshakeState.Role ownrole) {
+        return createHandshake(HandshakeBuilder);
     }
 
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata) {
-        return createHandshake(handshakedata, true);
+    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder) {
+        return createHandshake(HandshakeBuilder, true);
     }
 
     /**
      * @deprecated use createHandshake without the role since it does not have any effect
      */
     @Deprecated
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, HandshakeState.Role ownrole, boolean withcontent) {
-        return createHandshake(handshakedata, withcontent);
+    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, HandshakeState.Role ownrole, boolean withcontent) {
+        return createHandshake(HandshakeBuilder, withcontent);
     }
 
-    public List<ByteBuffer> createHandshake(Handshakedata handshakedata, boolean withcontent) {
+    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {
         StringBuilder bui = new StringBuilder(100);
-        if (handshakedata instanceof ClientHandshake) {
-            bui.append("GET ").append(((ClientHandshake) handshakedata).getResourceDescriptor()).append(" HTTP/1.1");
-        } else if (handshakedata instanceof ServerHandshake) {
-            bui.append("HTTP/1.1 101 ").append(((ServerHandshake) handshakedata).getHttpStatusMessage());
+        if (HandshakeBuilder instanceof HandshakeBuilder) {
+            bui.append("GET ").append(HandshakeBuilder.getResourceDescriptor()).append(" HTTP/1.1");
+        } else if (HandshakeBuilder instanceof HandshakeBuilder) {
+            bui.append("HTTP/1.1 101 ").append(HandshakeBuilder.getHttpStatusMessage());
         } else {
             throw new IllegalArgumentException("unknown role");
         }
         bui.append("\r\n");
-        Iterator<String> it = handshakedata.iterateHttpFields();
+        Iterator<String> it = HandshakeBuilder.iterateHttpFields();
         while (it.hasNext()) {
             String fieldname = it.next();
-            String fieldvalue = handshakedata.getFieldValue(fieldname);
+            String fieldvalue = HandshakeBuilder.getFieldValue(fieldname);
             bui.append(fieldname);
             bui.append(": ");
             bui.append(fieldvalue);
@@ -224,7 +218,7 @@ public abstract class Draft {
         bui.append("\r\n");
         byte[] httpheader = Base64.asciiBytes(bui.toString());
 
-        byte[] content = withcontent ? handshakedata.getContent() : null;
+        byte[] content = withcontent ? HandshakeBuilder.getContent() : null;
         ByteBuffer bytebuffer = ByteBuffer.allocate((content == null ? 0 : content.length) + httpheader.length);
         bytebuffer.put(httpheader);
         if (content != null) {
@@ -234,9 +228,9 @@ public abstract class Draft {
         return Collections.singletonList(bytebuffer);
     }
 
-    public abstract ClientHandshakeBuilder postProcessHandshakeRequestAsClient(ClientHandshakeBuilder request) throws InstrumentException;
+    public abstract HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) throws InstrumentException;
 
-    public abstract HandshakeBuilder postProcessHandshakeResponseAsServer(ClientHandshake request, ServerHandshakeBuilder response) throws InstrumentException;
+    public abstract HandshakeBuilder postProcessHandshakeResponseAsServer(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException;
 
     public abstract List<Framedata> translateFrame(ByteBuffer buffer) throws InstrumentException, InvalidDataException;
 
@@ -250,8 +244,8 @@ public abstract class Draft {
      */
     public abstract Draft copyInstance();
 
-    public Handshakedata translateHandshake(ByteBuffer buf) throws InstrumentException {
-        return translateHandshakeHttp(buf, role);
+    public HandshakeBuilder translateHandshake(ByteBuffer buf) throws InstrumentException {
+        return translateHandshakeHttp(buf);
     }
 
     public int checkAlloc(int bytecount) throws InstrumentException {
@@ -260,8 +254,8 @@ public abstract class Draft {
         return bytecount;
     }
 
-    int readVersion(Handshakedata handshakedata) {
-        String vers = handshakedata.getFieldValue("Sec-WebSocket-Version");
+    int readVersion(HandshakeBuilder HandshakeBuilder) {
+        String vers = HandshakeBuilder.getFieldValue("Sec-WebSocket-Version");
         if (vers.length() > 0) {
             int v;
             try {
@@ -272,10 +266,6 @@ public abstract class Draft {
             }
         }
         return -1;
-    }
-
-    public void setParseMode(HandshakeState.Role role) {
-        this.role = role;
     }
 
     public String toString() {

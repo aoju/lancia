@@ -23,7 +23,7 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.framing;
+package org.aoju.lancia.socket.framing;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.Base64;

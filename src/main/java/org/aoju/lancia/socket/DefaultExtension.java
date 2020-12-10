@@ -26,7 +26,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.framing.Framedata;
 
 /**
  * Class which represents the normal websocket implementation specified by rfc6455.

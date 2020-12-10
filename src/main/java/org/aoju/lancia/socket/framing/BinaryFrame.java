@@ -23,17 +23,20 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.handshake;
+package org.aoju.lancia.socket.framing;
+
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * The interface for a client handshake
+ * Class to represent a binary frame
  */
-public interface ClientHandshake extends Handshakedata {
+public class BinaryFrame extends DataFrame {
 
     /**
-     * returns the HTTP Request-URI as defined by http://tools.ietf.org/html/rfc2616#section-5.1.2
-     *
-     * @return the HTTP Request-URI
+     * constructor which sets the opcode of this frame to binary
      */
-    String getResourceDescriptor();
+    public BinaryFrame() {
+        super(HandshakeState.Opcode.BINARY);
+    }
+
 }

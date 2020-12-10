@@ -23,17 +23,25 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.handshake;
+package org.aoju.lancia.socket.framing;
+
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * The interface for building a handshake for the client
+ * Class to represent a text frames
  */
-public interface ClientHandshakeBuilder extends HandshakeBuilder, ClientHandshake {
+public class TextFrame extends DataFrame {
 
     /**
-     * Set a specific resource descriptor
-     *
-     * @param resourceDescriptor the resource descriptior to set
+     * constructor which sets the opcode of this frame to text
      */
-    void setResourceDescriptor(String resourceDescriptor);
+    public TextFrame() {
+        super(HandshakeState.Opcode.TEXT);
+    }
+
+    @Override
+    public void isValid() {
+        super.isValid();
+    }
+
 }

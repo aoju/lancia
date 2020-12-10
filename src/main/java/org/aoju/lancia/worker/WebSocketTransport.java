@@ -29,8 +29,8 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
+import org.aoju.lancia.socket.HandshakeBuilder;
 import org.aoju.lancia.socket.WebSocketClient;
-import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
 
 import java.net.URI;
 import java.util.function.Consumer;
@@ -93,7 +93,7 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
     }
 
     @Override
-    public void onOpen(ServerHandshake serverHandshake) {
+    public void onOpen(HandshakeBuilder serverHandshake) {
         Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
     }
 

@@ -23,24 +23,20 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.handshake;
+package org.aoju.lancia.socket.framing;
+
+import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * Interface for the server handshake
+ * Class to represent a continuous frame
  */
-public interface ServerHandshake extends Handshakedata {
+public class ContinuousFrame extends DataFrame {
 
     /**
-     * Get the http status code
-     *
-     * @return the http status code
+     * constructor which sets the opcode of this frame to continuous
      */
-    short getHttpStatus();
+    public ContinuousFrame() {
+        super(HandshakeState.Opcode.CONTINUOUS);
+    }
 
-    /**
-     * Get the http status message
-     *
-     * @return the http status message
-     */
-    String getHttpStatusMessage();
 }

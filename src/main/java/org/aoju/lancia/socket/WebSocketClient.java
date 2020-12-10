@@ -26,11 +26,8 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.deleted.framing.CloseFrame;
-import org.aoju.lancia.socket.deleted.framing.Framedata;
-import org.aoju.lancia.socket.deleted.handshake.HandshakeImpl1Client;
-import org.aoju.lancia.socket.deleted.handshake.Handshakedata;
-import org.aoju.lancia.socket.deleted.handshake.ServerHandshake;
+import org.aoju.lancia.socket.framing.CloseFrame;
+import org.aoju.lancia.socket.framing.Framedata;
 
 import javax.net.SocketFactory;
 import javax.net.ssl.*;
@@ -571,7 +568,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
                         ? ":" + port
                         : "");
 
-        HandshakeImpl1Client handshake = new HandshakeImpl1Client();
+        HandshakeBuilder handshake = new HandshakeBuilder();
         handshake.setResourceDescriptor(path);
         handshake.put("Host", host);
         if (headers != null) {
@@ -606,9 +603,9 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
      * Calls subclass' implementation of <var>onOpen</var>.
      */
     @Override
-    public final void onWebsocketOpen(WebSocket conn, Handshakedata handshake) {
+    public final void onWebsocketOpen(WebSocket conn, HandshakeBuilder handshake) {
         startConnectionLostTimer();
-        onOpen((ServerHandshake) handshake);
+        onOpen(handshake);
         connectLatch.countDown();
     }
 
@@ -699,7 +696,7 @@ public abstract class WebSocketClient extends AbstractWebSocket implements Runna
      *
      * @param handshakedata The handshake of the websocket instance
      */
-    public abstract void onOpen(ServerHandshake handshakedata);
+    public abstract void onOpen(HandshakeBuilder handshakedata);
 
     /**
      * Callback for string messages received from the remote host

@@ -23,30 +23,40 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.framing;
+package org.aoju.lancia.socket.framing;
 
+import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.lancia.socket.HandshakeState;
+import org.aoju.lancia.socket.InvalidDataException;
 
 /**
- * Class to represent a pong frame
+ * Abstract class to represent control frames
  */
-public class PongFrame extends ControlFrame {
+public abstract class ControlFrame extends FramedataImpl1 {
 
     /**
-     * constructor which sets the opcode of this frame to pong
+     * Class to represent a control frame
+     *
+     * @param opcode the opcode to use
      */
-    public PongFrame() {
-        super(HandshakeState.Opcode.PONG);
+    public ControlFrame(HandshakeState.Opcode opcode) {
+        super(opcode);
     }
 
-    /**
-     * constructor which sets the opcode of this frame to ping copying over the payload of the ping
-     *
-     * @param pingFrame the PingFrame which payload is to copy
-     */
-    public PongFrame(PingFrame pingFrame) {
-        super(HandshakeState.Opcode.PONG);
-        setPayload(pingFrame.getPayloadData());
+    @Override
+    public void isValid() throws InvalidDataException {
+        if (!isFin()) {
+            throw new InstrumentException("Control frame cant have fin==false set");
+        }
+        if (isRSV1()) {
+            throw new InstrumentException("Control frame cant have rsv1==true set");
+        }
+        if (isRSV2()) {
+            throw new InstrumentException("Control frame cant have rsv2==true set");
+        }
+        if (isRSV3()) {
+            throw new InstrumentException("Control frame cant have rsv3==true set");
+        }
     }
 
 }

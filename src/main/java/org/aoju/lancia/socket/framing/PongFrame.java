@@ -23,25 +23,30 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package org.aoju.lancia.socket.deleted.framing;
+package org.aoju.lancia.socket.framing;
 
 import org.aoju.lancia.socket.HandshakeState;
 
 /**
- * Class to represent a text frames
+ * Class to represent a pong frame
  */
-public class TextFrame extends DataFrame {
+public class PongFrame extends ControlFrame {
 
     /**
-     * constructor which sets the opcode of this frame to text
+     * constructor which sets the opcode of this frame to pong
      */
-    public TextFrame() {
-        super(HandshakeState.Opcode.TEXT);
+    public PongFrame() {
+        super(HandshakeState.Opcode.PONG);
     }
 
-    @Override
-    public void isValid() {
-        super.isValid();
+    /**
+     * constructor which sets the opcode of this frame to ping copying over the payload of the ping
+     *
+     * @param pingFrame the PingFrame which payload is to copy
+     */
+    public PongFrame(PingFrame pingFrame) {
+        super(HandshakeState.Opcode.PONG);
+        setPayload(pingFrame.getPayloadData());
     }
 
 }

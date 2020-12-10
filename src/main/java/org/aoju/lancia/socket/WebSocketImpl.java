@@ -26,10 +26,9 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.deleted.framing.CloseFrame;
-import org.aoju.lancia.socket.deleted.framing.Framedata;
-import org.aoju.lancia.socket.deleted.framing.PingFrame;
-import org.aoju.lancia.socket.deleted.handshake.*;
+import org.aoju.lancia.socket.framing.CloseFrame;
+import org.aoju.lancia.socket.framing.Framedata;
+import org.aoju.lancia.socket.framing.PingFrame;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,17 +97,9 @@ public class WebSocketImpl implements WebSocket {
      */
     private volatile HandshakeState.ReadyState readyState = HandshakeState.ReadyState.NOT_YET_CONNECTED;
     /**
-     * A list of drafts available for this websocket
-     */
-    private List<Draft> knownDrafts;
-    /**
      * The draft which is used by this websocket
      */
     private Draft draft = null;
-    /**
-     * The role which this websocket takes in the connection
-     */
-    private HandshakeState.Role role;
     /**
      * the bytes of an incomplete received handshake
      */
@@ -116,7 +107,7 @@ public class WebSocketImpl implements WebSocket {
     /**
      * stores the handshake sent by this websocket ( Role.CLIENT only )
      */
-    private ClientHandshake handshakerequest = null;
+    private HandshakeBuilder handshakerequest = null;
     private String closemessage = null;
     private Integer closecode = null;
     private Boolean closedremotely = null;
@@ -139,12 +130,11 @@ public class WebSocketImpl implements WebSocket {
      * @param draft    The draft which should be used
      */
     public WebSocketImpl(WebSocketListener listener, Draft draft) {
-        if (listener == null || (draft == null && role == HandshakeState.Role.SERVER))// socket can be null because we want do be able to create the object without already having a bound channel
+        if (listener == null || draft == null)// socket can be null because we want do be able to create the object without already having a bound channel
             throw new IllegalArgumentException("parameters must not be null");
         this.outQueue = new LinkedBlockingQueue<>();
         inQueue = new LinkedBlockingQueue<>();
         this.wsl = listener;
-        this.role = HandshakeState.Role.CLIENT;
         if (draft != null)
             this.draft = draft.copyInstance();
     }
@@ -195,101 +185,33 @@ public class WebSocketImpl implements WebSocket {
             socketBuffer = tmpHandshakeBytes;
         }
         socketBuffer.mark();
-        HandshakeState handshakestate;
 
-        if (role == HandshakeState.Role.SERVER) {
-            if (draft == null) {
-                for (Draft d : knownDrafts) {
-                    d = d.copyInstance();
-                    try {
-                        d.setParseMode(role);
-                        socketBuffer.reset();
-                        Handshakedata tmphandshake = d.translateHandshake(socketBuffer);
-                        if (!(tmphandshake instanceof ClientHandshake)) {
-                            log.trace("Closing due to wrong handshake");
-                            closeConnectionDueToWrongHandshake(new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "wrong http function"));
-                            return false;
-                        }
-                        ClientHandshake handshake = (ClientHandshake) tmphandshake;
-                        handshakestate = d.acceptHandshakeAsServer(handshake);
-                        if (handshakestate == HandshakeState.MATCHED) {
-                            resourceDescriptor = handshake.getResourceDescriptor();
-                            ServerHandshakeBuilder response;
-                            try {
-                                response = wsl.onWebsocketHandshakeReceivedAsServer(this, d, handshake);
-                            } catch (InvalidDataException e) {
-                                log.trace("Closing due to wrong handshake. Possible handshake rejection", e);
-                                closeConnectionDueToWrongHandshake(e);
-                                return false;
-                            } catch (RuntimeException e) {
-                                log.error("Closing due to internal server error", e);
-                                wsl.onWebsocketError(this, e);
-                                closeConnectionDueToInternalServerError(e);
-                                return false;
-                            }
-                            write(d.createHandshake(d.postProcessHandshakeResponseAsServer(handshake, response)));
-                            draft = d;
-                            open(handshake);
-                            return true;
-                        }
-                    } catch (InstrumentException e) {
-                        // go on with an other draft
-                    }
-                }
-                if (draft == null) {
-                    log.trace("Closing due to protocol error: no draft matches");
-                    closeConnectionDueToWrongHandshake(new InvalidDataException(CloseFrame.PROTOCOL_ERROR, "no draft matches"));
-                }
+        HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
+        if (!(tmphandshake instanceof HandshakeBuilder)) {
+            log.trace("Closing due to protocol error: wrong http function");
+            flushAndClose(CloseFrame.PROTOCOL_ERROR, "wrong http function", false);
+            return false;
+        }
+        HandshakeBuilder handshake = tmphandshake;
+        HandshakeState handshakestate = draft.acceptHandshakeAsClient(handshakerequest, handshake);
+        if (handshakestate == HandshakeState.MATCHED) {
+            try {
+                wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, handshake);
+            } catch (InvalidDataException e) {
+                log.trace("Closing due to invalid data exception. Possible handshake rejection", e);
+                flushAndClose(e.getCloseCode(), e.getMessage(), false);
                 return false;
-            } else {
-                // special case for multiple step handshakes
-                Handshakedata tmphandshake = draft.translateHandshake(socketBuffer);
-                if (!(tmphandshake instanceof ClientHandshake)) {
-                    log.trace("Closing due to protocol error: wrong http function");
-                    flushAndClose(CloseFrame.PROTOCOL_ERROR, "wrong http function", false);
-                    return false;
-                }
-                ClientHandshake handshake = (ClientHandshake) tmphandshake;
-                handshakestate = draft.acceptHandshakeAsServer(handshake);
-
-                if (handshakestate == HandshakeState.MATCHED) {
-                    open(handshake);
-                    return true;
-                } else {
-                    log.trace("Closing due to protocol error: the handshake did finally not match");
-                    close(CloseFrame.PROTOCOL_ERROR, "the handshake did finally not match");
-                }
+            } catch (RuntimeException e) {
+                log.error("Closing since client was never connected", e);
+                wsl.onWebsocketError(this, e);
+                flushAndClose(CloseFrame.NEVER_CONNECTED, e.getMessage(), false);
                 return false;
             }
-        } else if (role == HandshakeState.Role.CLIENT) {
-            draft.setParseMode(role);
-            Handshakedata tmphandshake = draft.translateHandshake(socketBuffer);
-            if (!(tmphandshake instanceof ServerHandshake)) {
-                log.trace("Closing due to protocol error: wrong http function");
-                flushAndClose(CloseFrame.PROTOCOL_ERROR, "wrong http function", false);
-                return false;
-            }
-            ServerHandshake handshake = (ServerHandshake) tmphandshake;
-            handshakestate = draft.acceptHandshakeAsClient(handshakerequest, handshake);
-            if (handshakestate == HandshakeState.MATCHED) {
-                try {
-                    wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, handshake);
-                } catch (InvalidDataException e) {
-                    log.trace("Closing due to invalid data exception. Possible handshake rejection", e);
-                    flushAndClose(e.getCloseCode(), e.getMessage(), false);
-                    return false;
-                } catch (RuntimeException e) {
-                    log.error("Closing since client was never connected", e);
-                    wsl.onWebsocketError(this, e);
-                    flushAndClose(CloseFrame.NEVER_CONNECTED, e.getMessage(), false);
-                    return false;
-                }
-                open(handshake);
-                return true;
-            } else {
-                log.trace("Closing due to protocol error: draft {} refuses handshake", draft);
-                close(CloseFrame.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
-            }
+            open(handshake);
+            return true;
+        } else {
+            log.trace("Closing due to protocol error: draft {} refuses handshake", draft);
+            close(CloseFrame.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
         }
 
         return false;
@@ -471,9 +393,6 @@ public class WebSocketImpl implements WebSocket {
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.NONE) {
             closeConnection(CloseFrame.NORMAL, true);
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.ONEWAY) {
-            if (role == HandshakeState.Role.SERVER)
-                closeConnection(CloseFrame.ABNORMAL_CLOSE, true);
-            else
                 closeConnection(CloseFrame.NORMAL, true);
         } else {
             closeConnection(CloseFrame.ABNORMAL_CLOSE, true);
@@ -496,7 +415,7 @@ public class WebSocketImpl implements WebSocket {
     public void send(String text) {
         if (text == null)
             throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
-        send(draft.createFrames(text, role == HandshakeState.Role.CLIENT));
+        send(draft.createFrames(text, true));
     }
 
     /**
@@ -508,7 +427,7 @@ public class WebSocketImpl implements WebSocket {
     public void send(ByteBuffer bytes) {
         if (bytes == null)
             throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
-        send(draft.createFrames(bytes, role == HandshakeState.Role.CLIENT));
+        send(draft.createFrames(bytes, true));
     }
 
     @Override
@@ -559,7 +478,7 @@ public class WebSocketImpl implements WebSocket {
         return !this.outQueue.isEmpty();
     }
 
-    public void startHandshake(ClientHandshakeBuilder handshakedata) throws InstrumentException {
+    public void startHandshake(HandshakeBuilder handshakedata) throws InstrumentException {
         // Store the Handshake Request we are about to send
         this.handshakerequest = draft.postProcessHandshakeRequestAsClient(handshakedata);
 
@@ -602,7 +521,7 @@ public class WebSocketImpl implements WebSocket {
         }
     }
 
-    private void open(Handshakedata d) {
+    private void open(HandshakeBuilder d) {
         log.trace("open using draft: {}", draft);
         readyState = HandshakeState.ReadyState.OPEN;
         try {

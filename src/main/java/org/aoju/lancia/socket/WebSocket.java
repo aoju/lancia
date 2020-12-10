@@ -25,7 +25,7 @@
 
 package org.aoju.lancia.socket;
 
-import org.aoju.lancia.socket.deleted.framing.Framedata;
+import org.aoju.lancia.socket.framing.Framedata;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;

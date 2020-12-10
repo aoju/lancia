@@ -26,8 +26,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.lancia.socket.deleted.framing.*;
-import org.aoju.lancia.socket.deleted.handshake.*;
+import org.aoju.lancia.socket.framing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -180,7 +179,7 @@ public class Draft_6455 extends Draft {
     }
 
     @Override
-    public HandshakeState acceptHandshakeAsServer(ClientHandshake handshakedata) {
+    public HandshakeState acceptHandshakeAsServer(HandshakeBuilder handshakedata) {
         int v = readVersion(handshakedata);
         if (v != 13) {
             log.trace("acceptHandshakeAsServer - Wrong websocket version.");
@@ -220,7 +219,7 @@ public class Draft_6455 extends Draft {
     }
 
     @Override
-    public HandshakeState acceptHandshakeAsClient(ClientHandshake request, ServerHandshake response) throws InstrumentException {
+    public HandshakeState acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException {
         if (!basicAccept(response)) {
             log.trace("acceptHandshakeAsClient - Missing/wrong upgrade or connection in handshake.");
             return HandshakeState.NOT_MATCHED;
@@ -304,7 +303,7 @@ public class Draft_6455 extends Draft {
     }
 
     @Override
-    public ClientHandshakeBuilder postProcessHandshakeRequestAsClient(ClientHandshakeBuilder request) {
+    public HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) {
         request.put(UPGRADE, "websocket");
         request.put(CONNECTION, UPGRADE); // to respond to a Connection keep alives
         byte[] random = new byte[16];
@@ -338,7 +337,7 @@ public class Draft_6455 extends Draft {
     }
 
     @Override
-    public HandshakeBuilder postProcessHandshakeResponseAsServer(ClientHandshake request, ServerHandshakeBuilder response) throws InstrumentException {
+    public HandshakeBuilder postProcessHandshakeResponseAsServer(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException {
         response.put(UPGRADE, "websocket");
         response.put(CONNECTION, request.getFieldValue(CONNECTION)); // to respond to a Connection keep alives
         String seckey = request.getFieldValue(SEC_WEB_SOCKET_KEY);
@@ -379,7 +378,7 @@ public class Draft_6455 extends Draft {
 
     private ByteBuffer createByteBufferFromFramedata(Framedata framedata) {
         ByteBuffer mes = framedata.getPayloadData();
-        boolean mask = role == HandshakeState.Role.CLIENT;
+        boolean mask = true;
         int sizebytes = getSizeBytes(mes);
         ByteBuffer buf = ByteBuffer.allocate(1 + (sizebytes > 1 ? sizebytes + 1 : sizebytes) + (mask ? 4 : 0) + mes.remaining());
         byte optcode = fromOpcode(framedata.getOpcode());
