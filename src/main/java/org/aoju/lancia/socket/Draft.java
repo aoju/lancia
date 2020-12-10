@@ -148,12 +148,12 @@ public class Draft {
         return buf;
     }
 
-    private Framedata translateSingleFrame(ByteBuffer buffer) throws IncompleteException {
+    private Framedata translateSingleFrame(ByteBuffer buffer) {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
         int realpacketsize = 2;
-        translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
+        // translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
         byte b1 = buffer.get( /*0*/);
         boolean fin = b1 >> 8 != 0;
         boolean rsv1 = (b1 & 0x40) != 0;
@@ -210,9 +210,8 @@ public class Draft {
      * @param oldRealpacketsize the real packet size
      * @return the new payload data containing new payload length and new packet size
      * @throws InstrumentException thrown if a control frame has an invalid length
-     * @throws IncompleteException if the maxpacketsize is smaller than the realpackagesize
      */
-    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException, IncompleteException {
+    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException {
         int payloadlength = oldPayloadlength,
                 realpacketsize = oldRealpacketsize;
         if (optcode == HandshakeState.Opcode.PING || optcode == HandshakeState.Opcode.PONG || optcode == HandshakeState.Opcode.CLOSING) {
@@ -419,7 +418,7 @@ public class Draft {
         }
     }
 
-    public void processFrame(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
+    public void processFrame(WebSocketImpl webSocketImpl, Framedata frame) {
         HandshakeState.Opcode curop = frame.getOpcode();
         if (curop == HandshakeState.Opcode.CLOSING) {
             processFrameClosing(webSocketImpl);
@@ -429,7 +428,7 @@ public class Draft {
             processFrameBinary(webSocketImpl, frame);
         } else {
             Logger.error("non control or continious frame expected");
-            throw new InvalidDataException(Framedata.PROTOCOL_ERROR, "non control or continious frame expected");
+            throw new InstrumentException("non control or continious frame expected");
         }
     }
 
@@ -464,7 +463,7 @@ public class Draft {
      * @param webSocketImpl the websocket impl
      * @param frame         the frame
      */
-    private void processFrameText(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
+    private void processFrameText(WebSocketImpl webSocketImpl, Framedata frame) {
         try {
             webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, BufferKit.readLine(frame.getPayloadData()));
         } catch (RuntimeException e) {

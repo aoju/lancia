@@ -163,17 +163,12 @@ public class WebSocketImpl implements WebSocket {
 
     private void decodeFrames(ByteBuffer socketBuffer) {
         List<Framedata> frames;
-        try {
             frames = draft.translateFrame(socketBuffer);
             for (Framedata f : frames) {
                 Logger.trace("matched frame: {}", f);
                 draft.processFrame(this, f);
             }
-        } catch (InvalidDataException e) {
-            Logger.error("Closing due to invalid data in frame", e);
-            wsl.onWebsocketError(this, e);
-            close(e);
-        }
+
     }
 
     public synchronized void close(int code, String message, boolean remote) {
@@ -289,8 +284,8 @@ public class WebSocketImpl implements WebSocket {
         close(code, "", false);
     }
 
-    public void close(InvalidDataException e) {
-        close(e.getCloseCode(), e.getMessage(), false);
+    public void close(InstrumentException e) {
+        close(0, e.getMessage(), false);
     }
 
     /**
