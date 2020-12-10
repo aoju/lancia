@@ -26,6 +26,7 @@
 package org.aoju.lancia.kernel.page;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.network.RemoteAddress;
@@ -33,7 +34,6 @@ import org.aoju.lancia.nimble.network.ResponsePayload;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -142,7 +142,7 @@ public class Response {
                 if (response.get("base64Encoded").asBoolean()) {
                     contentPromise = Base64.getDecoder().decode(response.get("body").asText());
                 } else {
-                    contentPromise = response.get("body").asText().getBytes(StandardCharsets.UTF_8);
+                    contentPromise = response.get("body").asText().getBytes(Charset.UTF_8);
                 }
             }
         }
@@ -152,7 +152,7 @@ public class Response {
 
     public String text() throws InterruptedException {
         byte[] content = this.buffer();
-        return new String(content, StandardCharsets.UTF_8);
+        return new String(content, Charset.UTF_8);
     }
 
     public <T> T json(Class<T> clazz) throws IOException, InterruptedException {

@@ -26,6 +26,7 @@
 package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.lang.Assert;
+import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
@@ -35,7 +36,6 @@ import org.aoju.lancia.Variables;
 import org.aoju.lancia.option.*;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -249,7 +249,7 @@ public class DOMWorld {
             }
         }
         if (StringKit.isNotEmpty(options.getPath())) {
-            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), StandardCharsets.UTF_8);
+            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), Charset.UTF_8);
             String content = String.join("\n", contents) + "//# sourceURL=" + options.getPath().replaceAll("\n", Normal.EMPTY);
             ExecutionContext context = this.executionContext();
             ElementHandle evaluateHandle = (ElementHandle) context.evaluateHandle(addScriptContent(), Arrays.asList(content, options.getType()));
@@ -301,7 +301,7 @@ public class DOMWorld {
         }
 
         if (options != null && StringKit.isNotEmpty(options.getPath())) {
-            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), StandardCharsets.UTF_8);
+            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), Charset.UTF_8);
             String content = String.join("\n", contents) + "/*# sourceURL=" + options.getPath().replaceAll("\n", Normal.EMPTY) + "*/";
             ExecutionContext context = this.executionContext();
             ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleContent(), Arrays.asList(content));

@@ -441,7 +441,7 @@ public class Draft {
     public void processFrame(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
         HandshakeState.Opcode curop = frame.getOpcode();
         if (curop == HandshakeState.Opcode.CLOSING) {
-            processFrameClosing(webSocketImpl, frame);
+            processFrameClosing(webSocketImpl);
         } else if (curop == HandshakeState.Opcode.PING) {
             webSocketImpl.getWebSocketListener().onWebsocketPing(webSocketImpl, frame);
         } else if (curop == HandshakeState.Opcode.PONG) {
@@ -473,7 +473,7 @@ public class Draft {
             clearBufferList();
         }
         //Check if the whole payload is valid utf8, when the opcode indicates a text
-        if (curop == HandshakeState.Opcode.TEXT && !Base64.isValidUTF8(frame.getPayloadData())) {
+        if (curop == HandshakeState.Opcode.TEXT && !BufferKit.isValidUTF8(frame.getPayloadData(), 0)) {
             Logger.error("Protocol error: Payload is not UTF8");
             throw new InvalidDataException(Framedata.NO_UTF8);
         }
@@ -516,7 +516,7 @@ public class Draft {
      */
     private void processFrameText(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException {
         try {
-            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, Base64.stringUtf8(frame.getPayloadData()));
+            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, BufferKit.readLine(frame.getPayloadData()));
         } catch (RuntimeException e) {
             logRuntimeException(webSocketImpl, e);
         }
@@ -526,16 +526,10 @@ public class Draft {
      * Process the frame if it is a closing frame
      *
      * @param webSocketImpl the websocket impl
-     * @param frame         the frame
      */
-    private void processFrameClosing(WebSocketImpl webSocketImpl, Framedata frame) {
+    private void processFrameClosing(WebSocketImpl webSocketImpl) {
         int code = Framedata.NOCODE;
         String reason = "";
-        if (frame instanceof Framedata) {
-           /* CloseFrame cf = (CloseFrame) frame;
-            code = cf.getCloseCode();
-            reason = cf.getMessage();*/
-        }
         if (webSocketImpl.getReadyState() == HandshakeState.ReadyState.CLOSING) {
             // complete the close handshake by disconnecting
             webSocketImpl.closeConnection(code, reason, true);

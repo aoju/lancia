@@ -27,13 +27,13 @@ package org.aoju.lancia.kernel.page;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.lang.Assert;
+import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.ErrorCode;
 import org.aoju.lancia.nimble.HeaderEntry;
 import org.aoju.lancia.nimble.network.RequestWillPayload;
 import org.aoju.lancia.worker.CDPSession;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -213,7 +213,7 @@ public class Request {
             params.put("method", method);
         }
         if (StringKit.isNotEmpty(postData)) {
-            params.put("postData", new String(Base64.getEncoder().encode(postData.getBytes()), StandardCharsets.UTF_8));
+            params.put("postData", new String(Base64.getEncoder().encode(postData.getBytes()), Charset.UTF_8));
         }
 
         if (headers != null && headers.size() > 0) {
@@ -248,7 +248,7 @@ public class Request {
         setInterceptionHandled(true);
         byte[] responseBody = null;
         if (StringKit.isNotEmpty(body)) {
-            responseBody = body.getBytes(StandardCharsets.UTF_8);
+            responseBody = body.getBytes(Charset.UTF_8);
         }
         Map<String, String> responseHeaders = new HashMap<>();
 
