@@ -8,31 +8,6 @@ public abstract class WebSocketAdapter implements WebSocketListener {
     private Framedata pingFrame;
 
     /**
-     * This default implementation does not do anything. Go ahead and overwrite it.
-     *
-     * @see WebSocketListener#onWebsocketHandshakeReceivedAsServer(WebSocket, Draft, HandshakeBuilder)
-     */
-    @Override
-    public HandshakeBuilder onWebsocketHandshakeReceivedAsServer(WebSocket conn, Draft draft, HandshakeBuilder request) throws InvalidDataException {
-        return new HandshakeBuilder();
-    }
-
-    @Override
-    public void onWebsocketHandshakeReceivedAsClient(WebSocket conn, HandshakeBuilder request, HandshakeBuilder response) throws InvalidDataException {
-        //To overwrite
-    }
-
-    /**
-     * This default implementation does not do anything which will cause the connections to always progress.
-     *
-     * @see WebSocketListener#onWebsocketHandshakeSentAsClient(WebSocket, HandshakeBuilder)
-     */
-    @Override
-    public void onWebsocketHandshakeSentAsClient(WebSocket conn, HandshakeBuilder request) {
-        //To overwrite
-    }
-
-    /**
      * This default implementation will send a pong in response to the received ping.
      * The pong frame will have the same payload as the ping frame.
      *
@@ -41,16 +16,6 @@ public abstract class WebSocketAdapter implements WebSocketListener {
     @Override
     public void onWebsocketPing(WebSocket conn, Framedata f) {
         conn.sendFrame(f);
-    }
-
-    /**
-     * This default implementation does not do anything. Go ahead and overwrite it.
-     *
-     * @see WebSocketListener#onWebsocketPong(WebSocket, Framedata)
-     */
-    @Override
-    public void onWebsocketPong(WebSocket conn, Framedata f) {
-        //To overwrite
     }
 
     /**

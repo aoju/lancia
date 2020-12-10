@@ -11,40 +11,6 @@ import java.nio.ByteBuffer;
 public interface WebSocketListener {
 
     /**
-     * Called on the server side when the socket connection is first established, and the WebSocket
-     * handshake has been received. This method allows to deny connections based on the received handshake.<br>
-     * By default this method only requires protocol compliance.
-     *
-     * @param conn    The WebSocket related to this event
-     * @param draft   The protocol draft the client uses to connect
-     * @param request The opening http message send by the client. Can be used to access additional fields like cookies.
-     * @return Returns an incomplete handshake containing all optional fields
-     * @throws InvalidDataException Throwing this exception will cause this handshake to be rejected
-     */
-    HandshakeBuilder onWebsocketHandshakeReceivedAsServer(WebSocket conn, Draft draft, HandshakeBuilder request) throws InvalidDataException;
-
-    /**
-     * Called on the client side when the socket connection is first established, and the WebSocketImpl
-     * handshake response has been received.
-     *
-     * @param conn     The WebSocket related to this event
-     * @param request  The handshake initially send out to the server by this websocket.
-     * @param response The handshake the server sent in response to the request.
-     * @throws InvalidDataException Allows the client to reject the connection with the server in respect of its handshake response.
-     */
-    void onWebsocketHandshakeReceivedAsClient(WebSocket conn, HandshakeBuilder request, HandshakeBuilder response) throws InvalidDataException;
-
-    /**
-     * Called on the client side when the socket connection is first established, and the WebSocketImpl
-     * handshake has just been sent.
-     *
-     * @param conn    The WebSocket related to this event
-     * @param request The handshake sent to the server by this websocket
-     * @throws InvalidDataException Allows the client to stop the connection from progressing
-     */
-    void onWebsocketHandshakeSentAsClient(WebSocket conn, HandshakeBuilder request) throws InvalidDataException;
-
-    /**
      * Called when an entire text frame has been received. Do whatever you want
      * here...
      *
@@ -128,14 +94,6 @@ public interface WebSocketListener {
      * @return PingFrame to be sent.
      */
     Framedata onPreparePing(WebSocket conn);
-
-    /**
-     * Called when a pong frame is received.
-     *
-     * @param conn The <tt>WebSocket</tt> instance this event is occuring on.
-     * @param f    The pong frame. Control frames may contain payload.
-     **/
-    void onWebsocketPong(WebSocket conn, Framedata f);
 
     /**
      * This method is used to inform the selector thread that there is data queued to be written to the socket.

@@ -1,8 +1,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.aoju.bus.logger.Logger;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -46,12 +45,6 @@ public class WebSocketImpl implements WebSocket {
      * Queue of buffers that need to be processed
      */
     public final BlockingQueue<ByteBuffer> inQueue;
-    /**
-     * Logger instance
-     *
-     * @since 1.4.0
-     */
-    private final Logger log = LoggerFactory.getLogger(WebSocketImpl.class);
     /**
      * The listener to notify of WebSocket events.
      */
@@ -118,7 +111,7 @@ public class WebSocketImpl implements WebSocket {
      */
     public void decode(ByteBuffer socketBuffer) {
         assert (socketBuffer.hasRemaining());
-        log.trace("process({}): ({})", socketBuffer.remaining(), (socketBuffer.remaining() > 1000 ? "too big to display" : new String(socketBuffer.array(), socketBuffer.position(), socketBuffer.remaining())));
+        Logger.trace("process({}): ({})", socketBuffer.remaining(), (socketBuffer.remaining() > 1000 ? "too big to display" : new String(socketBuffer.array(), socketBuffer.position(), socketBuffer.remaining())));
 
         if (readyState != HandshakeState.ReadyState.NOT_YET_CONNECTED) {
             if (readyState == HandshakeState.ReadyState.OPEN) {
@@ -160,29 +153,29 @@ public class WebSocketImpl implements WebSocket {
 
         HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
-            log.trace("Closing due to protocol error: wrong http function");
+            Logger.trace("Closing due to protocol error: wrong http function");
             flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
             return false;
         }
         HandshakeBuilder handshake = tmphandshake;
         HandshakeState handshakestate = draft.acceptHandshakeAsClient(handshakerequest, handshake);
         if (handshakestate == HandshakeState.MATCHED) {
-            try {
-                wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, handshake);
+           /* try {
+              //  wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, handshake);
             } catch (InvalidDataException e) {
-                log.trace("Closing due to invalid data exception. Possible handshake rejection", e);
+                Logger.trace("Closing due to invalid data exception. Possible handshake rejection", e);
                 flushAndClose(e.getCloseCode(), e.getMessage(), false);
                 return false;
             } catch (RuntimeException e) {
-                log.error("Closing since client was never connected", e);
+                Logger.error("Closing since client was never connected", e);
                 wsl.onWebsocketError(this, e);
                 flushAndClose(Framedata.NEVER_CONNECTED, e.getMessage(), false);
                 return false;
-            }
+            }*/
             open(handshake);
             return true;
         } else {
-            log.trace("Closing due to protocol error: draft {} refuses handshake", draft);
+            Logger.trace("Closing due to protocol error: draft {} refuses handshake", draft);
             close(Framedata.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
         }
 
@@ -194,11 +187,11 @@ public class WebSocketImpl implements WebSocket {
         try {
             frames = draft.translateFrame(socketBuffer);
             for (Framedata f : frames) {
-                log.trace("matched frame: {}", f);
+                Logger.trace("matched frame: {}", f);
                 draft.processFrame(this, f);
             }
         } catch (InvalidDataException e) {
-            log.error("Closing due to invalid data in frame", e);
+            Logger.error("Closing due to invalid data in frame", e);
             wsl.onWebsocketError(this, e);
             close(e);
         }
@@ -269,7 +262,7 @@ public class WebSocketImpl implements WebSocket {
                             sendFrame(framedata);
                         }
                     } catch (InvalidDataException e) {
-                        log.error("generated frame is invalid", e);
+                        Logger.error("generated frame is invalid", e);
                         wsl.onWebsocketError(this, e);
                         flushAndClose(Framedata.ABNORMAL_CLOSE, "generated frame is invalid", false);
                     }
@@ -349,7 +342,7 @@ public class WebSocketImpl implements WebSocket {
         try {
             wsl.onWebsocketClosing(this, code, message, remote);
         } catch (RuntimeException e) {
-            log.error("Exception in onWebsocketClosing", e);
+            Logger.error("Exception in onWebsocketClosing", e);
             wsl.onWebsocketError(this, e);
         }
         if (draft != null)
@@ -416,7 +409,7 @@ public class WebSocketImpl implements WebSocket {
         }
         ArrayList<ByteBuffer> outgoingFrames = new ArrayList<>();
         for (Framedata f : frames) {
-            log.trace("send frame: {}", f);
+            Logger.trace("send frame: {}", f);
             outgoingFrames.add(draft.createBinaryFrame(f));
         }
         write(outgoingFrames);
@@ -458,23 +451,23 @@ public class WebSocketImpl implements WebSocket {
         assert (resourceDescriptor != null);
 
         // Notify Listener
-        try {
+ /*       try {
             wsl.onWebsocketHandshakeSentAsClient(this, this.handshakerequest);
         } catch (InvalidDataException e) {
             // Stop if the client code throws an exception
             throw new InstrumentException("Handshake data rejected by client.");
         } catch (RuntimeException e) {
-            log.error("Exception in startHandshake", e);
+            Logger.error("Exception in startHandshake", e);
             wsl.onWebsocketError(this, e);
             throw new InstrumentException("rejected because of " + e);
-        }
+        }*/
 
         // Send
         write(draft.createHandshake(this.handshakerequest));
     }
 
     private void write(ByteBuffer buf) {
-        log.trace("write({}): {}", buf.remaining(), buf.remaining() > 1000 ? "too big to display" : new String(buf.array()));
+        Logger.trace("write({}): {}", buf.remaining(), buf.remaining() > 1000 ? "too big to display" : new String(buf.array()));
 
         outQueue.add(buf);
         wsl.onWriteDemand(this);
@@ -494,7 +487,7 @@ public class WebSocketImpl implements WebSocket {
     }
 
     private void open(HandshakeBuilder d) {
-        log.trace("open using draft: {}", draft);
+        Logger.trace("open using draft: {}", draft);
         readyState = HandshakeState.ReadyState.OPEN;
         try {
             wsl.onWebsocketOpen(this, d);
