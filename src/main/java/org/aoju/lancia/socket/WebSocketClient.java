@@ -169,8 +169,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
 
     /**
      * Reinitiates the websocket connection. This method does not block.
-     *
-     * @since 1.3.8
+
      */
     public void reconnect() {
         reset();
@@ -179,8 +178,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
 
     /**
      * Reset everything relevant to allow a reconnect
-     *
-     * @since 1.3.8
+
      */
     private void reset() {
         Thread current = Thread.currentThread();
