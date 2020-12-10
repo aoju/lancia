@@ -209,7 +209,7 @@ public class Framedata {
         }
     }
 
-    public void isValid() throws InvalidDataException {
+    public void isValid() {
         if (!isFin()) {
             throw new InstrumentException("Control frame cant have fin==false set");
         }

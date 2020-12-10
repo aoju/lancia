@@ -160,18 +160,6 @@ public class WebSocketImpl implements WebSocket {
         HandshakeBuilder handshake = tmphandshake;
         HandshakeState handshakestate = draft.acceptHandshakeAsClient(handshakerequest, handshake);
         if (handshakestate == HandshakeState.MATCHED) {
-           /* try {
-              //  wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, handshake);
-            } catch (InvalidDataException e) {
-                Logger.trace("Closing due to invalid data exception. Possible handshake rejection", e);
-                flushAndClose(e.getCloseCode(), e.getMessage(), false);
-                return false;
-            } catch (RuntimeException e) {
-                Logger.error("Closing since client was never connected", e);
-                wsl.onWebsocketError(this, e);
-                flushAndClose(Framedata.NEVER_CONNECTED, e.getMessage(), false);
-                return false;
-            }*/
             open(handshake);
             return true;
         } else {
@@ -197,45 +185,6 @@ public class WebSocketImpl implements WebSocket {
         }
     }
 
-    /**
-     * Close the connection if the received handshake was not correct
-     *
-     * @param exception the InvalidDataException causing this problem
-     */
-    private void closeConnectionDueToWrongHandshake(InvalidDataException exception) {
-        write(generateHttpResponseDueToError(404));
-        flushAndClose(exception.getCloseCode(), exception.getMessage(), false);
-    }
-
-    /**
-     * Close the connection if there was a server error by a RuntimeException
-     *
-     * @param exception the RuntimeException causing this problem
-     */
-    private void closeConnectionDueToInternalServerError(RuntimeException exception) {
-        write(generateHttpResponseDueToError(500));
-        flushAndClose(Framedata.NEVER_CONNECTED, exception.getMessage(), false);
-    }
-
-    /**
-     * Generate a simple response for the corresponding endpoint to indicate some error
-     *
-     * @param errorCode the http error code
-     * @return the complete response as ByteBuffer
-     */
-    private ByteBuffer generateHttpResponseDueToError(int errorCode) {
-        String errorCodeDescription;
-        switch (errorCode) {
-            case 404:
-                errorCodeDescription = "404 WebSocket Upgrade Failure";
-                break;
-            case 500:
-            default:
-                errorCodeDescription = "500 Internal Server Error";
-        }
-        return ByteBuffer.wrap(Base64.asciiBytes("HTTP/1.1 " + errorCodeDescription + "\r\nContent-Type: text/html\nServer: TooTallNate Java-WebSocket\r\nContent-Length: " + (48 + errorCodeDescription.length()) + "\r\n\r\n<html><head></head><body><h1>" + errorCodeDescription + "</h1></body></html>"));
-    }
-
     public synchronized void close(int code, String message, boolean remote) {
         if (readyState != HandshakeState.ReadyState.CLOSING && readyState != HandshakeState.ReadyState.CLOSED) {
             if (readyState == HandshakeState.ReadyState.OPEN) {
@@ -246,18 +195,11 @@ public class WebSocketImpl implements WebSocket {
                     return;
                 }
                 if (draft.getCloseHandshakeType() != HandshakeState.CloseHandshakeType.NONE) {
-                    try {
-                        if (isOpen()) {
-                            Framedata framedata = new Framedata(HandshakeState.Opcode.CLOSING);
-                           /* closeFrame.setReason(message);
-                            closeFrame.setCode(code);*/
-                            framedata.isValid();
-                            sendFrame(framedata);
-                        }
-                    } catch (InvalidDataException e) {
-                        Logger.error("generated frame is invalid", e);
-                        wsl.onWebsocketError(this, e);
-                        flushAndClose(Framedata.ABNORMAL_CLOSE, "generated frame is invalid", false);
+
+                    if (isOpen()) {
+                        Framedata framedata = new Framedata(HandshakeState.Opcode.CLOSING);
+                        framedata.isValid();
+                        sendFrame(framedata);
                     }
                 }
                 flushAndClose(code, message, remote);
@@ -437,19 +379,6 @@ public class WebSocketImpl implements WebSocket {
         resourceDescriptor = handshakedata.getResourceDescriptor();
         assert (resourceDescriptor != null);
 
-        // Notify Listener
- /*       try {
-            wsl.onWebsocketHandshakeSentAsClient(this, this.handshakerequest);
-        } catch (InvalidDataException e) {
-            // Stop if the client code throws an exception
-            throw new InstrumentException("Handshake data rejected by client.");
-        } catch (RuntimeException e) {
-            Logger.error("Exception in startHandshake", e);
-            wsl.onWebsocketError(this, e);
-            throw new InstrumentException("rejected because of " + e);
-        }*/
-
-        // Send
         write(draft.createHandshake(this.handshakerequest));
     }
 

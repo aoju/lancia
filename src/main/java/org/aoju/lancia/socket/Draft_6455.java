@@ -283,7 +283,7 @@ public class Draft_6455 extends Draft {
         return buf;
     }
 
-    private Framedata translateSingleFrame(ByteBuffer buffer) throws IncompleteException, InvalidDataException {
+    private Framedata translateSingleFrame(ByteBuffer buffer) throws IncompleteException {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
@@ -460,7 +460,7 @@ public class Draft_6455 extends Draft {
     }
 
     @Override
-    public List<Framedata> translateFrame(ByteBuffer buffer) throws InvalidDataException {
+    public List<Framedata> translateFrame(ByteBuffer buffer) {
         while (true) {
             List<Framedata> frames = new LinkedList<>();
             Framedata cur;
@@ -499,7 +499,6 @@ public class Draft_6455 extends Draft {
                     cur = translateSingleFrame(buffer);
                     frames.add(cur);
                 } catch (IncompleteException e) {
-                    // remember the incomplete data
                     buffer.reset();
                     int pref = e.getPreferredSize();
                     incompleteframe = ByteBuffer.allocate(checkAlloc(pref));
@@ -516,11 +515,8 @@ public class Draft_6455 extends Draft {
         Framedata curframe = new Framedata(HandshakeState.Opcode.BINARY);
         curframe.setPayload(binary);
         curframe.setTransferemasked(mask);
-        try {
-            curframe.isValid();
-        } catch (InvalidDataException e) {
-            e.printStackTrace();
-        }
+        curframe.isValid();
+
         return Collections.singletonList(curframe);
     }
 
@@ -529,11 +525,7 @@ public class Draft_6455 extends Draft {
         Framedata curframe = new Framedata(HandshakeState.Opcode.TEXT);
         curframe.setPayload(ByteBuffer.wrap(Base64.utf8Bytes(text)));
         curframe.setTransferemasked(mask);
-        try {
-            curframe.isValid();
-        } catch (InvalidDataException e) {
-            e.printStackTrace();
-        }
+        curframe.isValid();
         return Collections.singletonList(curframe);
     }
 
@@ -845,7 +837,7 @@ public class Draft_6455 extends Draft {
         Draft_6455 that = (Draft_6455) o;
 
         if (maxFrameSize != that.getMaxFrameSize()) return false;
-       // if (extension != null ? !extension.equals(that.getExtension()) : that.getExtension() != null) return false;
+        // if (extension != null ? !extension.equals(that.getExtension()) : that.getExtension() != null) return false;
         return protocol != null ? protocol.equals(that.getProtocol()) : that.getProtocol() == null;
     }
 

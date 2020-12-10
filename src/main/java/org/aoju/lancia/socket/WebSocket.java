@@ -50,7 +50,7 @@ public interface WebSocket {
      * @param bytes the binary data to send
      * @throws IllegalArgumentException the data is null
      */
-    void send(ByteBuffer bytes) throws InvalidDataException;
+    void send(ByteBuffer bytes);
 
     /**
      * Send Binary data (plain bytes) to the other end.
@@ -58,7 +58,7 @@ public interface WebSocket {
      * @param bytes the byte array to send
      * @throws IllegalArgumentException the data is null
      */
-    void send(byte[] bytes) throws InvalidDataException;
+    void send(byte[] bytes);
 
     /**
      * Send a frame to the other end

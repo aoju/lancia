@@ -113,7 +113,7 @@ public abstract class Draft {
      * @param frame         the frame which is supposed to be handled
      * @throws InstrumentException will be thrown on invalid data
      */
-    public abstract void processFrame(WebSocketImpl webSocketImpl, Framedata frame) throws InstrumentException, InvalidDataException;
+    public abstract void processFrame(WebSocketImpl webSocketImpl, Framedata frame) throws InvalidDataException;
 
     public List<Framedata> continuousFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin) {
         if (op != HandshakeState.Opcode.BINARY && op != HandshakeState.Opcode.TEXT) {
@@ -132,11 +132,7 @@ public abstract class Draft {
         }
         bui.setPayload(buffer);
         bui.setFin(fin);
-        try {
-            bui.isValid();
-        } catch (InstrumentException | InvalidDataException e) {
-            throw new IllegalArgumentException(e); // can only happen when one builds close frames(Opcode.Close)
-        }
+        bui.isValid();
         if (fin) {
             continuousFrameType = null;
         } else {
@@ -205,20 +201,6 @@ public abstract class Draft {
         if (bytecount < 0)
             throw new InstrumentException("Negative count:" + Framedata.PROTOCOL_ERROR);
         return bytecount;
-    }
-
-    int readVersion(HandshakeBuilder HandshakeBuilder) {
-        String vers = HandshakeBuilder.getFieldValue("Sec-WebSocket-Version");
-        if (vers.length() > 0) {
-            int v;
-            try {
-                v = new Integer(vers.trim());
-                return v;
-            } catch (NumberFormatException e) {
-                return -1;
-            }
-        }
-        return -1;
     }
 
     public String toString() {
