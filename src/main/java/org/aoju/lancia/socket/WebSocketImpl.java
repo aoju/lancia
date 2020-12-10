@@ -157,17 +157,8 @@ public class WebSocketImpl implements WebSocket {
             flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
             return false;
         }
-        HandshakeBuilder handshake = tmphandshake;
-        HandshakeState handshakestate = draft.acceptHandshakeAsClient(handshakerequest, handshake);
-        if (handshakestate == HandshakeState.MATCHED) {
-            open(handshake);
-            return true;
-        } else {
-            Logger.trace("Closing due to protocol error: draft {} refuses handshake", draft);
-            close(Framedata.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
-        }
-
-        return false;
+        open(tmphandshake);
+        return true;
     }
 
     private void decodeFrames(ByteBuffer socketBuffer) {
@@ -309,7 +300,7 @@ public class WebSocketImpl implements WebSocket {
     public void send(String text) {
         if (text == null)
             throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
-        send(draft.createFrames(text, true));
+        send(draft.createFrames(text));
     }
 
     /**
@@ -321,7 +312,7 @@ public class WebSocketImpl implements WebSocket {
     public void send(ByteBuffer bytes) {
         if (bytes == null)
             throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
-        send(draft.createFrames(bytes, true));
+        send(draft.createFrames(bytes));
     }
 
     @Override

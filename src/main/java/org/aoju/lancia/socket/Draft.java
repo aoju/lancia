@@ -1,6 +1,8 @@
 package org.aoju.lancia.socket;
 
+import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.toolkit.BufferKit;
 import org.aoju.bus.core.toolkit.RandomKit;
 import org.aoju.bus.logger.Logger;
 
@@ -14,16 +16,15 @@ import java.util.*;
  */
 public class Draft {
 
-    protected HandshakeState.Opcode continuousFrameType = null;
+    /**
+     * Attribute for the maximum allowed size of a frame
+     */
+    private final int maxBufferSize;
     /**
      * Handshake specific field for the key
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
 
-    /**
-     * Handshake specific field for the accept
-     */
-    private static final String SEC_WEB_SOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
     /**
      * Handshake specific field for the upgrade
@@ -39,18 +40,11 @@ public class Draft {
      * Attribute for the payload of the current continuous frame
      */
     private final List<ByteBuffer> byteBufferList;
-
-    /**
-     * Attribute for the maximum allowed size of a frame
-     *
-     * @since 1.4.0
-     */
-    private final int maxFrameSize;
-
+    protected HandshakeState.Opcode opcode = null;
     /**
      * Attribute for the current incomplete frame
      */
-    private ByteBuffer incompleteframe;
+    private ByteBuffer byteBuffer;
 
     /**
      * Constructor for the websocket protocol specified by RFC 6455 with custom extensions and protocols
@@ -62,50 +56,46 @@ public class Draft {
     /**
      * Constructor for the websocket protocol specified by RFC 6455 with custom extensions and protocols
      *
-     * @param inputMaxFrameSize the maximum allowed size of a frame (the real payload size, decoded frames can be bigger)
+     * @param inputMaxBufferSize the maximum allowed size of a frame (the real payload size, decoded frames can be bigger)
      */
-    public Draft(int inputMaxFrameSize) {
-        if (inputMaxFrameSize < 1) {
+    public Draft(int inputMaxBufferSize) {
+        if (inputMaxBufferSize < 1) {
             throw new IllegalArgumentException();
         }
 
-        byteBufferList = new ArrayList<>();
-        maxFrameSize = inputMaxFrameSize;
+        this.byteBufferList = new ArrayList<>();
+        this.maxBufferSize = inputMaxBufferSize;
     }
 
-    public static ByteBuffer readLine(ByteBuffer buf) {
-        ByteBuffer sbuf = ByteBuffer.allocate(buf.remaining());
-        byte prev;
-        byte cur = '0';
-        while (buf.hasRemaining()) {
-            prev = cur;
-            cur = buf.get();
-            sbuf.put(cur);
-            if (prev == (byte) '\r' && cur == (byte) '\n') {
-                sbuf.limit(sbuf.position() - 2);
-                sbuf.position(0);
-                return sbuf;
+    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf) throws InstrumentException {
+        String line = BufferKit.readLine(buf, Charset.UTF_8);
+        if (line == null)
+            throw new InstrumentException("" + buf.capacity() + 128);
 
-            }
+        String[] firstLineTokens = line.split(" ", 3);// eg. HTTP/1.1 101 Switching the Protocols
+        if (firstLineTokens.length != 3) {
+            throw new InstrumentException();
         }
-        buf.position(buf.position() - sbuf.position());
-        return null;
+
+        HandshakeBuilder handshake = translateHandshakeHttpClient(firstLineTokens, line);
+
+        line = BufferKit.readLine(buf, Charset.UTF_8);
+        while (line != null && line.length() > 0) {
+            String[] pair = line.split(":", 2);
+            if (pair.length != 2)
+                throw new InstrumentException("not an http header");
+            // If the handshake contains already a specific key, append the new value
+            if (handshake.hasFieldValue(pair[0])) {
+                handshake.put(pair[0], handshake.getFieldValue(pair[0]) + "; " + pair[1].replaceFirst("^ +", ""));
+            } else {
+                handshake.put(pair[0], pair[1].replaceFirst("^ +", ""));
+            }
+            line = BufferKit.readLine(buf, Charset.UTF_8);
+        }
+        if (line == null)
+            throw new InstrumentException();
+        return handshake;
     }
-
-    public HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) {
-        request.put(UPGRADE, "websocket");
-        request.put(CONNECTION, UPGRADE);
-        request.put(SEC_WEB_SOCKET_KEY, RandomKit.randomString(16));
-        request.put("Sec-WebSocket-Version", "13");
-
-        return request;
-    }
-
-    public static String readStringLine(ByteBuffer buf) {
-        ByteBuffer b = readLine(buf);
-        return b == null ? null : Base64.stringAscii(b.array(), 0, b.limit());
-    }
-
 
     public ByteBuffer createBinaryFrame(Framedata framedata) {
         if (Logger.get().isTrace())
@@ -251,24 +241,12 @@ public class Draft {
         array[1] = realpacketsize;
     }
 
-    /**
-     * Check if the frame size exceeds the allowed limit
-     *
-     * @param length the current payload length
-     */
-    private void translateSingleFrameCheckLengthLimit(long length) {
-        if (length > Integer.MAX_VALUE) {
-            Logger.trace("Limit exedeed: Payloadsize is to big...");
-            throw new InstrumentException("Payloadsize is to big...");
-        }
-        if (length > maxFrameSize) {
-            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxFrameSize, length);
-            throw new InstrumentException("Payload limit reached.", maxFrameSize);
-        }
-        if (length < 0) {
-            Logger.trace("Limit underflow: Payloadsize is to little...");
-            throw new InstrumentException("Payloadsize is to little...");
-        }
+    public HandshakeBuilder postProcessHandshakeRequestAsClient(HandshakeBuilder request) {
+        request.put(UPGRADE, "websocket");
+        request.put(CONNECTION, UPGRADE); // to respond to a Connection keep alives
+        request.put(SEC_WEB_SOCKET_KEY, RandomKit.randomString(16));
+        request.put("Sec-WebSocket-Version", "13");// overwriting the previouss
+        return request;
     }
 
     /**
@@ -332,36 +310,55 @@ public class Draft {
         return 8;
     }
 
+    /**
+     * Check if the frame size exceeds the allowed limit
+     *
+     * @param length the current payload length
+     */
+    private void translateSingleFrameCheckLengthLimit(long length) {
+        if (length > Integer.MAX_VALUE) {
+            Logger.trace("Limit exedeed: Payloadsize is to big...");
+            throw new InstrumentException("Payloadsize is to big...");
+        }
+        if (length > maxBufferSize) {
+            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxBufferSize, length);
+            throw new InstrumentException("Payload limit reached.", maxBufferSize);
+        }
+        if (length < 0) {
+            Logger.trace("Limit underflow: Payloadsize is to little...");
+            throw new InstrumentException("Payloadsize is to little...");
+        }
+    }
 
     public List<Framedata> translateFrame(ByteBuffer buffer) {
         while (true) {
             List<Framedata> frames = new LinkedList<>();
             Framedata cur;
-            if (incompleteframe != null) {
+            if (byteBuffer != null) {
                 // complete an incomplete frame
                 try {
                     buffer.mark();
                     int availableNextByteCount = buffer.remaining();// The number of bytes received
-                    int expectedNextByteCount = incompleteframe.remaining();// The number of bytes to complete the incomplete frame
+                    int expectedNextByteCount = byteBuffer.remaining();// The number of bytes to complete the incomplete frame
 
                     if (expectedNextByteCount > availableNextByteCount) {
                         // did not receive enough bytes to complete the frame
-                        incompleteframe.put(buffer.array(), buffer.position(), availableNextByteCount);
+                        byteBuffer.put(buffer.array(), buffer.position(), availableNextByteCount);
                         buffer.position(buffer.position() + availableNextByteCount);
                         return Collections.emptyList();
                     }
-                    incompleteframe.put(buffer.array(), buffer.position(), expectedNextByteCount);
+                    byteBuffer.put(buffer.array(), buffer.position(), expectedNextByteCount);
                     buffer.position(buffer.position() + expectedNextByteCount);
-                    cur = translateSingleFrame((ByteBuffer) incompleteframe.duplicate().position(0));
+                    cur = translateSingleFrame((ByteBuffer) byteBuffer.duplicate().position(0));
                     frames.add(cur);
-                    incompleteframe = null;
+                    byteBuffer = null;
                 } catch (IncompleteException e) {
                     // extending as much as suggested
                     ByteBuffer extendedframe = ByteBuffer.allocate(checkAlloc(e.getPreferredSize()));
-                    assert (extendedframe.limit() > incompleteframe.limit());
-                    incompleteframe.rewind();
-                    extendedframe.put(incompleteframe);
-                    incompleteframe = extendedframe;
+                    assert (extendedframe.limit() > byteBuffer.limit());
+                    byteBuffer.rewind();
+                    extendedframe.put(byteBuffer);
+                    byteBuffer = extendedframe;
                     continue;
                 }
             }
@@ -374,8 +371,8 @@ public class Draft {
                 } catch (IncompleteException e) {
                     buffer.reset();
                     int pref = e.getPreferredSize();
-                    incompleteframe = ByteBuffer.allocate(checkAlloc(pref));
-                    incompleteframe.put(buffer);
+                    byteBuffer = ByteBuffer.allocate(checkAlloc(pref));
+                    byteBuffer.put(buffer);
                     break;
                 }
             }
@@ -383,24 +380,18 @@ public class Draft {
         }
     }
 
-    public List<Framedata> createFrames(ByteBuffer binary, boolean mask) {
+    public List<Framedata> createFrames(ByteBuffer binary) {
         Framedata curframe = new Framedata(HandshakeState.Opcode.BINARY);
         curframe.setPayload(binary);
-        curframe.setTransferemasked(mask);
         curframe.isValid();
         return Collections.singletonList(curframe);
     }
 
-    public List<Framedata> createFrames(String text, boolean mask) {
+    public List<Framedata> createFrames(String text) {
         Framedata curframe = new Framedata(HandshakeState.Opcode.TEXT);
-        curframe.setPayload(ByteBuffer.wrap(Base64.utf8Bytes(text)));
-        curframe.setTransferemasked(mask);
+        curframe.setPayload(ByteBuffer.wrap(text.getBytes(Charset.UTF_8)));
         curframe.isValid();
         return Collections.singletonList(curframe);
-    }
-
-    public void reset() {
-        incompleteframe = null;
     }
 
     private byte[] toByteArray(long val, int bytecount) {
@@ -577,42 +568,12 @@ public class Draft {
         }
     }
 
-    /**
-     * Check the current size of the buffer and throw an exception if the size is bigger than the max allowed frame size
-     */
-    private void checkBufferLimit() {
-        long totalSize = getByteBufferListSize();
-        if (totalSize > maxFrameSize) {
-            clearBufferList();
-            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxFrameSize, totalSize);
-            throw new InstrumentException("" + maxFrameSize);
-        }
+    public void reset() {
+        byteBuffer = null;
     }
 
     public HandshakeState.CloseHandshakeType getCloseHandshakeType() {
         return HandshakeState.CloseHandshakeType.TWOWAY;
-    }
-
-    /**
-     * Method to generate a full bytebuffer out of all the fragmented frame payload
-     *
-     * @return a bytebuffer containing all the data
-     */
-    private ByteBuffer getPayloadFromByteBufferList() {
-        long totalSize = 0;
-        ByteBuffer resultingByteBuffer;
-        synchronized (byteBufferList) {
-            for (ByteBuffer buffer : byteBufferList) {
-                totalSize += buffer.limit();
-            }
-            checkBufferLimit();
-            resultingByteBuffer = ByteBuffer.allocate((int) totalSize);
-            for (ByteBuffer buffer : byteBufferList) {
-                resultingByteBuffer.put(buffer);
-            }
-        }
-        resultingByteBuffer.flip();
-        return resultingByteBuffer;
     }
 
     /**
@@ -630,36 +591,16 @@ public class Draft {
         return totalSize;
     }
 
-    public static HandshakeBuilder translateHandshakeHttp(ByteBuffer buf) throws InstrumentException {
-        HandshakeBuilder handshake;
-
-        String line = readStringLine(buf);
-        if (line == null)
-            throw new InstrumentException("" + buf.capacity() + 128);
-
-        String[] firstLineTokens = line.split(" ", 3);// eg. HTTP/1.1 101 Switching the Protocols
-        if (firstLineTokens.length != 3) {
-            throw new InstrumentException();
+    /**
+     * Check the current size of the buffer and throw an exception if the size is bigger than the max allowed frame size
+     */
+    private void checkBufferLimit() {
+        long totalSize = getByteBufferListSize();
+        if (totalSize > maxBufferSize) {
+            clearBufferList();
+            Logger.trace("Payload limit reached. Allowed: {} Current: {}", maxBufferSize, totalSize);
+            throw new InstrumentException("" + maxBufferSize);
         }
-
-        handshake = translateHandshakeHttpClient(firstLineTokens, line);
-
-        line = readStringLine(buf);
-        while (line != null && line.length() > 0) {
-            String[] pair = line.split(":", 2);
-            if (pair.length != 2)
-                throw new InstrumentException("not an http header");
-            // If the handshake contains already a specific key, append the new value
-            if (handshake.hasFieldValue(pair[0])) {
-                handshake.put(pair[0], handshake.getFieldValue(pair[0]) + "; " + pair[1].replaceFirst("^ +", ""));
-            } else {
-                handshake.put(pair[0], pair[1].replaceFirst("^ +", ""));
-            }
-            line = readStringLine(buf);
-        }
-        if (line == null)
-            throw new InstrumentException();
-        return handshake;
     }
 
     /**
@@ -682,26 +623,8 @@ public class Draft {
         return serverhandshake;
     }
 
-    public HandshakeState acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) throws InstrumentException {
-        if (!basicAccept(response)) {
-            Logger.trace("acceptHandshakeAsClient - Missing/wrong upgrade or connection in handshake.");
-            return HandshakeState.NOT_MATCHED;
-        }
-        if (!request.hasFieldValue(SEC_WEB_SOCKET_KEY) || !response.hasFieldValue(SEC_WEB_SOCKET_ACCEPT)) {
-            Logger.trace("acceptHandshakeAsClient - Missing Sec-WebSocket-Key or Sec-WebSocket-Accept");
-            return HandshakeState.NOT_MATCHED;
-        }
-
-
-        return HandshakeState.MATCHED;
-    }
-
     public Draft copyInstance() {
-        return new Draft(maxFrameSize);
-    }
-
-    protected boolean basicAccept(HandshakeBuilder HandshakeBuilder) {
-        return HandshakeBuilder.getFieldValue("Upgrade").equalsIgnoreCase("websocket") && HandshakeBuilder.getFieldValue("Connection").toLowerCase(Locale.ENGLISH).contains("upgrade");
+        return new Draft(maxBufferSize);
     }
 
     public List<Framedata> continuousFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin) {
@@ -709,10 +632,10 @@ public class Draft {
             throw new IllegalArgumentException("Only Opcode.BINARY or  Opcode.TEXT are allowed");
         }
         Framedata bui = null;
-        if (continuousFrameType != null) {
+        if (this.opcode != null) {
             bui = new Framedata(HandshakeState.Opcode.CONTINUOUS);
         } else {
-            continuousFrameType = op;
+            this.opcode = op;
             if (op == HandshakeState.Opcode.BINARY) {
                 bui = new Framedata(HandshakeState.Opcode.BINARY);
             } else if (op == HandshakeState.Opcode.TEXT) {
@@ -723,9 +646,9 @@ public class Draft {
         bui.setFin(fin);
         bui.isValid();
         if (fin) {
-            continuousFrameType = null;
+            this.opcode = null;
         } else {
-            continuousFrameType = op;
+            this.opcode = op;
         }
         return Collections.singletonList(bui);
     }
@@ -754,7 +677,7 @@ public class Draft {
             bui.append("\r\n");
         }
         bui.append("\r\n");
-        byte[] httpheader = Base64.asciiBytes(bui.toString());
+        byte[] httpheader = bui.toString().getBytes(Charset.US_ASCII);
 
         byte[] content = withcontent ? HandshakeBuilder.getContent() : null;
         ByteBuffer bytebuffer = ByteBuffer.allocate((content == null ? 0 : content.length) + httpheader.length);
