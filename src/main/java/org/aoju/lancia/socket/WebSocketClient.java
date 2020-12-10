@@ -99,7 +99,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      * @param serverUri the server URI to connect to
      */
     public WebSocketClient(URI serverUri) {
-        this(serverUri, new Draft_6455());
+        this(serverUri, new Draft());
     }
 
     /**
@@ -121,10 +121,9 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      *
      * @param serverUri   the server URI to connect to
      * @param httpHeaders Additional HTTP-Headers
-     * @since 1.3.8
      */
     public WebSocketClient(URI serverUri, Map<String, String> httpHeaders) {
-        this(serverUri, new Draft_6455(), httpHeaders);
+        this(serverUri, new Draft(), httpHeaders);
     }
 
     /**
@@ -159,14 +158,9 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
         }
         this.uri = serverUri;
         this.draft = protocolDraft;
-        this.dnsResolver = new DnsResolver() {
-            @Override
-            public InetAddress resolve(URI uri) throws UnknownHostException {
-                return InetAddress.getByName(uri.getHost());
-            }
-        };
+        this.dnsResolver = uri -> InetAddress.getByName(uri.getHost());
         if (httpHeaders != null) {
-            headers = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+            headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             headers.putAll(httpHeaders);
         }
         this.connectTimeout = connectTimeout;
@@ -841,4 +835,5 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
             }
         }
     }
+
 }
