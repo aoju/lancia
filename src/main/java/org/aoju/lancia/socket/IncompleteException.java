@@ -1,9 +1,11 @@
 package org.aoju.lancia.socket;
 
+import org.aoju.bus.core.lang.exception.InstrumentException;
+
 /**
  * Exception which indicates that the frame is not yet complete
  */
-public class IncompleteException extends Exception {
+public class IncompleteException extends InstrumentException {
 
     /**
      * It's Serializable.

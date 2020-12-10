@@ -1,9 +1,11 @@
 package org.aoju.lancia.socket;
 
+import org.aoju.bus.core.lang.exception.InstrumentException;
+
 /**
  * exception which indicates that a invalid data was recieved
  */
-public class InvalidDataException extends Exception {
+public class InvalidDataException extends InstrumentException {
 
     /**
      * Serializable
@@ -43,18 +45,6 @@ public class InvalidDataException extends Exception {
      */
     public InvalidDataException(int closecode, Throwable t) {
         super(t);
-        this.closecode = closecode;
-    }
-
-    /**
-     * constructor for a InvalidDataException.
-     *
-     * @param closecode the closecode which will be returned.
-     * @param s         the detail message.
-     * @param t         the throwable causing this exception.
-     */
-    public InvalidDataException(int closecode, String s, Throwable t) {
-        super(s, t);
         this.closecode = closecode;
     }
 

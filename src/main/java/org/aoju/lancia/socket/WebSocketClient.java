@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * A subclass must implement at least <var>onOpen</var>, <var>onClose</var>, and <var>onMessage</var> to be
  * useful. At runtime the user is expected to establish a connection via {@link #connect()}, then receive events like {@link #onMessage(String)} via the overloaded methods and to {@link #send(String)} data to the server.
  */
-public abstract class WebSocketClient extends AbstractWebSocket implements Runnable, WebSocket {
+public abstract class WebSocketClient extends WebSocketAdapter implements Runnable, WebSocket {
 
     /**
      * The draft to use
