@@ -87,10 +87,7 @@ public class Draft_6455 extends Draft {
      * Attribute for the reusable random instance
      */
     private final Random reuseableRandom = new Random();
-    /**
-     * Attribute for all available extension in this draft
-     */
-    private final List<DefaultExtension> knownExtensions;
+
     /**
      * Attribute for all available protocols in this draft
      */
@@ -101,10 +98,7 @@ public class Draft_6455 extends Draft {
      * @since 1.4.0
      */
     private final int maxFrameSize;
-    /**
-     * Attribute for the used extension in this draft
-     */
-    private DefaultExtension extension = new DefaultExtension();
+
     /**
      * Attribute for the used protocol in this draft
      */
@@ -119,61 +113,39 @@ public class Draft_6455 extends Draft {
     private ByteBuffer incompleteframe;
 
     /**
-     * Constructor for the websocket protocol specified by RFC 6455 with default extensions
-     *
-     * @since 1.3.5
+     * Constructor for the websocket protocol specified by RFC 6455 with custom extensions
      */
     public Draft_6455() {
-        this(Collections.emptyList());
-    }
-
-    /**
-     * Constructor for the websocket protocol specified by RFC 6455 with custom extensions
-     *
-     * @param inputExtensions the extensions which should be used for this draft
-     * @since 1.3.5
-     */
-    public Draft_6455(List<DefaultExtension> inputExtensions) {
-        this(inputExtensions, Collections.singletonList(new Protocol("")));
+        this(Collections.singletonList(new Protocol("")));
     }
 
     /**
      * Constructor for the websocket protocol specified by RFC 6455 with custom extensions and protocols
      *
-     * @param inputExtensions the extensions which should be used for this draft
-     * @param inputProtocols  the protocols which should be used for this draft
+     * @param inputProtocols the protocols which should be used for this draft
      * @since 1.3.7
      */
-    public Draft_6455(List<DefaultExtension> inputExtensions, List<Protocol> inputProtocols) {
-        this(inputExtensions, inputProtocols, Integer.MAX_VALUE);
+    public Draft_6455(List<Protocol> inputProtocols) {
+        this(inputProtocols, Integer.MAX_VALUE);
     }
 
     /**
      * Constructor for the websocket protocol specified by RFC 6455 with custom extensions and protocols
      *
-     * @param inputExtensions   the extensions which should be used for this draft
      * @param inputProtocols    the protocols which should be used for this draft
      * @param inputMaxFrameSize the maximum allowed size of a frame (the real payload size, decoded frames can be bigger)
      * @since 1.4.0
      */
-    public Draft_6455(List<DefaultExtension> inputExtensions, List<Protocol> inputProtocols, int inputMaxFrameSize) {
-        if (inputExtensions == null || inputProtocols == null || inputMaxFrameSize < 1) {
+    public Draft_6455(List<Protocol> inputProtocols, int inputMaxFrameSize) {
+        if (inputProtocols == null || inputMaxFrameSize < 1) {
             throw new IllegalArgumentException();
         }
-        knownExtensions = new ArrayList<>(inputExtensions.size());
+
         knownProtocols = new ArrayList<>(inputProtocols.size());
         boolean hasDefault = false;
         byteBufferList = new ArrayList<>();
-        for (DefaultExtension inputExtension : inputExtensions) {
-            if (inputExtension.getClass().equals(DefaultExtension.class)) {
-                hasDefault = true;
-            }
-        }
-        knownExtensions.addAll(inputExtensions);
-        //We always add the DefaultExtension to implement the normal RFC 6455 specification
-        if (!hasDefault) {
-            knownExtensions.add(this.knownExtensions.size(), extension);
-        }
+
+
         knownProtocols.addAll(inputProtocols);
         maxFrameSize = inputMaxFrameSize;
     }
@@ -186,13 +158,7 @@ public class Draft_6455 extends Draft {
             return HandshakeState.NOT_MATCHED;
         }
         HandshakeState extensionState = HandshakeState.NOT_MATCHED;
-        String requestedExtension = handshakedata.getFieldValue(SEC_WEB_SOCKET_EXTENSIONS);
-        for (DefaultExtension knownExtension : knownExtensions) {
-            extension = knownExtension;
-            extensionState = HandshakeState.MATCHED;
-            log.trace("acceptHandshakeAsServer - Matching extension found: {}", extension);
-            break;
-        }
+
         HandshakeState protocolState = containsRequestedProtocol(handshakedata.getFieldValue(SEC_WEB_SOCKET_PROTOCOL));
         if (protocolState == HandshakeState.MATCHED && extensionState == HandshakeState.MATCHED) {
             return HandshakeState.MATCHED;
@@ -237,38 +203,13 @@ public class Draft_6455 extends Draft {
             log.trace("acceptHandshakeAsClient - Wrong key for Sec-WebSocket-Key.");
             return HandshakeState.NOT_MATCHED;
         }
-        HandshakeState extensionState = HandshakeState.NOT_MATCHED;
-        for (DefaultExtension knownExtension : knownExtensions) {
-            extension = knownExtension;
-            extensionState = HandshakeState.MATCHED;
-            log.trace("acceptHandshakeAsClient - Matching extension found: {}", extension);
-            break;
 
-        }
         HandshakeState protocolState = containsRequestedProtocol(response.getFieldValue(SEC_WEB_SOCKET_PROTOCOL));
-        if (protocolState == HandshakeState.MATCHED && extensionState == HandshakeState.MATCHED) {
+        if (protocolState == HandshakeState.MATCHED) {
             return HandshakeState.MATCHED;
         }
         log.trace("acceptHandshakeAsClient - No matching extension or protocol found.");
         return HandshakeState.NOT_MATCHED;
-    }
-
-    /**
-     * Getter for the extension which is used by this draft
-     *
-     * @return the extension which is used or null, if handshake is not yet done
-     */
-    public DefaultExtension getExtension() {
-        return extension;
-    }
-
-    /**
-     * Getter for all available extensions for this draft
-     *
-     * @return the extensions which are enabled for this draft
-     */
-    public List<DefaultExtension> getKnownExtensions() {
-        return knownExtensions;
     }
 
     /**
@@ -311,13 +252,7 @@ public class Draft_6455 extends Draft {
         request.put(SEC_WEB_SOCKET_KEY, org.aoju.lancia.socket.Base64.encodeBytes(random));
         request.put("Sec-WebSocket-Version", "13");// overwriting the previous
         StringBuilder requestedExtensions = new StringBuilder();
-        for (DefaultExtension knownExtension : knownExtensions) {
-            if ("".length() != 0) {
-                if (requestedExtensions.length() > 0) {
-                    requestedExtensions.append(", ");
-                }
-            }
-        }
+
         if (requestedExtensions.length() != 0) {
             request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
         }
@@ -358,15 +293,11 @@ public class Draft_6455 extends Draft {
 
     @Override
     public Draft copyInstance() {
-        ArrayList<DefaultExtension> newExtensions = new ArrayList<>();
-        for (DefaultExtension iExtension : getKnownExtensions()) {
-            newExtensions.add(iExtension.copyInstance());
-        }
         ArrayList<Protocol> newProtocols = new ArrayList<>();
         for (Protocol Protocol : getKnownProtocols()) {
             newProtocols.add(Protocol.copyInstance());
         }
-        return new Draft_6455(newExtensions, newProtocols, maxFrameSize);
+        return new Draft_6455(newProtocols, maxFrameSize);
     }
 
     @Override
@@ -468,7 +399,7 @@ public class Draft_6455 extends Draft {
         frame.setRSV3(rsv3);
         payload.flip();
         frame.setPayload(payload);
-        getExtension().isFrameValid(frame);
+       // getExtension().isFrameValid(frame);
         if (log.isTraceEnabled())
             log.trace("afterDecoding({}): {}", frame.getPayloadData().remaining(), (frame.getPayloadData().remaining() > 1000 ? "too big to display" : new String(frame.getPayloadData().array())));
         frame.isValid();
@@ -671,7 +602,6 @@ public class Draft_6455 extends Draft {
     @Override
     public void reset() {
         incompleteframe = null;
-        extension = new DefaultExtension();
         protocol = null;
     }
 
@@ -962,8 +892,7 @@ public class Draft_6455 extends Draft {
     @Override
     public String toString() {
         String result = super.toString();
-        if (getExtension() != null)
-            result += " extension: " + getExtension().toString();
+
         if (getProtocol() != null)
             result += " protocol: " + getProtocol().toString();
         result += " max frame size: " + this.maxFrameSize;
@@ -978,13 +907,13 @@ public class Draft_6455 extends Draft {
         Draft_6455 that = (Draft_6455) o;
 
         if (maxFrameSize != that.getMaxFrameSize()) return false;
-        if (extension != null ? !extension.equals(that.getExtension()) : that.getExtension() != null) return false;
+       // if (extension != null ? !extension.equals(that.getExtension()) : that.getExtension() != null) return false;
         return protocol != null ? protocol.equals(that.getProtocol()) : that.getProtocol() == null;
     }
 
     @Override
     public int hashCode() {
-        int result = extension != null ? extension.hashCode() : 0;
+        int result = 0;
         result = 31 * result + (protocol != null ? protocol.hashCode() : 0);
         result = 31 * result + (maxFrameSize ^ (maxFrameSize >>> 32));
         return result;

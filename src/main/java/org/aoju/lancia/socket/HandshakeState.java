@@ -4,6 +4,7 @@ package org.aoju.lancia.socket;
  * Enum which represents the states a handshake may be in
  */
 public enum HandshakeState {
+
     /**
      * Handshake matched this Draft successfully
      */
@@ -25,13 +26,6 @@ public enum HandshakeState {
      */
     public enum ReadyState {
         NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
-    }
-
-    /**
-     * Enum which represents the states a websocket may be in
-     */
-    public enum Role {
-        CLIENT
     }
 
     /**

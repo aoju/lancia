@@ -176,24 +176,8 @@ public abstract class Draft {
 
     public abstract void reset();
 
-    /**
-     * @deprecated use createHandshake without the role
-     */
-    @Deprecated
-    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, HandshakeState.Role ownrole) {
-        return createHandshake(HandshakeBuilder);
-    }
-
     public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder) {
         return createHandshake(HandshakeBuilder, true);
-    }
-
-    /**
-     * @deprecated use createHandshake without the role since it does not have any effect
-     */
-    @Deprecated
-    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, HandshakeState.Role ownrole, boolean withcontent) {
-        return createHandshake(HandshakeBuilder, withcontent);
     }
 
     public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {
