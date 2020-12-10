@@ -80,7 +80,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     /**
      * The socket timeout value to be used in milliseconds.
      */
-    private int connectTimeout;
+    private final int connectTimeout;
 
     /**
      * DNS resolver that translates a URI to an InetAddress
