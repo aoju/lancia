@@ -162,9 +162,11 @@ public class Framedata {
     public void setRSV2(boolean rsv2) {
         this.rsv2 = rsv2;
     }
+
     public boolean isRSV3() {
         return rsv3;
     }
+
     /**
      * Set the rsv3 of this frame to the provided boolean
      *
@@ -173,9 +175,11 @@ public class Framedata {
     public void setRSV3(boolean rsv3) {
         this.rsv3 = rsv3;
     }
+
     public boolean isFin() {
         return fin;
     }
+
     /**
      * Set the fin of this frame to the provided boolean
      *
@@ -184,12 +188,15 @@ public class Framedata {
     public void setFin(boolean fin) {
         this.fin = fin;
     }
+
     public HandshakeState.Opcode getOpcode() {
         return optcode;
     }
+
     public ByteBuffer getPayloadData() {
         return unmaskedpayload;
     }
+
     /**
      * Set the payload of this frame to the provided payload
      *

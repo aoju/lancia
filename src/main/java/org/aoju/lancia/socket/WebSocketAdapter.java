@@ -15,11 +15,11 @@ import java.util.concurrent.TimeUnit;
  **/
 public abstract class WebSocketAdapter implements WebSocketListener {
 
-    private Framedata pingFrame;
     /**
      * Attribute to sync on
      */
     private final Object syncConnectionLost = new Object();
+    private Framedata pingFrame;
     /**
      * Attribute which allows you to deactivate the Nagle's algorithm
      */

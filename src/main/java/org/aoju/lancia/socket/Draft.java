@@ -20,25 +20,21 @@ import java.util.List;
 public class Draft {
 
     /**
-     * Attribute for the maximum allowed size of a frame
-     */
-    private final int maxBufferSize;
-    /**
      * Handshake specific field for the key
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
-
-
     /**
      * Handshake specific field for the upgrade
      */
     private static final String UPGRADE = "Upgrade";
-
     /**
      * Handshake specific field for the connection
      */
     private static final String CONNECTION = "Connection";
-
+    /**
+     * Attribute for the maximum allowed size of a frame
+     */
+    private final int maxBufferSize;
     protected HandshakeState.Opcode opcode = null;
     /**
      * Attribute for the current incomplete frame

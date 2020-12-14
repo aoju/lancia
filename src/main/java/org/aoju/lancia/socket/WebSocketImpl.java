@@ -151,7 +151,7 @@ public class WebSocketImpl implements WebSocket {
         }
         socketBuffer.mark();
 
-        HandshakeBuilder tmphandshake = draft.translateHandshakeHttp(socketBuffer);
+        HandshakeBuilder tmphandshake = Draft.translateHandshakeHttp(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
             Logger.trace("Closing due to protocol error: wrong http function");
             flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
@@ -163,11 +163,11 @@ public class WebSocketImpl implements WebSocket {
 
     private void decodeFrames(ByteBuffer socketBuffer) {
         List<Framedata> frames;
-            frames = draft.translateFrame(socketBuffer);
-            for (Framedata f : frames) {
-                Logger.trace("matched frame: {}", f);
-                draft.processFrame(this, f);
-            }
+        frames = draft.translateFrame(socketBuffer);
+        for (Framedata f : frames) {
+            Logger.trace("matched frame: {}", f);
+            draft.processFrame(this, f);
+        }
 
     }
 

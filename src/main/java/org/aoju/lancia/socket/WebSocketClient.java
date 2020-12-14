@@ -45,7 +45,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      *
      * @since 1.4.0
      */
-    private SocketFactory socketFactory = null;
+    private final SocketFactory socketFactory = null;
     /**
      * The used OutputStream
      */
@@ -53,7 +53,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     /**
      * The used proxy, if any
      */
-    private Proxy proxy = Proxy.NO_PROXY;
+    private final Proxy proxy = Proxy.NO_PROXY;
     /**
      * The thread to write outgoing message
      */
@@ -80,7 +80,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
     /**
      * The socket timeout value to be used in milliseconds.
      */
-    private int connectTimeout;
+    private final int connectTimeout;
 
     /**
      * DNS resolver that translates a URI to an InetAddress
@@ -88,7 +88,7 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
      * @see InetAddress
      * @since 1.4.1
      */
-    private DnsResolver dnsResolver;
+    private final DnsResolver dnsResolver;
 
     /**
      * Constructs a WebSocketClient instance and sets it to the connect to the
@@ -169,7 +169,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
 
     /**
      * Reinitiates the websocket connection. This method does not block.
-
      */
     public void reconnect() {
         reset();
@@ -178,7 +177,6 @@ public abstract class WebSocketClient extends WebSocketAdapter implements Runnab
 
     /**
      * Reset everything relevant to allow a reconnect
-
      */
     private void reset() {
         Thread current = Thread.currentThread();
