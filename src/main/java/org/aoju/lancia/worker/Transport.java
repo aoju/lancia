@@ -34,7 +34,7 @@ package org.aoju.lancia.worker;
  */
 public interface Transport {
 
-    void send(String message);
+    boolean send(String message);
 
     void onMessage(String message);
 

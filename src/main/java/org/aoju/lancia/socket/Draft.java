@@ -35,7 +35,6 @@ public class Draft {
      * Attribute for the maximum allowed size of a frame
      */
     private final int maxBufferSize;
-    protected HandshakeState.Opcode opcode = null;
     /**
      * Attribute for the current incomplete frame
      */
@@ -98,6 +97,8 @@ public class Draft {
         return handshake;
     }
 
+    private int realpacketsize;
+
     public ByteBuffer createBinaryFrame(Framedata framedata) {
         if (Logger.get().isTrace())
             Logger.trace("afterEnconding({}): {}", framedata.getPayloadData().remaining(), (framedata.getPayloadData().remaining() > 1000 ? "too big to display" : new String(framedata.getPayloadData().array())));
@@ -105,7 +106,7 @@ public class Draft {
         boolean mask = true;
         int sizebytes = getSizeBytes(mes);
         ByteBuffer buf = ByteBuffer.allocate(1 + (sizebytes > 1 ? sizebytes + 1 : sizebytes) + (mask ? 4 : 0) + mes.remaining());
-        byte optcode = fromOpcode(framedata.getOpcode());
+        byte optcode = 1;
         byte one = (byte) (framedata.isFin() ? -128 : 0);
         one |= optcode;
         if (framedata.isRSV1())
@@ -148,8 +149,7 @@ public class Draft {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
-        int realpacketsize = 2;
-        // translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
+        this.realpacketsize = 2;
         byte b1 = buffer.get( /*0*/);
         boolean fin = b1 >> 8 != 0;
         boolean rsv1 = (b1 & 0x40) != 0;
@@ -158,19 +158,20 @@ public class Draft {
         byte b2 = buffer.get( /*1*/);
         boolean mask = (b2 & -128) != 0;
         int payloadlength = (byte) (b2 & ~(byte) 128);
-        HandshakeState.Opcode optcode = toOpcode((byte) (b1 & 15));
 
         if (!(payloadlength >= 0 && payloadlength <= 125)) {
             int[] array = {payloadlength, realpacketsize};
-            translateSingleFramePayloadLength(array, buffer, optcode, payloadlength, maxpacketsize, realpacketsize);
+            translateSingleFramePayloadLength(array, buffer, payloadlength, maxpacketsize, realpacketsize);
             payloadlength = array[0];
             realpacketsize = array[1];
         }
-        // translateSingleFrameCheckLengthLimit(payloadlength);
         realpacketsize += (mask ? 4 : 0);
         realpacketsize += payloadlength;
-        translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
 
+        if (maxpacketsize < realpacketsize) {
+            Logger.trace("Incomplete frame: maxpacketsize < realpacketsize");
+            throw new InstrumentException("" + realpacketsize);
+        }
         ByteBuffer payload = ByteBuffer.allocate(checkAlloc(payloadlength));
         if (mask) {
             byte[] maskskey = new byte[4];
@@ -183,7 +184,7 @@ public class Draft {
             buffer.position(buffer.position() + payload.limit());
         }
 
-        Framedata frame = Framedata.get(optcode);
+        Framedata frame = new Framedata();
         frame.setFin(fin);
         frame.setRSV1(rsv1);
         frame.setRSV2(rsv2);
@@ -200,37 +201,29 @@ public class Draft {
      * Translate the buffer depending when it has an extended payload length (126 or 127)
      *
      * @param buffer            the buffer to read from
-     * @param optcode           the decoded optcode
      * @param oldPayloadlength  the old payload length
      * @param maxpacketsize     the max packet size allowed
      * @param oldRealpacketsize the real packet size
      * @return the new payload data containing new payload length and new packet size
      * @throws InstrumentException thrown if a control frame has an invalid length
      */
-    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, HandshakeState.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException {
+    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException {
         int payloadlength = oldPayloadlength,
                 realpacketsize = oldRealpacketsize;
-        if (optcode == HandshakeState.Opcode.PING || optcode == HandshakeState.Opcode.PONG || optcode == HandshakeState.Opcode.CLOSING) {
-            Logger.trace("Invalid frame: more than 125 octets");
-            throw new InstrumentException("more than 125 octets");
-        }
+
         if (payloadlength == 126) {
             realpacketsize += 2; // additional length bytes
-            translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
             byte[] sizebytes = new byte[3];
             sizebytes[1] = buffer.get( /*1 + 1*/);
             sizebytes[2] = buffer.get( /*1 + 2*/);
             payloadlength = new BigInteger(sizebytes).intValue();
         } else {
             realpacketsize += 8; // additional length bytes
-            translateSingleFrameCheckPacketSize(maxpacketsize, realpacketsize);
-
             byte[] bytes = new byte[8];
             for (int i = 0; i < 8; i++) {
                 bytes[i] = buffer.get( /*1 + i*/);
             }
             long length = new BigInteger(bytes).longValue();
-            //  translateSingleFrameCheckLengthLimit(length);
             payloadlength = (int) length;
         }
 
@@ -244,20 +237,6 @@ public class Draft {
         request.put(SEC_WEB_SOCKET_KEY, RandomKit.randomString(16));
         request.put("Sec-WebSocket-Version", "13");// overwriting the previouss
         return request;
-    }
-
-    /**
-     * Check if the max packet size is smaller than the real packet size
-     *
-     * @param maxpacketsize  the max packet size
-     * @param realpacketsize the real packet size
-     * @throws IncompleteException if the maxpacketsize is smaller than the realpackagesize
-     */
-    private void translateSingleFrameCheckPacketSize(int maxpacketsize, int realpacketsize) throws IncompleteException {
-        if (maxpacketsize < realpacketsize) {
-            Logger.trace("Incomplete frame: maxpacketsize < realpacketsize");
-            throw new IncompleteException(realpacketsize);
-        }
     }
 
     /**
@@ -312,7 +291,7 @@ public class Draft {
             List<Framedata> frames = new LinkedList<>();
             Framedata cur;
             if (byteBuffer != null) {
-                try {
+
                     buffer.mark();
                     int availableNextByteCount = buffer.remaining();// The number of bytes received
                     int expectedNextByteCount = byteBuffer.remaining();// The number of bytes to complete the incomplete frame
@@ -328,15 +307,7 @@ public class Draft {
                     cur = translateSingleFrame((ByteBuffer) byteBuffer.duplicate().position(0));
                     frames.add(cur);
                     byteBuffer = null;
-                } catch (IncompleteException e) {
-                    // extending as much as suggested
-                    ByteBuffer extendedframe = ByteBuffer.allocate(checkAlloc(e.getPreferredSize()));
-                    assert (extendedframe.limit() > byteBuffer.limit());
-                    byteBuffer.rewind();
-                    extendedframe.put(byteBuffer);
-                    byteBuffer = extendedframe;
-                    continue;
-                }
+
             }
 
             while (buffer.hasRemaining()) {// Read as much as possible full frames
@@ -344,10 +315,9 @@ public class Draft {
                 try {
                     cur = translateSingleFrame(buffer);
                     frames.add(cur);
-                } catch (IncompleteException e) {
+                } catch (InstrumentException e) {
                     buffer.reset();
-                    int pref = e.getPreferredSize();
-                    byteBuffer = ByteBuffer.allocate(checkAlloc(pref));
+                    byteBuffer = ByteBuffer.allocate(checkAlloc(this.realpacketsize));
                     byteBuffer.put(buffer);
                     break;
                 }
@@ -356,15 +326,8 @@ public class Draft {
         }
     }
 
-    public List<Framedata> createFrames(ByteBuffer binary) {
-        Framedata curframe = new Framedata(HandshakeState.Opcode.BINARY);
-        curframe.setPayload(binary);
-        curframe.isValid();
-        return Collections.singletonList(curframe);
-    }
-
     public List<Framedata> createFrames(String text) {
-        Framedata curframe = new Framedata(HandshakeState.Opcode.TEXT);
+        Framedata curframe = new Framedata();
         curframe.setPayload(ByteBuffer.wrap(text.getBytes(Charset.UTF_8)));
         curframe.isValid();
         return Collections.singletonList(curframe);
@@ -379,111 +342,32 @@ public class Draft {
         return buffer;
     }
 
-    private byte fromOpcode(HandshakeState.Opcode opcode) {
-        if (opcode == HandshakeState.Opcode.CONTINUOUS)
-            return 0;
-        else if (opcode == HandshakeState.Opcode.TEXT)
-            return 1;
-        else if (opcode == HandshakeState.Opcode.BINARY)
-            return 2;
-        else if (opcode == HandshakeState.Opcode.CLOSING)
-            return 8;
-        else if (opcode == HandshakeState.Opcode.PING)
-            return 9;
-        else if (opcode == HandshakeState.Opcode.PONG)
-            return 10;
-        throw new IllegalArgumentException("Don't know how to handle " + opcode.toString());
-    }
-
-    private HandshakeState.Opcode toOpcode(byte opcode) throws InstrumentException {
-        switch (opcode) {
-            case 0:
-                return HandshakeState.Opcode.CONTINUOUS;
-            case 1:
-                return HandshakeState.Opcode.TEXT;
-            case 2:
-                return HandshakeState.Opcode.BINARY;
-            case 8:
-                return HandshakeState.Opcode.CLOSING;
-            case 9:
-                return HandshakeState.Opcode.PING;
-            case 10:
-                return HandshakeState.Opcode.PONG;
-            default:
-                throw new InstrumentException("Unknown opcode " + (short) opcode);
-        }
-    }
-
-    public void processFrame(WebSocketImpl webSocketImpl, Framedata frame) {
-        HandshakeState.Opcode curop = frame.getOpcode();
-        if (curop == HandshakeState.Opcode.CLOSING) {
-            processFrameClosing(webSocketImpl);
-        } else if (curop == HandshakeState.Opcode.TEXT) {
-            processFrameText(webSocketImpl, frame);
-        } else if (curop == HandshakeState.Opcode.BINARY) {
-            processFrameBinary(webSocketImpl, frame);
-        } else {
-            Logger.error("non control or continious frame expected");
-            throw new InstrumentException("non control or continious frame expected");
-        }
-    }
-
-    /**
-     * Process the frame if it is a binary frame
-     *
-     * @param webSocketImpl the websocket impl
-     * @param frame         the frame
-     */
-    private void processFrameBinary(WebSocketImpl webSocketImpl, Framedata frame) {
-        try {
-            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, frame.getPayloadData());
-        } catch (RuntimeException e) {
-            logRuntimeException(webSocketImpl, e);
-        }
+    public void processFrame(RFCWebSocket RFCWebSocket, Framedata frame) {
+        processFrameText(RFCWebSocket, frame);
     }
 
     /**
      * Log the runtime exception to the specific WebSocketImpl
      *
-     * @param webSocketImpl the implementation of the websocket
-     * @param e             the runtime exception
+     * @param RFCWebSocket the implementation of the websocket
+     * @param e            the runtime exception
      */
-    private void logRuntimeException(WebSocketImpl webSocketImpl, RuntimeException e) {
+    private void logRuntimeException(RFCWebSocket RFCWebSocket, RuntimeException e) {
         Logger.error("Runtime exception during onWebsocketMessage", e);
-        webSocketImpl.getWebSocketListener().onWebsocketError(webSocketImpl, e);
+        RFCWebSocket.getWebSocketListener().onWebsocketError(e);
     }
 
     /**
      * Process the frame if it is a text frame
      *
-     * @param webSocketImpl the websocket impl
-     * @param frame         the frame
+     * @param RFCWebSocket the websocket impl
+     * @param frame        the frame
      */
-    private void processFrameText(WebSocketImpl webSocketImpl, Framedata frame) {
+    private void processFrameText(RFCWebSocket RFCWebSocket, Framedata frame) {
         try {
-            webSocketImpl.getWebSocketListener().onWebsocketMessage(webSocketImpl, BufferKit.readLine(frame.getPayloadData()));
+            RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(frame.getPayloadData()));
         } catch (RuntimeException e) {
-            logRuntimeException(webSocketImpl, e);
-        }
-    }
-
-    /**
-     * Process the frame if it is a closing frame
-     *
-     * @param webSocketImpl the websocket impl
-     */
-    private void processFrameClosing(WebSocketImpl webSocketImpl) {
-        int code = Framedata.NOCODE;
-        String reason = "";
-        if (webSocketImpl.getReadyState() == HandshakeState.ReadyState.CLOSING) {
-            // complete the close handshake by disconnecting
-            webSocketImpl.closeConnection(code, reason, true);
-        } else {
-            // echo close handshake
-            if (getCloseHandshakeType() == HandshakeState.CloseHandshakeType.TWOWAY)
-                webSocketImpl.close(code, reason, true);
-            else
-                webSocketImpl.flushAndClose(code, reason, false);
+            logRuntimeException(RFCWebSocket, e);
         }
     }
 
@@ -497,32 +381,6 @@ public class Draft {
 
     public Draft copyInstance() {
         return new Draft(maxBufferSize);
-    }
-
-    public List<Framedata> continuousFrame(HandshakeState.Opcode op, ByteBuffer buffer, boolean fin) {
-        if (op != HandshakeState.Opcode.BINARY && op != HandshakeState.Opcode.TEXT) {
-            throw new IllegalArgumentException("Only Opcode.BINARY or  Opcode.TEXT are allowed");
-        }
-        Framedata bui = null;
-        if (this.opcode != null) {
-            bui = new Framedata(HandshakeState.Opcode.CONTINUOUS);
-        } else {
-            this.opcode = op;
-            if (op == HandshakeState.Opcode.BINARY) {
-                bui = new Framedata(HandshakeState.Opcode.BINARY);
-            } else if (op == HandshakeState.Opcode.TEXT) {
-                bui = new Framedata(HandshakeState.Opcode.TEXT);
-            }
-        }
-        bui.setPayload(buffer);
-        bui.setFin(fin);
-        bui.isValid();
-        if (fin) {
-            this.opcode = null;
-        } else {
-            this.opcode = op;
-        }
-        return Collections.singletonList(bui);
     }
 
     public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {

@@ -30,7 +30,7 @@ import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.socket.HandshakeBuilder;
-import org.aoju.lancia.socket.WebSocketClient;
+import org.aoju.lancia.socket.RFCWebSocket;
 
 import java.net.URI;
 import java.util.function.Consumer;
@@ -42,13 +42,12 @@ import java.util.function.Consumer;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class WebSocketTransport extends WebSocketClient implements Transport {
+public class WebSocketTransport extends RFCWebSocket implements Transport {
 
     private Consumer<String> messageConsumer = null;
     public CoverWebSocket socket;
     private Connection connection = null;
 
-    @Override
     public void onClose(int code, String reason, boolean remote) {
         Logger.info("Connection closed by " + (remote ? "remote peer" : "us") + " Code: " + code + " Reason: " + reason);
         this.onClose();
@@ -57,7 +56,6 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
         }
     }
 
-    @Override
     public void onError(Exception e) {
         Logger.error(e);
     }
@@ -65,14 +63,16 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
     public WebSocketTransport(String browserWSEndpoint) {
         super(URI.create(browserWSEndpoint));
         try {
-            this.setConnectionLostTimeout(0);
+            //this.setConnectionLostTimeout(0);
             this.connectBlocking();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    /* public WebSocketTransport(String browserWSEndpoint) {
+    /*
+
+     public WebSocketTransport(String browserWSEndpoint) {
          Httpv httpv = Httpv.builder().build();
          this.socket = httpv.webSocket(browserWSEndpoint).listen();
      }
@@ -87,12 +87,12 @@ public class WebSocketTransport extends WebSocketClient implements Transport {
      */
 
     @Override
-    public void send(String message) {
+    public boolean send(String message) {
         Logger.debug(message);
         super.send(message);
+        return false;
     }
 
-    @Override
     public void onOpen(HandshakeBuilder serverHandshake) {
         Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
     }

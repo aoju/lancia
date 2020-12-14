@@ -64,12 +64,13 @@ public class PipeTransport implements Transport {
     }
 
     @Override
-    public void send(String message) {
+    public boolean send(String message) {
         try {
             messageQueue.put(message);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+        return true;
     }
 
     @Override

@@ -20,13 +20,6 @@ public class Framedata {
      */
     public static final int PROTOCOL_ERROR = 1002;
     /**
-     * 1005 is a reserved value and MUST NOT be set as a status code in a
-     * Close control frame by an endpoint. It is designated for use in
-     * applications expecting a status code to indicate that no status
-     * code was actually present.
-     */
-    public static final int NOCODE = 1005;
-    /**
      * 1006 is a reserved value and MUST NOT be set as a status code in a
      * Close control frame by an endpoint. It is designated for use in
      * applications expecting a status code to indicate that the
@@ -34,14 +27,6 @@ public class Framedata {
      * receiving a Close control frame.
      */
     public static final int ABNORMAL_CLOSE = 1006;
-    /**
-     * 1007 indicates that an endpoint is terminating the connection
-     * because it has received data within a message that was not
-     * consistent with the type of the message (e.g., non-UTF-8 [RFC3629]
-     * data within a text message).
-     */
-    public static final int NO_UTF8 = 1007;
-
 
     /**
      * The connection had never been established
@@ -53,10 +38,6 @@ public class Framedata {
      */
     public static final int FLASHPOLICY = -3;
 
-    /**
-     * Defines the interpretation of the "Payload data".
-     */
-    private final HandshakeState.Opcode optcode;
     /**
      * Indicates that this is the final fragment in a message.
      */
@@ -80,13 +61,8 @@ public class Framedata {
      */
     private boolean rsv3;
 
-    /**
-     * Constructor for a FramedataImpl without any attributes set apart from the opcode
-     *
-     * @param op the opcode to use
-     */
-    public Framedata(HandshakeState.Opcode op) {
-        optcode = op;
+
+    public Framedata() {
         unmaskedpayload = ByteBuffer.allocate(0);
         fin = true;
         rsv1 = false;
@@ -94,33 +70,6 @@ public class Framedata {
         rsv3 = false;
     }
 
-    /**
-     * Get a frame with a specific opcode
-     *
-     * @param opcode the opcode representing the frame
-     * @return the frame with a specific opcode
-     */
-    public static Framedata get(HandshakeState.Opcode opcode) {
-        if (opcode == null) {
-            throw new IllegalArgumentException("Supplied opcode cannot be null");
-        }
-        switch (opcode) {
-            case PING:
-                return new Framedata(HandshakeState.Opcode.PING);
-            case PONG:
-                return new Framedata(HandshakeState.Opcode.PONG);
-            case TEXT:
-                return new Framedata(HandshakeState.Opcode.TEXT);
-            case BINARY:
-                return new Framedata(HandshakeState.Opcode.BINARY);
-            case CLOSING:
-                return new Framedata(HandshakeState.Opcode.CLOSING);
-            case CONTINUOUS:
-                return new Framedata(HandshakeState.Opcode.CONTINUOUS);
-            default:
-                throw new IllegalArgumentException("Supplied opcode is invalid");
-        }
-    }
 
     public void isValid() {
         if (!isFin()) {
@@ -187,10 +136,6 @@ public class Framedata {
      */
     public void setFin(boolean fin) {
         this.fin = fin;
-    }
-
-    public HandshakeState.Opcode getOpcode() {
-        return optcode;
     }
 
     public ByteBuffer getPayloadData() {

@@ -15,13 +15,6 @@ public enum HandshakeState {
     NOT_MATCHED;
 
     /**
-     * Enum which contains the different valid opcodes
-     */
-    public enum Opcode {
-        CONTINUOUS, TEXT, BINARY, PING, PONG, CLOSING
-    }
-
-    /**
      * Enum which represents the state a websocket may be in
      */
     public enum ReadyState {
