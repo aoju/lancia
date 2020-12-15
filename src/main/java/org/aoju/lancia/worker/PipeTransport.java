@@ -41,7 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public abstract class PipeTransport implements Transport {
+public class PipeTransport implements Transport {
 
     private final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private final StringBuffer pendingMessage = new StringBuffer();

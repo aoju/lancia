@@ -25,6 +25,9 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
+import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.logger.Logger;
+
 /**
  * 传输工厂
  *
@@ -35,14 +38,19 @@ package org.aoju.lancia.worker;
 public class TransportFactory {
 
     /**
-     * 创建套接字传输客户端
+     * 创建套接字传输协议
      *
      * @param browserWSEndpoint 连接websocket的地址
-     * @return WebSocketTransport websocket客户端
-     * @throws InterruptedException 被打断异常
+     * @return WebSocketTransport/PipeTransport 客户端
      */
-    public static WebSocketTransport create(String browserWSEndpoint) {
-        return new WebSocketTransport(browserWSEndpoint);
+    public static Transport create(String browserWSEndpoint) {
+        try {
+            return new WebSocketTransport(browserWSEndpoint);
+        } catch (InstrumentException e) {
+            Logger.warn(e.getMessage());
+            return new PipeTransport();
+        }
+
     }
 
 }
