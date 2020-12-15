@@ -168,7 +168,7 @@ public class Draft {
         return buf;
     }
 
-    private Framedatads translateSingleFrame(ByteBuffer buffer) {
+    private Framedata translateSingleFrame(ByteBuffer buffer) {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
@@ -207,7 +207,7 @@ public class Draft {
             buffer.position(buffer.position() + payload.limit());
         }
 
-        Framedatads frame = new Framedatads();
+        Framedata frame = new Framedata();
         payload.flip();
         frame.setPayload(payload);
         if (Logger.get().isTrace())
@@ -304,10 +304,10 @@ public class Draft {
         return 8;
     }
 
-    public List<Framedatads> translateFrame(ByteBuffer buffer) {
+    public List<Framedata> translateFrame(ByteBuffer buffer) {
         while (true) {
-            List<Framedatads> frames = new LinkedList<>();
-            Framedatads cur;
+            List<Framedata> frames = new LinkedList<>();
+            Framedata cur;
             if (byteBuffer != null) {
 
                 buffer.mark();
@@ -359,7 +359,7 @@ public class Draft {
      * @param RFCWebSocket the websocket impl
      * @param frame        the frame
      */
-    void processFrameText(RFCWebSocket RFCWebSocket, Framedatads frame) {
+    void processFrameText(RFCWebSocket RFCWebSocket, Framedata frame) {
         try {
             RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(frame.getPayload()));
         } catch (RuntimeException e) {

@@ -5,14 +5,14 @@ import java.nio.ByteBuffer;
 /**
  * Abstract implementation of a frame
  */
-public class Framedatads {
+public class Framedata {
 
     /**
      * The unmasked "Payload data" which was sent in this frame
      */
     private ByteBuffer byteBuffer;
 
-    public Framedatads() {
+    public Framedata() {
         byteBuffer = ByteBuffer.allocate(0);
     }
 
