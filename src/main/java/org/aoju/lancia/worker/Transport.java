@@ -34,12 +34,13 @@ package org.aoju.lancia.worker;
  */
 public interface Transport {
 
-    boolean send(String message);
+    default void send(String message) {
+    }
 
-    void onMessage(String message);
+    default void call(String message) {
+    }
 
-    void onClose();
-
-    void close();
+    default void close() {
+    }
 
 }

@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class CDPSession extends EventEmitter {
 
-    private final Map<Long, SendMsg> callbacks = new ConcurrentHashMap<>();
+    private final Map<Long, Messages> callbacks = new ConcurrentHashMap<>();
 
     private final String targetType;
 
@@ -62,7 +62,7 @@ public class CDPSession extends EventEmitter {
     }
 
     public void onClosed() {
-        for (SendMsg callback : callbacks.values()) {
+        for (Messages callback : callbacks.values()) {
             callback.setErrorText("Protocol error " + callback.getMethod() + " Target closed.");
             if (callback.getCountDownLatch() != null) {
                 callback.getCountDownLatch().countDown();
@@ -87,7 +87,7 @@ public class CDPSession extends EventEmitter {
         if (connection == null) {
             throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
-        SendMsg message = new SendMsg();
+        Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
@@ -137,7 +137,7 @@ public class CDPSession extends EventEmitter {
         if (connection == null) {
             throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
-        SendMsg message = new SendMsg();
+        Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
@@ -177,7 +177,7 @@ public class CDPSession extends EventEmitter {
         JsonNode id = node.get(Variables.RECV_MESSAGE_ID_PROPERTY);
         if (id != null) {
             Long idLong = id.asLong();
-            SendMsg callback = this.callbacks.get(idLong);
+            Messages callback = this.callbacks.get(idLong);
             if (callback != null) {
                 try {
                     JsonNode errNode = node.get(Variables.RECV_MESSAGE_ERROR_PROPERTY);

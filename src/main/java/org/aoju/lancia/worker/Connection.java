@@ -61,7 +61,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
      * 单位是毫秒
      */
     private final int delay;
-    private final Map<Long, SendMsg> callbacks = new ConcurrentHashMap<>();// 并发
+    private final Map<Long, Messages> callbacks = new ConcurrentHashMap<>();// 并发
 
     private final Map<String, CDPSession> sessions = new ConcurrentHashMap<>();
 
@@ -73,8 +73,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         this.transport = transport;
         this.delay = delay;
         if (this.transport instanceof WebSocketTransport) {
-            ((WebSocketTransport) this.transport).addMessageConsumer(this);
-            ((WebSocketTransport) this.transport).addConnection(this);
+            ((WebSocketTransport) this.transport).addConsumer(this);
         }
     }
 
@@ -89,7 +88,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
     }
 
     public JsonNode send(String method, Map<String, Object> params, boolean isWait) {
-        SendMsg message = new SendMsg();
+        Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         try {
@@ -111,7 +110,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
     }
 
     public JsonNode send(String method, Map<String, Object> params, boolean isWait, CountDownLatch outLatch) {
-        SendMsg message = new SendMsg();
+        Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         try {
@@ -150,7 +149,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
      * @param callbacks   对应的callbacks
      * @return 发送消息的id
      */
-    public long rawSend(SendMsg message, boolean putCallback, Map<Long, SendMsg> callbacks) {
+    public long rawSend(Messages message, boolean putCallback, Map<Long, Messages> callbacks) {
         long id = lastId.incrementAndGet();
         message.setId(id);
         try {
@@ -216,7 +215,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                     }
                 } else if (objectId != null) {// long类型的id,说明属于这次发送消息后接受的回应
                     long id = objectId.asLong();
-                    SendMsg callback = this.callbacks.get(id);
+                    Messages callback = this.callbacks.get(id);
                     if (callback != null) {
                         try {
                             JsonNode error = readTree.get(Variables.RECV_MESSAGE_ERROR_PROPERTY);
@@ -295,7 +294,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         if (this.closed)
             return;
         this.closed = true;
-        for (SendMsg callback : this.callbacks.values()) {
+        for (Messages callback : this.callbacks.values()) {
             callback.setErrorText("Protocol error " + callback.getMethod() + " Target closed.");
             if (callback.getCountDownLatch() != null) {
                 callback.getCountDownLatch().countDown();

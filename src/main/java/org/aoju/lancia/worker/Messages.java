@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class SendMsg {
+public class Messages {
 
     private long id;
 
@@ -142,7 +142,7 @@ public class SendMsg {
 
     @Override
     public String toString() {
-        return "SendMsg{" +
+        return "Messages{" +
                 "id=" + id +
                 ", params=" + params +
                 ", method='" + method + '\'' +

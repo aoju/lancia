@@ -41,7 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class PipeTransport implements Transport {
+public abstract class PipeTransport implements Transport {
 
     private final BlockingQueue<String> messageQueue = new LinkedBlockingQueue<>();
     private final StringBuffer pendingMessage = new StringBuffer();
@@ -57,29 +57,19 @@ public class PipeTransport implements Transport {
     public PipeTransport(InputStream pipeReader, OutputStream pipeWriter) {
         this.pipeReader = pipeReader;
         this.pipeWriter = pipeWriter;
-        readThread = new Thread(new PipeReaderThread());
+        readThread = new Thread(new ReaderThread());
         readThread.start();
-        writerThread = new Thread(new PipeWriterThread());
+        writerThread = new Thread(new WriterThread());
         writerThread.start();
     }
 
     @Override
-    public boolean send(String message) {
+    public void send(String message) {
         try {
             messageQueue.put(message);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        return true;
-    }
-
-    @Override
-    public void onMessage(String message) {
-    }
-
-    @Override
-    public void onClose() {
-
     }
 
     @Override
@@ -88,7 +78,7 @@ public class PipeTransport implements Transport {
         IoKit.close(pipeReader);
     }
 
-    private class PipeWriterThread implements Runnable {
+    private class WriterThread implements Runnable {
 
         @Override
         public void run() {
@@ -109,7 +99,7 @@ public class PipeTransport implements Transport {
     /**
      * 读取管道中的消息线程
      */
-    private class PipeReaderThread implements Runnable {
+    private class ReaderThread implements Runnable {
 
         @Override
         public void run() {
@@ -122,7 +112,7 @@ public class PipeTransport implements Transport {
                     } else {
                         String message = pendingMessage.toString();
                         pendingMessage.delete(0, pendingMessage.length());
-                        onMessage(message);
+                        call(message);
                     }
                 } catch (IOException e) {
                     Logger.error("read message from chrome error ", e);

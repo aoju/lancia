@@ -25,12 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.toolkit.ObjectKit;
-import org.aoju.bus.http.socket.CoverWebSocket;
 import org.aoju.bus.logger.Logger;
-import org.aoju.lancia.socket.HandshakeBuilder;
-import org.aoju.lancia.socket.RFCWebSocket;
 
 import java.net.URI;
 import java.util.function.Consumer;
@@ -42,78 +37,39 @@ import java.util.function.Consumer;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class WebSocketTransport extends RFCWebSocket implements Transport {
+public class WebSocketTransport implements Transport {
 
-    private Consumer<String> messageConsumer = null;
-    public CoverWebSocket socket;
-    private Connection connection = null;
-
-    public void onClose(int code, String reason, boolean remote) {
-        Logger.info("Connection closed by " + (remote ? "remote peer" : "us") + " Code: " + code + " Reason: " + reason);
-        this.onClose();
-        if (ObjectKit.isNotEmpty(this.connection)) {
-            this.connection.dispose();
-        }
-    }
-
-    public void onError(Exception e) {
-        Logger.error(e);
-    }
+    private final RFCWebSocket socket;
+    private Consumer<String> consumer;
 
     public WebSocketTransport(String browserWSEndpoint) {
-        super(URI.create(browserWSEndpoint));
+        this.socket = new RFCWebSocket(URI.create(browserWSEndpoint)) {
+
+            @Override
+            public void onWebsocketMessage(String message) {
+                Logger.debug(message);
+                consumer.accept(message);
+            }
+
+            @Override
+            public void onWebsocketError(Exception ex) {
+                Logger.error(ex.getMessage());
+            }
+        };
         try {
-            //this.setConnectionLostTimeout(0);
-            this.connectBlocking();
+            socket.connectBlocking();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    /*
-
-     public WebSocketTransport(String browserWSEndpoint) {
-         Httpv httpv = Httpv.builder().build();
-         this.socket = httpv.webSocket(browserWSEndpoint).listen();
-     }
-
-     @Override
-     public void close() {
-         if (ObjectKit.isNotEmpty(this.connection)) {
-             this.connection.dispose();
-         }
-     }
-
-     */
-
     @Override
-    public boolean send(String message) {
-        Logger.debug(message);
-        super.send(message);
-        return false;
+    public void send(String message) {
+        this.socket.send(message);
     }
 
-    public void onOpen(HandshakeBuilder serverHandshake) {
-        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
-    }
-
-    @Override
-    public void onMessage(String message) {
-        Assert.notNull(this.messageConsumer, "MessageConsumer must be initialized");
-        this.messageConsumer.accept(message);
-    }
-
-    @Override
-    public void onClose() {
-        this.close();
-    }
-
-    public void addMessageConsumer(Consumer<String> consumer) {
-        this.messageConsumer = consumer;
-    }
-
-    public void addConnection(Connection connection) {
-        this.connection = connection;
+    public void addConsumer(Consumer<String> consumer) {
+        this.consumer = consumer;
     }
 
 }
