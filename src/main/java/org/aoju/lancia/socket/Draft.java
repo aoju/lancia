@@ -367,10 +367,6 @@ public class Draft {
         }
     }
 
-    public HandshakeState.CloseHandshakeType getCloseHandshakeType() {
-        return HandshakeState.CloseHandshakeType.TWOWAY;
-    }
-
     public Draft copyInstance() {
         return new Draft(maxBufferSize);
     }
@@ -404,6 +400,20 @@ public class Draft {
         }
         bytebuffer.flip();
         return bytebuffer;
+    }
+
+    /**
+     * Enum which represents the state a websocket may be in
+     */
+    public enum ReadyState {
+        NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
+    }
+
+    /**
+     * Enum which represents type of handshake is required for a close
+     */
+    public enum CloseType {
+        NONE, ONEWAY, TWOWAY
     }
 
 }

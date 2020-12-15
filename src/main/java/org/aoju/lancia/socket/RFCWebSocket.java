@@ -91,7 +91,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     /**
      * The current state of the connection
      */
-    private volatile HandshakeState.ReadyState readyState = HandshakeState.ReadyState.NOT_YET_CONNECTED;
+    private volatile Draft.ReadyState readyState = Draft.ReadyState.NOT_YET_CONNECTED;
     /**
      * The socket for this WebSocketClient
      */
@@ -295,8 +295,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         assert (socketBuffer.hasRemaining());
         Logger.trace("process({}): ({})", socketBuffer.remaining(), (socketBuffer.remaining() > 1000 ? "too big to display" : new String(socketBuffer.array(), socketBuffer.position(), socketBuffer.remaining())));
 
-        if (readyState != HandshakeState.ReadyState.NOT_YET_CONNECTED) {
-            if (readyState == HandshakeState.ReadyState.OPEN) {
+        if (readyState != Draft.ReadyState.NOT_YET_CONNECTED) {
+            if (readyState == Draft.ReadyState.OPEN) {
                 decodeFrames(socketBuffer);
             }
         } else {
@@ -344,11 +344,11 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public synchronized void close(int code, String message, boolean remote) {
-        if (readyState != HandshakeState.ReadyState.CLOSING && readyState != HandshakeState.ReadyState.CLOSED) {
-            if (readyState == HandshakeState.ReadyState.OPEN) {
+        if (readyState != Draft.ReadyState.CLOSING && readyState != Draft.ReadyState.CLOSED) {
+            if (readyState == Draft.ReadyState.OPEN) {
                 if (code == Draft.ABNORMAL_CLOSE) {
                     assert (!remote);
-                    readyState = HandshakeState.ReadyState.CLOSING;
+                    readyState = Draft.ReadyState.CLOSING;
                     flushAndClose(code, message, false);
                     return;
                 }
@@ -361,7 +361,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             } else {
                 flushAndClose(Draft.NEVER_CONNECTED, message, false);
             }
-            readyState = HandshakeState.ReadyState.CLOSING;
+            readyState = Draft.ReadyState.CLOSING;
             tmpHandshakeBytes = null;
             return;
         }
@@ -379,12 +379,12 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      *                <code>remote</code> may also be true if this endpoint started the closing handshake since the other endpoint may not simply echo the <code>code</code> but close the connection the same time this endpoint does do but with an other <code>code</code>. <br>
      **/
     public synchronized void closeConnection(int code, String message, boolean remote) {
-        if (readyState == HandshakeState.ReadyState.CLOSED) {
+        if (readyState == Draft.ReadyState.CLOSED) {
             return;
         }
-        if (readyState == HandshakeState.ReadyState.OPEN) {
+        if (readyState == Draft.ReadyState.OPEN) {
             if (code == Draft.ABNORMAL_CLOSE) {
-                readyState = HandshakeState.ReadyState.CLOSING;
+                readyState = Draft.ReadyState.CLOSING;
             }
         }
         try {
@@ -395,7 +395,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         if (draft != null)
             draft.byteBuffer = null;
         handshakerequest = null;
-        readyState = HandshakeState.ReadyState.CLOSED;
+        readyState = Draft.ReadyState.CLOSED;
     }
 
     protected void closeConnection(int code, boolean remote) {
@@ -422,14 +422,10 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public void eot() {
-        if (readyState == HandshakeState.ReadyState.NOT_YET_CONNECTED) {
+        if (readyState == Draft.ReadyState.NOT_YET_CONNECTED) {
             closeConnection(Draft.NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
             closeConnection(closecode, closemessage, closedremotely);
-        } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.NONE) {
-            closeConnection(Draft.NORMAL, true);
-        } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.ONEWAY) {
-            closeConnection(Draft.NORMAL, true);
         } else {
             closeConnection(Draft.ABNORMAL_CLOSE, true);
         }
@@ -458,15 +454,15 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public boolean isOpen() {
-        return readyState == HandshakeState.ReadyState.OPEN;
+        return readyState == Draft.ReadyState.OPEN;
     }
 
     public boolean isClosing() {
-        return readyState == HandshakeState.ReadyState.CLOSING;
+        return readyState == Draft.ReadyState.CLOSING;
     }
 
     public boolean isClosed() {
-        return readyState == HandshakeState.ReadyState.CLOSED;
+        return readyState == Draft.ReadyState.CLOSED;
     }
 
     public void close() {
@@ -839,7 +835,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     private void open(HandshakeBuilder d) {
         Logger.trace("open using draft: {}", draft);
-        readyState = HandshakeState.ReadyState.OPEN;
+        readyState = Draft.ReadyState.OPEN;
         try {
             this.onWebsocketOpen(d);
         } catch (RuntimeException e) {
