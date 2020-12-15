@@ -44,6 +44,45 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      * Initial buffer size
      */
     public static final int RCVBUF = 16384;
+
+    public static final String NOT_YET_CONNECTED = "NOT_YET_CONNECTED";
+
+    public static final String OPEN = "OPEN";
+
+    public static final String CLOSING = "CLOSING";
+
+    public static final String CLOSED = "CLOSED";
+
+
+    /**
+     * indicates a normal closure, meaning whatever purpose the
+     * connection was established for has been fulfilled.
+     */
+    public static final int NORMAL = 1000;
+    /**
+     * 1002 indicates that an endpoint is terminating the connection due
+     * to a protocol error.
+     */
+    public static final int PROTOCOL_ERROR = 1002;
+    /**
+     * 1006 is a reserved value and MUST NOT be set as a status code in a
+     * Close control frame by an endpoint. It is designated for use in
+     * applications expecting a status code to indicate that the
+     * connection was closed abnormally, e.g. without sending or
+     * receiving a Close control frame.
+     */
+    public static final int ABNORMAL_CLOSE = 1006;
+
+    /**
+     * The connection had never been established
+     */
+    public static final int NEVER_CONNECTED = -1;
+
+    /**
+     * The connection was flushed and closed
+     */
+    public static final int FLASHPOLICY = -3;
+
     /**
      * Attribut to synchronize the write
      */
@@ -91,7 +130,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     /**
      * The current state of the connection
      */
-    private volatile Draft.ReadyState readyState = Draft.ReadyState.NOT_YET_CONNECTED;
+    private volatile String readyState = NOT_YET_CONNECTED;
     /**
      * The socket for this WebSocketClient
      */
@@ -295,8 +334,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         assert (socketBuffer.hasRemaining());
         Logger.trace("process({}): ({})", socketBuffer.remaining(), (socketBuffer.remaining() > 1000 ? "too big to display" : new String(socketBuffer.array(), socketBuffer.position(), socketBuffer.remaining())));
 
-        if (readyState != Draft.ReadyState.NOT_YET_CONNECTED) {
-            if (readyState == Draft.ReadyState.OPEN) {
+        if (readyState != NOT_YET_CONNECTED) {
+            if (readyState == OPEN) {
                 decodeFrames(socketBuffer);
             }
         } else {
@@ -336,7 +375,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         HandshakeBuilder tmphandshake = Draft.translateHandshakeHttp(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
             Logger.trace("Closing due to protocol error: wrong http function");
-            flushAndClose(Draft.PROTOCOL_ERROR, "wrong http function", false);
+            flushAndClose(PROTOCOL_ERROR, "wrong http function", false);
             return false;
         }
         open(tmphandshake);
@@ -344,24 +383,24 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public synchronized void close(int code, String message, boolean remote) {
-        if (readyState != Draft.ReadyState.CLOSING && readyState != Draft.ReadyState.CLOSED) {
-            if (readyState == Draft.ReadyState.OPEN) {
-                if (code == Draft.ABNORMAL_CLOSE) {
+        if (readyState != CLOSING && readyState != CLOSED) {
+            if (readyState == OPEN) {
+                if (code == ABNORMAL_CLOSE) {
                     assert (!remote);
-                    readyState = Draft.ReadyState.CLOSING;
+                    readyState = CLOSING;
                     flushAndClose(code, message, false);
                     return;
                 }
                 flushAndClose(code, message, remote);
-            } else if (code == Draft.FLASHPOLICY) {
+            } else if (code == FLASHPOLICY) {
                 assert (remote);
-                flushAndClose(Draft.FLASHPOLICY, message, true);
-            } else if (code == Draft.PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
+                flushAndClose(FLASHPOLICY, message, true);
+            } else if (code == PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
                 flushAndClose(code, message, remote);
             } else {
-                flushAndClose(Draft.NEVER_CONNECTED, message, false);
+                flushAndClose(NEVER_CONNECTED, message, false);
             }
-            readyState = Draft.ReadyState.CLOSING;
+            readyState = CLOSING;
             tmpHandshakeBytes = null;
             return;
         }
@@ -379,12 +418,12 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      *                <code>remote</code> may also be true if this endpoint started the closing handshake since the other endpoint may not simply echo the <code>code</code> but close the connection the same time this endpoint does do but with an other <code>code</code>. <br>
      **/
     public synchronized void closeConnection(int code, String message, boolean remote) {
-        if (readyState == Draft.ReadyState.CLOSED) {
+        if (readyState == CLOSED) {
             return;
         }
-        if (readyState == Draft.ReadyState.OPEN) {
-            if (code == Draft.ABNORMAL_CLOSE) {
-                readyState = Draft.ReadyState.CLOSING;
+        if (readyState == OPEN) {
+            if (code == ABNORMAL_CLOSE) {
+                readyState = CLOSING;
             }
         }
         try {
@@ -395,7 +434,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         if (draft != null)
             draft.byteBuffer = null;
         handshakerequest = null;
-        readyState = Draft.ReadyState.CLOSED;
+        readyState = CLOSED;
     }
 
     protected void closeConnection(int code, boolean remote) {
@@ -422,12 +461,12 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public void eot() {
-        if (readyState == Draft.ReadyState.NOT_YET_CONNECTED) {
-            closeConnection(Draft.NEVER_CONNECTED, true);
+        if (readyState == NOT_YET_CONNECTED) {
+            closeConnection(NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
             closeConnection(closecode, closemessage, closedremotely);
         } else {
-            closeConnection(Draft.ABNORMAL_CLOSE, true);
+            closeConnection(ABNORMAL_CLOSE, true);
         }
     }
 
@@ -454,19 +493,19 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public boolean isOpen() {
-        return readyState == Draft.ReadyState.OPEN;
+        return readyState == OPEN;
     }
 
     public boolean isClosing() {
-        return readyState == Draft.ReadyState.CLOSING;
+        return readyState == CLOSING;
     }
 
     public boolean isClosed() {
-        return readyState == Draft.ReadyState.CLOSED;
+        return readyState == CLOSED;
     }
 
     public void close() {
-        close(Draft.NORMAL);
+        close(NORMAL);
     }
 
     /**
@@ -576,14 +615,14 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             sendHandshake();
         } catch ( /*IOException | SecurityException | UnresolvedAddressException | InstrumentException | ClosedByInterruptException | SocketTimeoutException */Exception e) {
             onWebsocketError(e);
-            this.closeConnection(Draft.NEVER_CONNECTED, e.getMessage());
+            this.closeConnection(NEVER_CONNECTED, e.getMessage());
             return;
         } catch (InternalError e) {
             // https://bugs.openjdk.java.net/browse/JDK-8173620
             if (e.getCause() instanceof InvocationTargetException && e.getCause().getCause() instanceof IOException) {
                 IOException cause = (IOException) e.getCause().getCause();
                 onWebsocketError(cause);
-                this.closeConnection(Draft.NEVER_CONNECTED, cause.getMessage());
+                this.closeConnection(NEVER_CONNECTED, cause.getMessage());
                 return;
             }
             throw e;
@@ -605,7 +644,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         } catch (RuntimeException e) {
             // this catch case covers internal errors only and indicates a bug in this websocket implementation
             onError(e);
-            this.closeConnection(Draft.ABNORMAL_CLOSE, e.getMessage());
+            this.closeConnection(ABNORMAL_CLOSE, e.getMessage());
         }
         connectReadThread = null;
     }
@@ -775,7 +814,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             }
         } catch (Exception e) {
             onError(e);
-            this.closeConnection(Draft.ABNORMAL_CLOSE, e.getMessage());
+            this.closeConnection(ABNORMAL_CLOSE, e.getMessage());
             return;
         }
         connectLatch = new CountDownLatch(1);
@@ -835,7 +874,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     private void open(HandshakeBuilder d) {
         Logger.trace("open using draft: {}", draft);
-        readyState = Draft.ReadyState.OPEN;
+        readyState = OPEN;
         try {
             this.onWebsocketOpen(d);
         } catch (RuntimeException e) {
@@ -897,7 +936,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         RFCWebSocket RFCWebSocket = (RFCWebSocket) webSocket;
         if (RFCWebSocket.getLastPong() < minimumPongTime) {
             Logger.trace("Closing connection due to no pong received: {}", RFCWebSocket);
-            RFCWebSocket.closeConnection(Draft.ABNORMAL_CLOSE, "The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection");
+            RFCWebSocket.closeConnection(ABNORMAL_CLOSE, "The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection");
         } else {
             if (RFCWebSocket.isOpen()) {
                 RFCWebSocket.sendPing();

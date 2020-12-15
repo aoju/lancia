@@ -20,35 +20,6 @@ import java.util.List;
 public class Draft {
 
     /**
-     * indicates a normal closure, meaning whatever purpose the
-     * connection was established for has been fulfilled.
-     */
-    public static final int NORMAL = 1000;
-    /**
-     * 1002 indicates that an endpoint is terminating the connection due
-     * to a protocol error.
-     */
-    public static final int PROTOCOL_ERROR = 1002;
-    /**
-     * 1006 is a reserved value and MUST NOT be set as a status code in a
-     * Close control frame by an endpoint. It is designated for use in
-     * applications expecting a status code to indicate that the
-     * connection was closed abnormally, e.g. without sending or
-     * receiving a Close control frame.
-     */
-    public static final int ABNORMAL_CLOSE = 1006;
-
-    /**
-     * The connection had never been established
-     */
-    public static final int NEVER_CONNECTED = -1;
-
-    /**
-     * The connection was flushed and closed
-     */
-    public static final int FLASHPOLICY = -3;
-
-    /**
      * Handshake specific field for the key
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
@@ -60,6 +31,7 @@ public class Draft {
      * Handshake specific field for the connection
      */
     private static final String CONNECTION = "Connection";
+
     /**
      * Attribute for the maximum allowed size of a frame
      */
@@ -258,28 +230,6 @@ public class Draft {
     }
 
     /**
-     * Get a byte that can set RSV bits when OR(|)'d.
-     * 0 1 2 3 4 5 6 7
-     * +-+-+-+-+-------+
-     * |F|R|R|R| opcode|
-     * |I|S|S|S|  (4)  |
-     * |N|V|V|V|       |
-     * | |1|2|3|       |
-     *
-     * @param rsv Can only be {0, 1, 2, 3}
-     * @return byte that represents which RSV bit is set.
-     */
-    private byte getRSVByte(int rsv) {
-        if (rsv == 1) // 0100 0000
-            return 0x40;
-        if (rsv == 2) // 0010 0000
-            return 0x20;
-        if (rsv == 3) // 0001 0000
-            return 0x10;
-        return 0;
-    }
-
-    /**
      * Get the mask byte if existing
      *
      * @param mask is mask active or not
@@ -400,13 +350,6 @@ public class Draft {
         }
         bytebuffer.flip();
         return bytebuffer;
-    }
-
-    /**
-     * Enum which represents the state a websocket may be in
-     */
-    public enum ReadyState {
-        NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
     }
 
 }
