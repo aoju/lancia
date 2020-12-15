@@ -266,7 +266,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     /**
      * Called after the websocket connection has been closed.
      *
-     * @param code   The codes can be looked up here: {@link Framedata}
+     * @param code   The codes
      * @param reason Additional information string
      * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
      **/
@@ -479,10 +479,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     public void sendPing() throws NullPointerException {
-        Framedata pingFrame = new Framedata();
-        if (pingFrame == null)
-            throw new NullPointerException("onPreparePing(WebSocket) returned null. PingFrame to sent can't be null.");
-        send((ByteString) Collections.singletonList(pingFrame));
+        send(ByteString.EMPTY);
     }
 
     public void startHandshake(HandshakeBuilder handshakedata) throws InstrumentException {
@@ -854,8 +851,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     private void decodeFrames(ByteBuffer socketBuffer) {
-        List<Framedata> frames = draft.translateFrame(socketBuffer);
-        for (Framedata f : frames) {
+        List<ByteString> frames = draft.translateFrame(socketBuffer);
+        for (ByteString f : frames) {
             Logger.trace("matched frame: {}", f);
             draft.processFrameText(this, f);
         }

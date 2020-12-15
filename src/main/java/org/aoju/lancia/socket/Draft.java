@@ -1,5 +1,6 @@
 package org.aoju.lancia.socket;
 
+import org.aoju.bus.core.io.ByteString;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.BufferKit;
@@ -100,18 +101,17 @@ public class Draft {
         return handshake;
     }
 
-    public ByteBuffer createBinaryFrame(ByteBuffer framedata) {
+    public ByteBuffer createBinaryFrame(ByteBuffer byteBuffer) {
         if (Logger.get().isTrace())
-            Logger.trace("afterEnconding({}): {}", framedata.remaining(), (framedata.remaining() > 1000 ? "too big to display" : new String(framedata.array())));
-        ByteBuffer mes = framedata;
+            Logger.trace("afterEnconding({}): {}", byteBuffer.remaining(), (byteBuffer.remaining() > 1000 ? "too big to display" : new String(byteBuffer.array())));
         boolean mask = true;
-        int sizebytes = getSizeBytes(mes);
-        ByteBuffer buf = ByteBuffer.allocate(1 + (sizebytes > 1 ? sizebytes + 1 : sizebytes) + (mask ? 4 : 0) + mes.remaining());
+        int sizebytes = getSizeBytes(byteBuffer);
+        ByteBuffer buf = ByteBuffer.allocate(1 + (sizebytes > 1 ? sizebytes + 1 : sizebytes) + (mask ? 4 : 0) + byteBuffer.remaining());
         byte optcode = 1;
         byte one = -128;
         one |= optcode;
         buf.put(one);
-        byte[] payloadlengthbytes = toByteArray(mes.remaining(), sizebytes);
+        byte[] payloadlengthbytes = toByteArray(byteBuffer.remaining(), sizebytes);
         assert (payloadlengthbytes.length == sizebytes);
 
         if (sizebytes == 1) {
@@ -128,35 +128,33 @@ public class Draft {
         if (mask) {
             ByteBuffer maskkey = ByteBuffer.allocate(4);
             buf.put(maskkey.array());
-            for (int i = 0; mes.hasRemaining(); i++) {
-                buf.put((byte) (mes.get() ^ maskkey.get(i % 4)));
+            for (int i = 0; byteBuffer.hasRemaining(); i++) {
+                buf.put((byte) (byteBuffer.get() ^ maskkey.get(i % 4)));
             }
         } else {
-            buf.put(mes);
-            mes.flip();
+            buf.put(byteBuffer);
+            byteBuffer.flip();
         }
         assert (buf.remaining() == 0) : buf.remaining();
         buf.flip();
         return buf;
     }
 
-    private Framedata translateSingleFrame(ByteBuffer buffer) {
+    private ByteString translateSingleFrame(ByteBuffer buffer) {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
         this.realpacketsize = 2;
-        byte b1 = buffer.get( /*0*/);
 
-        boolean rsv1 = (b1 & 0x40) != 0;
-        boolean rsv2 = (b1 & 0x20) != 0;
-        boolean rsv3 = (b1 & 0x10) != 0;
+        buffer.get( /*0*/);
+
         byte b2 = buffer.get( /*1*/);
         boolean mask = (b2 & -128) != 0;
         int payloadlength = (byte) (b2 & ~(byte) 128);
 
         if (!(payloadlength >= 0 && payloadlength <= 125)) {
             int[] array = {payloadlength, realpacketsize};
-            translateSingleFramePayloadLength(array, buffer, payloadlength, maxpacketsize, realpacketsize);
+            translateSingleFramePayloadLength(array, buffer, payloadlength, realpacketsize);
             payloadlength = array[0];
             realpacketsize = array[1];
         }
@@ -178,13 +176,8 @@ public class Draft {
             payload.put(buffer.array(), buffer.position(), payload.limit());
             buffer.position(buffer.position() + payload.limit());
         }
-
-        Framedata frame = new Framedata();
         payload.flip();
-        frame.setPayload(payload);
-        if (Logger.get().isTrace())
-            Logger.trace("afterDecoding({}): {}", frame.getPayload().remaining(), (frame.getPayload().remaining() > 1000 ? "too big to display" : new String(frame.getPayload().array())));
-        return frame;
+        return ByteString.of(payload);
     }
 
     /**
@@ -192,12 +185,11 @@ public class Draft {
      *
      * @param buffer            the buffer to read from
      * @param oldPayloadlength  the old payload length
-     * @param maxpacketsize     the max packet size allowed
      * @param oldRealpacketsize the real packet size
      * @return the new payload data containing new payload length and new packet size
      * @throws InstrumentException thrown if a control frame has an invalid length
      */
-    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize) throws InstrumentException {
+    private void translateSingleFramePayloadLength(int[] array, ByteBuffer buffer, int oldPayloadlength, int oldRealpacketsize) throws InstrumentException {
         int payloadlength = oldPayloadlength,
                 realpacketsize = oldRealpacketsize;
 
@@ -254,10 +246,10 @@ public class Draft {
         return 8;
     }
 
-    public List<Framedata> translateFrame(ByteBuffer buffer) {
+    public List<ByteString> translateFrame(ByteBuffer buffer) {
         while (true) {
-            List<Framedata> frames = new LinkedList<>();
-            Framedata cur;
+            List<ByteString> frames = new LinkedList<>();
+            ByteString cur;
             if (byteBuffer != null) {
 
                 buffer.mark();
@@ -309,9 +301,9 @@ public class Draft {
      * @param RFCWebSocket the websocket impl
      * @param frame        the frame
      */
-    void processFrameText(RFCWebSocket RFCWebSocket, Framedata frame) {
+    void processFrameText(RFCWebSocket RFCWebSocket, ByteString frame) {
         try {
-            RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(frame.getPayload()));
+            RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(ByteBuffer.wrap(frame.internalArray())));
         } catch (RuntimeException e) {
             RFCWebSocket.getWebSocketListener().onWebsocketError(e);
         }
