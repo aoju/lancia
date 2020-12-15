@@ -20,6 +20,35 @@ import java.util.List;
 public class Draft {
 
     /**
+     * indicates a normal closure, meaning whatever purpose the
+     * connection was established for has been fulfilled.
+     */
+    public static final int NORMAL = 1000;
+    /**
+     * 1002 indicates that an endpoint is terminating the connection due
+     * to a protocol error.
+     */
+    public static final int PROTOCOL_ERROR = 1002;
+    /**
+     * 1006 is a reserved value and MUST NOT be set as a status code in a
+     * Close control frame by an endpoint. It is designated for use in
+     * applications expecting a status code to indicate that the
+     * connection was closed abnormally, e.g. without sending or
+     * receiving a Close control frame.
+     */
+    public static final int ABNORMAL_CLOSE = 1006;
+
+    /**
+     * The connection had never been established
+     */
+    public static final int NEVER_CONNECTED = -1;
+
+    /**
+     * The connection was flushed and closed
+     */
+    public static final int FLASHPOLICY = -3;
+
+    /**
      * Handshake specific field for the key
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
@@ -38,7 +67,9 @@ public class Draft {
     /**
      * Attribute for the current incomplete frame
      */
-    private ByteBuffer byteBuffer;
+    public ByteBuffer byteBuffer;
+
+    private int realpacketsize;
 
     /**
      * Constructor for the websocket protocol specified by RFC 6455 with custom extensions and protocols
@@ -64,7 +95,7 @@ public class Draft {
         if (line == null)
             throw new InstrumentException("" + buf.capacity() + 128);
 
-        String[] firstLineTokens = line.split(" ", 3);// eg. HTTP/1.1 101 Switching the Protocols
+        String[] firstLineTokens = line.split(" ", 3);
         if (firstLineTokens.length != 3) {
             throw new InstrumentException();
         }
@@ -83,7 +114,7 @@ public class Draft {
         while (line != null && line.length() > 0) {
             String[] pair = line.split(":", 2);
             if (pair.length != 2)
-                throw new InstrumentException("not an http header");
+                throw new InstrumentException("Not an http header");
             // If the handshake contains already a specific key, append the new value
             if (handshake.hasFieldValue(pair[0])) {
                 handshake.put(pair[0], handshake.getFieldValue(pair[0]) + "; " + pair[1].replaceFirst("^ +", ""));
@@ -97,24 +128,16 @@ public class Draft {
         return handshake;
     }
 
-    private int realpacketsize;
-
-    public ByteBuffer createBinaryFrame(Framedata framedata) {
+    public ByteBuffer createBinaryFrame(ByteBuffer framedata) {
         if (Logger.get().isTrace())
-            Logger.trace("afterEnconding({}): {}", framedata.getPayloadData().remaining(), (framedata.getPayloadData().remaining() > 1000 ? "too big to display" : new String(framedata.getPayloadData().array())));
-        ByteBuffer mes = framedata.getPayloadData();
+            Logger.trace("afterEnconding({}): {}", framedata.remaining(), (framedata.remaining() > 1000 ? "too big to display" : new String(framedata.array())));
+        ByteBuffer mes = framedata;
         boolean mask = true;
         int sizebytes = getSizeBytes(mes);
         ByteBuffer buf = ByteBuffer.allocate(1 + (sizebytes > 1 ? sizebytes + 1 : sizebytes) + (mask ? 4 : 0) + mes.remaining());
         byte optcode = 1;
-        byte one = (byte) (framedata.isFin() ? -128 : 0);
+        byte one = -128;
         one |= optcode;
-        if (framedata.isRSV1())
-            one |= getRSVByte(1);
-        if (framedata.isRSV2())
-            one |= getRSVByte(2);
-        if (framedata.isRSV3())
-            one |= getRSVByte(3);
         buf.put(one);
         byte[] payloadlengthbytes = toByteArray(mes.remaining(), sizebytes);
         assert (payloadlengthbytes.length == sizebytes);
@@ -145,13 +168,13 @@ public class Draft {
         return buf;
     }
 
-    private Framedata translateSingleFrame(ByteBuffer buffer) {
+    private Framedatads translateSingleFrame(ByteBuffer buffer) {
         if (buffer == null)
             throw new IllegalArgumentException();
         int maxpacketsize = buffer.remaining();
         this.realpacketsize = 2;
         byte b1 = buffer.get( /*0*/);
-        boolean fin = b1 >> 8 != 0;
+
         boolean rsv1 = (b1 & 0x40) != 0;
         boolean rsv2 = (b1 & 0x20) != 0;
         boolean rsv3 = (b1 & 0x10) != 0;
@@ -172,7 +195,7 @@ public class Draft {
             Logger.trace("Incomplete frame: maxpacketsize < realpacketsize");
             throw new InstrumentException("" + realpacketsize);
         }
-        ByteBuffer payload = ByteBuffer.allocate(checkAlloc(payloadlength));
+        ByteBuffer payload = ByteBuffer.allocate(payloadlength);
         if (mask) {
             byte[] maskskey = new byte[4];
             buffer.get(maskskey);
@@ -184,16 +207,11 @@ public class Draft {
             buffer.position(buffer.position() + payload.limit());
         }
 
-        Framedata frame = new Framedata();
-        frame.setFin(fin);
-        frame.setRSV1(rsv1);
-        frame.setRSV2(rsv2);
-        frame.setRSV3(rsv3);
+        Framedatads frame = new Framedatads();
         payload.flip();
         frame.setPayload(payload);
         if (Logger.get().isTrace())
-            Logger.trace("afterDecoding({}): {}", frame.getPayloadData().remaining(), (frame.getPayloadData().remaining() > 1000 ? "too big to display" : new String(frame.getPayloadData().array())));
-        frame.isValid();
+            Logger.trace("afterDecoding({}): {}", frame.getPayload().remaining(), (frame.getPayload().remaining() > 1000 ? "too big to display" : new String(frame.getPayload().array())));
         return frame;
     }
 
@@ -286,27 +304,27 @@ public class Draft {
         return 8;
     }
 
-    public List<Framedata> translateFrame(ByteBuffer buffer) {
+    public List<Framedatads> translateFrame(ByteBuffer buffer) {
         while (true) {
-            List<Framedata> frames = new LinkedList<>();
-            Framedata cur;
+            List<Framedatads> frames = new LinkedList<>();
+            Framedatads cur;
             if (byteBuffer != null) {
 
-                    buffer.mark();
-                    int availableNextByteCount = buffer.remaining();// The number of bytes received
-                    int expectedNextByteCount = byteBuffer.remaining();// The number of bytes to complete the incomplete frame
+                buffer.mark();
+                int availableNextByteCount = buffer.remaining();// The number of bytes received
+                int expectedNextByteCount = byteBuffer.remaining();// The number of bytes to complete the incomplete frame
 
-                    if (expectedNextByteCount > availableNextByteCount) {
-                        // did not receive enough bytes to complete the frame
-                        byteBuffer.put(buffer.array(), buffer.position(), availableNextByteCount);
-                        buffer.position(buffer.position() + availableNextByteCount);
-                        return Collections.emptyList();
-                    }
-                    byteBuffer.put(buffer.array(), buffer.position(), expectedNextByteCount);
-                    buffer.position(buffer.position() + expectedNextByteCount);
-                    cur = translateSingleFrame((ByteBuffer) byteBuffer.duplicate().position(0));
-                    frames.add(cur);
-                    byteBuffer = null;
+                if (expectedNextByteCount > availableNextByteCount) {
+                    // did not receive enough bytes to complete the frame
+                    byteBuffer.put(buffer.array(), buffer.position(), availableNextByteCount);
+                    buffer.position(buffer.position() + availableNextByteCount);
+                    return Collections.emptyList();
+                }
+                byteBuffer.put(buffer.array(), buffer.position(), expectedNextByteCount);
+                buffer.position(buffer.position() + expectedNextByteCount);
+                cur = translateSingleFrame((ByteBuffer) byteBuffer.duplicate().position(0));
+                frames.add(cur);
+                byteBuffer = null;
 
             }
 
@@ -317,20 +335,13 @@ public class Draft {
                     frames.add(cur);
                 } catch (InstrumentException e) {
                     buffer.reset();
-                    byteBuffer = ByteBuffer.allocate(checkAlloc(this.realpacketsize));
+                    byteBuffer = ByteBuffer.allocate(this.realpacketsize);
                     byteBuffer.put(buffer);
                     break;
                 }
             }
             return frames;
         }
-    }
-
-    public List<Framedata> createFrames(String text) {
-        Framedata curframe = new Framedata();
-        curframe.setPayload(ByteBuffer.wrap(text.getBytes(Charset.UTF_8)));
-        curframe.isValid();
-        return Collections.singletonList(curframe);
     }
 
     private byte[] toByteArray(long val, int bytecount) {
@@ -342,37 +353,18 @@ public class Draft {
         return buffer;
     }
 
-    public void processFrame(RFCWebSocket RFCWebSocket, Framedata frame) {
-        processFrameText(RFCWebSocket, frame);
-    }
-
-    /**
-     * Log the runtime exception to the specific WebSocketImpl
-     *
-     * @param RFCWebSocket the implementation of the websocket
-     * @param e            the runtime exception
-     */
-    private void logRuntimeException(RFCWebSocket RFCWebSocket, RuntimeException e) {
-        Logger.error("Runtime exception during onWebsocketMessage", e);
-        RFCWebSocket.getWebSocketListener().onWebsocketError(e);
-    }
-
     /**
      * Process the frame if it is a text frame
      *
      * @param RFCWebSocket the websocket impl
      * @param frame        the frame
      */
-    private void processFrameText(RFCWebSocket RFCWebSocket, Framedata frame) {
+    void processFrameText(RFCWebSocket RFCWebSocket, Framedatads frame) {
         try {
-            RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(frame.getPayloadData()));
+            RFCWebSocket.getWebSocketListener().onWebsocketMessage(BufferKit.readLine(frame.getPayload()));
         } catch (RuntimeException e) {
-            logRuntimeException(RFCWebSocket, e);
+            RFCWebSocket.getWebSocketListener().onWebsocketError(e);
         }
-    }
-
-    public void reset() {
-        byteBuffer = null;
     }
 
     public HandshakeState.CloseHandshakeType getCloseHandshakeType() {
@@ -383,7 +375,7 @@ public class Draft {
         return new Draft(maxBufferSize);
     }
 
-    public List<ByteBuffer> createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {
+    public ByteBuffer createHandshake(HandshakeBuilder HandshakeBuilder, boolean withcontent) {
         StringBuilder bui = new StringBuilder(100);
         if (HandshakeBuilder instanceof HandshakeBuilder) {
             bui.append("GET ").append(HandshakeBuilder.getResourceDescriptor()).append(" HTTP/1.1");
@@ -411,13 +403,7 @@ public class Draft {
             bytebuffer.put(content);
         }
         bytebuffer.flip();
-        return Collections.singletonList(bytebuffer);
-    }
-
-    public int checkAlloc(int bytecount) throws InstrumentException {
-        if (bytecount < 0)
-            throw new InstrumentException("Negative count:" + Framedata.PROTOCOL_ERROR);
-        return bytecount;
+        return bytebuffer;
     }
 
 }

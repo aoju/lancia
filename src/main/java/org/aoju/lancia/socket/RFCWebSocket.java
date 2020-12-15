@@ -1,6 +1,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.io.ByteString;
+import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.thread.NamedThreadFactory;
 import org.aoju.bus.http.Request;
@@ -33,14 +34,12 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      * is binded to. Note that ports under 1024 usually require root permissions.
      */
     public static final int DEFAULT_PORT = 80;
-
     /**
      * The default wss port of WebSockets, as defined in the spec. If the nullary
      * constructor is used, DEFAULT_WSS_PORT will be the port the WebSocketServer
      * is binded to. Note that ports under 1024 usually require root permissions.
      */
     public static final int DEFAULT_WSS_PORT = 443;
-
     /**
      * Initial buffer size
      */
@@ -48,11 +47,9 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     /**
      * Attribut to synchronize the write
      */
-    private final Object synchronizeWriteObject = new Object();
+    private final Object object = new Object();
     /**
      * The SocketFactory for this WebSocketClient
-     *
-     * @since 1.4.0
      */
     private final SocketFactory socketFactory = null;
     /**
@@ -143,7 +140,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      * The latch for closeBlocking()
      */
     private CountDownLatch closeLatch = new CountDownLatch(1);
-    private Framedata pingFrame;
     /**
      * Attribute which allows you to deactivate the Nagle's algorithm
      */
@@ -215,6 +211,82 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
+     * Called after an opening handshake has been performed and the given websocket is ready to be written on.
+     *
+     * @param handshakedata The handshake of the websocket instance
+     */
+    public abstract void onOpen(HandshakeBuilder handshakedata);
+
+    /**
+     * Callback for string messages received from the remote host
+     *
+     * @param message The UTF-8 decoded message that was received.
+     **/
+    public abstract void onMessage(String message);
+
+    /**
+     * Called after the websocket connection has been closed.
+     *
+     * @param code   The codes can be looked up here: {@link Framedatads}
+     * @param reason Additional information string
+     * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
+     **/
+    public abstract void onClose(int code, String reason, boolean remote);
+
+    /**
+     * Called when errors occurs. If an error causes the websocket connection to fail {@link #onClose(int, String, boolean)} will be called additionally.<br>
+     * This method will be called primarily because of IO or protocol errors.<br>
+     * If the given exception is an RuntimeException that probably means that you encountered a bug.<br>
+     *
+     * @param ex The exception causing this error
+     **/
+    public abstract void onError(Exception ex);
+
+    @Override
+    public Request request() {
+        return null;
+    }
+
+    @Override
+    public long queueSize() {
+        return 0;
+    }
+
+    /**
+     * Send Text data to the other end.
+     */
+    @Override
+    public boolean send(String text) {
+        if (text == null)
+            throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
+        ByteBuffer byteBuffer = ByteBuffer.wrap(text.getBytes(Charset.UTF_8));
+        if (!isOpen()) {
+            throw new InstrumentException();
+        }
+        if (byteBuffer == null) {
+            throw new IllegalArgumentException();
+        }
+        write(draft.createBinaryFrame(byteBuffer));
+        return true;
+    }
+
+    @Override
+    public boolean send(ByteString bytes) {
+        return false;
+    }
+
+    @Override
+    public boolean close(int code, String message) {
+        close(code, message, false);
+        return true;
+    }
+
+    @Override
+    public void cancel() {
+
+    }
+
+    /**
      * Method to decode the provided ByteBuffer
      *
      * @param socketBuffer the ByteBuffer to decode
@@ -264,64 +336,35 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         HandshakeBuilder tmphandshake = Draft.translateHandshakeHttp(socketBuffer);
         if (!(tmphandshake instanceof HandshakeBuilder)) {
             Logger.trace("Closing due to protocol error: wrong http function");
-            flushAndClose(Framedata.PROTOCOL_ERROR, "wrong http function", false);
+            flushAndClose(Draft.PROTOCOL_ERROR, "wrong http function", false);
             return false;
         }
         open(tmphandshake);
         return true;
     }
 
-    private void decodeFrames(ByteBuffer socketBuffer) {
-        List<Framedata> frames;
-        frames = draft.translateFrame(socketBuffer);
-        for (Framedata f : frames) {
-            Logger.trace("matched frame: {}", f);
-            draft.processFrame(this, f);
-        }
-
-    }
-
     public synchronized void close(int code, String message, boolean remote) {
         if (readyState != HandshakeState.ReadyState.CLOSING && readyState != HandshakeState.ReadyState.CLOSED) {
             if (readyState == HandshakeState.ReadyState.OPEN) {
-                if (code == Framedata.ABNORMAL_CLOSE) {
+                if (code == Draft.ABNORMAL_CLOSE) {
                     assert (!remote);
                     readyState = HandshakeState.ReadyState.CLOSING;
                     flushAndClose(code, message, false);
                     return;
                 }
-                if (draft.getCloseHandshakeType() != HandshakeState.CloseHandshakeType.NONE) {
-
-                    if (isOpen()) {
-                        Framedata framedata = new Framedata();
-                        framedata.isValid();
-                        sendFrame(framedata);
-                    }
-                }
                 flushAndClose(code, message, remote);
-            } else if (code == Framedata.FLASHPOLICY) {
+            } else if (code == Draft.FLASHPOLICY) {
                 assert (remote);
-                flushAndClose(Framedata.FLASHPOLICY, message, true);
-            } else if (code == Framedata.PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
+                flushAndClose(Draft.FLASHPOLICY, message, true);
+            } else if (code == Draft.PROTOCOL_ERROR) { // this endpoint found a PROTOCOL_ERROR
                 flushAndClose(code, message, remote);
             } else {
-                flushAndClose(Framedata.NEVER_CONNECTED, message, false);
+                flushAndClose(Draft.NEVER_CONNECTED, message, false);
             }
             readyState = HandshakeState.ReadyState.CLOSING;
             tmpHandshakeBytes = null;
             return;
         }
-    }
-
-    @Override
-    public boolean close(int code, String message) {
-        close(code, message, false);
-        return true;
-    }
-
-    @Override
-    public void cancel() {
-
     }
 
     /**
@@ -339,9 +382,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         if (readyState == HandshakeState.ReadyState.CLOSED) {
             return;
         }
-        //Methods like eot() call this method without calling onClose(). Due to that reason we have to adjust the ReadyState manually
         if (readyState == HandshakeState.ReadyState.OPEN) {
-            if (code == Framedata.ABNORMAL_CLOSE) {
+            if (code == Draft.ABNORMAL_CLOSE) {
                 readyState = HandshakeState.ReadyState.CLOSING;
             }
         }
@@ -351,7 +393,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             this.onWebsocketError(e);
         }
         if (draft != null)
-            draft.reset();
+            draft.byteBuffer = null;
         handshakerequest = null;
         readyState = HandshakeState.ReadyState.CLOSED;
     }
@@ -374,23 +416,22 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
         flushandclosestate = true;
 
-        //  this.onWriteDemand(this); // ensures that all outgoing frames are flushed before closing the connection
         if (draft != null)
-            draft.reset();
+            draft.byteBuffer = null;
         handshakerequest = null;
     }
 
     public void eot() {
         if (readyState == HandshakeState.ReadyState.NOT_YET_CONNECTED) {
-            closeConnection(Framedata.NEVER_CONNECTED, true);
+            closeConnection(Draft.NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
             closeConnection(closecode, closemessage, closedremotely);
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.NONE) {
-            closeConnection(Framedata.NORMAL, true);
+            closeConnection(Draft.NORMAL, true);
         } else if (draft.getCloseHandshakeType() == HandshakeState.CloseHandshakeType.ONEWAY) {
-            closeConnection(Framedata.NORMAL, true);
+            closeConnection(Draft.NORMAL, true);
         } else {
-            closeConnection(Framedata.ABNORMAL_CLOSE, true);
+            closeConnection(Draft.ABNORMAL_CLOSE, true);
         }
     }
 
@@ -402,97 +443,18 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         close(0, e.getMessage(), false);
     }
 
-    @Override
-    public Request request() {
-        return null;
-    }
-
-    @Override
-    public long queueSize() {
-        return 0;
-    }
-
-    /**
-     * Send Text data to the other end.
-     */
-    @Override
-    public boolean send(String text) {
-        if (text == null)
-            throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
-        send(draft.createFrames(text));
-        return true;
-    }
-
-    @Override
-    public boolean send(ByteString bytes) {
-        return false;
-    }
-
-    private void send(Collection<Framedata> frames) {
-        if (!isOpen()) {
-            throw new InstrumentException();
-        }
-        if (frames == null) {
-            throw new IllegalArgumentException();
-        }
-        ArrayList<ByteBuffer> outgoingFrames = new ArrayList<>();
-        for (Framedata f : frames) {
-            Logger.trace("send frame: {}", f);
-            outgoingFrames.add(draft.createBinaryFrame(f));
-        }
-        write(outgoingFrames);
-    }
-
-    public void sendFrame(Framedata framedata) {
-        send(Collections.singletonList(framedata));
-    }
-
     public void sendPing() throws NullPointerException {
-        // Gets a PingFrame from WebSocketListener(wsl) and sends it.
-        Framedata pingFrame = this.onPreparePing();
+        Framedatads pingFrame = new Framedatads();
         if (pingFrame == null)
             throw new NullPointerException("onPreparePing(WebSocket) returned null. PingFrame to sent can't be null.");
-        sendFrame(pingFrame);
+        send((ByteString) Collections.singletonList(pingFrame));
     }
 
     public void startHandshake(HandshakeBuilder handshakedata) throws InstrumentException {
-        // Store the Handshake Request we are about to send
         this.handshakerequest = draft.postProcessHandshakeRequestAsClient(handshakedata);
-
         resourceDescriptor = handshakedata.getResourceDescriptor();
         assert (resourceDescriptor != null);
-
         write(draft.createHandshake(this.handshakerequest, true));
-    }
-
-    private void write(ByteBuffer buf) {
-        Logger.trace("write({}): {}", buf.remaining(), buf.remaining() > 1000 ? "too big to display" : new String(buf.array()));
-
-        outQueue.add(buf);
-        // this.onWriteDemand(this);
-    }
-
-    /**
-     * Write a list of bytebuffer (frames in binary form) into the outgoing queue
-     *
-     * @param bufs the list of bytebuffer
-     */
-    private void write(List<ByteBuffer> bufs) {
-        synchronized (synchronizeWriteObject) {
-            for (ByteBuffer b : bufs) {
-                write(b);
-            }
-        }
-    }
-
-    private void open(HandshakeBuilder d) {
-        Logger.trace("open using draft: {}", draft);
-        readyState = HandshakeState.ReadyState.OPEN;
-        try {
-            this.onWebsocketOpen(d);
-        } catch (RuntimeException e) {
-            this.onWebsocketError(e);
-        }
     }
 
     public boolean isOpen() {
@@ -507,12 +469,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         return readyState == HandshakeState.ReadyState.CLOSED;
     }
 
-    public HandshakeState.ReadyState getReadyState() {
-        return readyState;
-    }
-
     public void close() {
-        close(Framedata.NORMAL);
+        close(Draft.NORMAL);
     }
 
     /**
@@ -543,60 +501,11 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
-     * Accepts bound and unbound sockets.<br>
-     * This method must be called before <code>connect</code>.
-     * If the given socket is not yet bound it will be bound to the uri specified in the constructor.
-     *
-     * @param socket The socket which should be used for the connection
-     * @deprecated use setSocketFactory
-     */
-    @Deprecated
-    public void setSocket(Socket socket) {
-        if (this.socket != null) {
-            throw new IllegalStateException("socket has already been set");
-        }
-        this.socket = socket;
-    }
-
-    /**
      * Reinitiates the websocket connection. This method does not block.
      */
     public void reconnect() {
         reset();
         connect();
-    }
-
-    /**
-     * Reset everything relevant to allow a reconnect
-     */
-    private void reset() {
-        Thread current = Thread.currentThread();
-        if (current == writeThread || current == connectReadThread) {
-            throw new IllegalStateException("You cannot initialize a reconnect out of the websocket thread. Use reconnect in another thread to insure a successful cleanup.");
-        }
-        try {
-            closeBlocking();
-            if (writeThread != null) {
-                this.writeThread.interrupt();
-                this.writeThread = null;
-            }
-            if (connectReadThread != null) {
-                this.connectReadThread.interrupt();
-                this.connectReadThread = null;
-            }
-            this.draft.reset();
-            if (this.socket != null) {
-                this.socket.close();
-                this.socket = null;
-            }
-        } catch (Exception e) {
-            onError(e);
-            this.closeConnection(Framedata.ABNORMAL_CLOSE, e.getMessage());
-            return;
-        }
-        connectLatch = new CountDownLatch(1);
-        closeLatch = new CountDownLatch(1);
-
     }
 
     /**
@@ -632,7 +541,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         closeLatch.await();
     }
 
-    protected Collection<WebSocket> getConnections() {
+    protected List<WebSocket> getConnections() {
         return Collections.singletonList(this);
     }
 
@@ -671,14 +580,14 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             sendHandshake();
         } catch ( /*IOException | SecurityException | UnresolvedAddressException | InstrumentException | ClosedByInterruptException | SocketTimeoutException */Exception e) {
             onWebsocketError(e);
-            this.closeConnection(Framedata.NEVER_CONNECTED, e.getMessage());
+            this.closeConnection(Draft.NEVER_CONNECTED, e.getMessage());
             return;
         } catch (InternalError e) {
             // https://bugs.openjdk.java.net/browse/JDK-8173620
             if (e.getCause() instanceof InvocationTargetException && e.getCause().getCause() instanceof IOException) {
                 IOException cause = (IOException) e.getCause().getCause();
                 onWebsocketError(cause);
-                this.closeConnection(Framedata.NEVER_CONNECTED, cause.getMessage());
+                this.closeConnection(Draft.NEVER_CONNECTED, cause.getMessage());
                 return;
             }
             throw e;
@@ -700,61 +609,9 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         } catch (RuntimeException e) {
             // this catch case covers internal errors only and indicates a bug in this websocket implementation
             onError(e);
-            this.closeConnection(Framedata.ABNORMAL_CLOSE, e.getMessage());
+            this.closeConnection(Draft.ABNORMAL_CLOSE, e.getMessage());
         }
         connectReadThread = null;
-    }
-
-    /**
-     * Extract the specified port
-     *
-     * @return the specified port or the default port for the specific scheme
-     */
-    private int getPort() {
-        int port = uri.getPort();
-        if (port == -1) {
-            String scheme = uri.getScheme();
-            if ("wss".equals(scheme)) {
-                return RFCWebSocket.DEFAULT_WSS_PORT;
-            } else if ("ws".equals(scheme)) {
-                return RFCWebSocket.DEFAULT_PORT;
-            } else {
-                throw new IllegalArgumentException("unknown scheme: " + scheme);
-            }
-        }
-        return port;
-    }
-
-    /**
-     * Create and send the handshake to the other endpoint
-     *
-     * @throws InstrumentException a invalid handshake was created
-     */
-    private void sendHandshake() throws InstrumentException {
-        String path;
-        String part1 = uri.getRawPath();
-        String part2 = uri.getRawQuery();
-        if (part1 == null || part1.length() == 0)
-            path = "/";
-        else
-            path = part1;
-        if (part2 != null)
-            path += '?' + part2;
-        int port = getPort();
-        String host = uri.getHost() + (
-                (port != RFCWebSocket.DEFAULT_PORT && port != RFCWebSocket.DEFAULT_WSS_PORT)
-                        ? ":" + port
-                        : "");
-
-        HandshakeBuilder handshake = new HandshakeBuilder();
-        handshake.setResourceDescriptor(path);
-        handshake.put("Host", host);
-        if (headers != null) {
-            for (Map.Entry<String, String> kv : headers.entrySet()) {
-                handshake.put(kv.getKey(), kv.getValue());
-            }
-        }
-        this.startHandshake(handshake);
     }
 
     /**
@@ -802,38 +659,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
-     * Called after an opening handshake has been performed and the given websocket is ready to be written on.
-     *
-     * @param handshakedata The handshake of the websocket instance
-     */
-    public abstract void onOpen(HandshakeBuilder handshakedata);
-
-    /**
-     * Callback for string messages received from the remote host
-     *
-     * @param message The UTF-8 decoded message that was received.
-     **/
-    public abstract void onMessage(String message);
-
-    /**
-     * Called after the websocket connection has been closed.
-     *
-     * @param code   The codes can be looked up here: {@link Framedata}
-     * @param reason Additional information string
-     * @param remote Returns whether or not the closing of the connection was initiated by the remote host.
-     **/
-    public abstract void onClose(int code, String reason, boolean remote);
-
-    /**
-     * Called when errors occurs. If an error causes the websocket connection to fail {@link #onClose(int, String, boolean)} will be called additionally.<br>
-     * This method will be called primarily because of IO or protocol errors.<br>
-     * If the given exception is an RuntimeException that probably means that you encountered a bug.<br>
-     *
-     * @param ex The exception causing this error
-     **/
-    public abstract void onError(Exception ex);
-
-    /**
      * Method to give some additional info for specific IOExceptions
      *
      * @param e the IOException causing a eot.
@@ -868,71 +693,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             }
             Logger.trace("Connection lost timer started");
             restartConnectionLostTimer();
-        }
-    }
-
-    /**
-     * This methods allows the reset of the connection lost timer in case of a changed parameter
-     */
-    private void restartConnectionLostTimer() {
-        cancelConnectionLostTimer();
-        connectionLostCheckerService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("connectionLostChecker"));
-        Runnable connectionLostChecker = new Runnable() {
-            private final ArrayList<WebSocket> connections = new ArrayList<>();
-
-            @Override
-            public void run() {
-                connections.clear();
-                try {
-                    connections.addAll(getConnections());
-                    long minimumPongTime = (long) (System.nanoTime() - (connectionLostTimeout * 1.5));
-                    for (WebSocket conn : connections) {
-                        executeConnectionLostDetection(conn, minimumPongTime);
-                    }
-                } catch (Exception e) {
-                    //Ignore this exception
-                }
-                connections.clear();
-            }
-        };
-
-        connectionLostCheckerFuture = connectionLostCheckerService.scheduleAtFixedRate(connectionLostChecker, connectionLostTimeout, connectionLostTimeout, TimeUnit.NANOSECONDS);
-    }
-
-    /**
-     * Cancel any running timer for the connection lost detection
-     */
-    private void cancelConnectionLostTimer() {
-        if (connectionLostCheckerService != null) {
-            connectionLostCheckerService.shutdownNow();
-            connectionLostCheckerService = null;
-        }
-        if (connectionLostCheckerFuture != null) {
-            connectionLostCheckerFuture.cancel(false);
-            connectionLostCheckerFuture = null;
-        }
-    }
-
-    /**
-     * Send a ping to the endpoint or close the connection since the other endpoint did not respond with a ping
-     *
-     * @param webSocket       the websocket instance
-     * @param minimumPongTime the lowest/oldest allowable last pong time (in nanoTime) before we consider the connection to be lost
-     */
-    private void executeConnectionLostDetection(WebSocket webSocket, long minimumPongTime) {
-        if (!(webSocket instanceof RFCWebSocket)) {
-            return;
-        }
-        RFCWebSocket RFCWebSocket = (RFCWebSocket) webSocket;
-        if (RFCWebSocket.getLastPong() < minimumPongTime) {
-            Logger.trace("Closing connection due to no pong received: {}", RFCWebSocket);
-            RFCWebSocket.closeConnection(Framedata.ABNORMAL_CLOSE, "The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection");
-        } else {
-            if (RFCWebSocket.isOpen()) {
-                RFCWebSocket.sendPing();
-            } else {
-                Logger.trace("Trying to ping a non open connection: {}", RFCWebSocket);
-            }
         }
     }
 
@@ -975,27 +735,190 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
-     * Default implementation for onPreparePing, returns a (cached) PingFrame that has no application data.
+     * Extract the specified port
      *
-     * @return PingFrame to be sent.
+     * @return the specified port or the default port for the specific scheme
      */
-    public Framedata onPreparePing() {
-        if (pingFrame == null)
-            pingFrame = new Framedata();
-        return pingFrame;
+    private int getPort() {
+        int port = uri.getPort();
+        if (port == -1) {
+            String scheme = uri.getScheme();
+            if ("wss".equals(scheme)) {
+                return RFCWebSocket.DEFAULT_WSS_PORT;
+            } else if ("ws".equals(scheme)) {
+                return RFCWebSocket.DEFAULT_PORT;
+            } else {
+                throw new IllegalArgumentException("unknown scheme: " + scheme);
+            }
+        }
+        return port;
+    }
+
+    /**
+     * Reset everything relevant to allow a reconnect
+     */
+    private void reset() {
+        Thread current = Thread.currentThread();
+        if (current == writeThread || current == connectReadThread) {
+            throw new IllegalStateException("You cannot initialize a reconnect out of the websocket thread. Use reconnect in another thread to insure a successful cleanup.");
+        }
+        try {
+            closeBlocking();
+            if (writeThread != null) {
+                this.writeThread.interrupt();
+                this.writeThread = null;
+            }
+            if (connectReadThread != null) {
+                this.connectReadThread.interrupt();
+                this.connectReadThread = null;
+            }
+            this.draft.byteBuffer = null;
+            if (this.socket != null) {
+                this.socket.close();
+                this.socket = null;
+            }
+        } catch (Exception e) {
+            onError(e);
+            this.closeConnection(Draft.ABNORMAL_CLOSE, e.getMessage());
+            return;
+        }
+        connectLatch = new CountDownLatch(1);
+        closeLatch = new CountDownLatch(1);
+    }
+
+    /**
+     * Create and send the handshake to the other endpoint
+     *
+     * @throws InstrumentException a invalid handshake was created
+     */
+    private void sendHandshake() throws InstrumentException {
+        String path;
+        String part1 = uri.getRawPath();
+        String part2 = uri.getRawQuery();
+        if (part1 == null || part1.length() == 0)
+            path = "/";
+        else
+            path = part1;
+        if (part2 != null)
+            path += '?' + part2;
+        int port = getPort();
+        String host = uri.getHost() + (
+                (port != RFCWebSocket.DEFAULT_PORT && port != RFCWebSocket.DEFAULT_WSS_PORT)
+                        ? ":" + port
+                        : "");
+
+        HandshakeBuilder handshake = new HandshakeBuilder();
+        handshake.setResourceDescriptor(path);
+        handshake.put("Host", host);
+        if (headers != null) {
+            for (Map.Entry<String, String> kv : headers.entrySet()) {
+                handshake.put(kv.getKey(), kv.getValue());
+            }
+        }
+        this.startHandshake(handshake);
+    }
+
+    private void decodeFrames(ByteBuffer socketBuffer) {
+        List<Framedatads> frames = draft.translateFrame(socketBuffer);
+        for (Framedatads f : frames) {
+            Logger.trace("matched frame: {}", f);
+            draft.processFrameText(this, f);
+        }
+    }
+
+    /**
+     * Write a list of bytebuffer (frames in binary form) into the outgoing queue
+     *
+     * @param byteBuffer the list of bytebuffer
+     */
+    private void write(ByteBuffer byteBuffer) {
+        synchronized (object) {
+            outQueue.add(byteBuffer);
+        }
+    }
+
+    private void open(HandshakeBuilder d) {
+        Logger.trace("open using draft: {}", draft);
+        readyState = HandshakeState.ReadyState.OPEN;
+        try {
+            this.onWebsocketOpen(d);
+        } catch (RuntimeException e) {
+            this.onWebsocketError(e);
+        }
+    }
+
+    /**
+     * This methods allows the reset of the connection lost timer in case of a changed parameter
+     */
+    private void restartConnectionLostTimer() {
+        cancelConnectionLostTimer();
+        connectionLostCheckerService = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("connectionLostChecker"));
+        Runnable connectionLostChecker = new Runnable() {
+            private final ArrayList<WebSocket> connections = new ArrayList<>();
+
+            @Override
+            public void run() {
+                connections.clear();
+                try {
+                    connections.addAll(getConnections());
+                    long minimumPongTime = (long) (System.nanoTime() - (connectionLostTimeout * 1.5));
+                    for (WebSocket conn : connections) {
+                        executeConnectionLostDetection(conn, minimumPongTime);
+                    }
+                } catch (Exception e) {
+                    //Ignore this exception
+                }
+                connections.clear();
+            }
+        };
+        connectionLostCheckerFuture = connectionLostCheckerService.scheduleAtFixedRate(connectionLostChecker, connectionLostTimeout, connectionLostTimeout, TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * Cancel any running timer for the connection lost detection
+     */
+    private void cancelConnectionLostTimer() {
+        if (connectionLostCheckerService != null) {
+            connectionLostCheckerService.shutdownNow();
+            connectionLostCheckerService = null;
+        }
+        if (connectionLostCheckerFuture != null) {
+            connectionLostCheckerFuture.cancel(false);
+            connectionLostCheckerFuture = null;
+        }
+    }
+
+    /**
+     * Send a ping to the endpoint or close the connection since the other endpoint did not respond with a ping
+     *
+     * @param webSocket       the websocket instance
+     * @param minimumPongTime the lowest/oldest allowable last pong time (in nanoTime) before we consider the connection to be lost
+     */
+    private void executeConnectionLostDetection(WebSocket webSocket, long minimumPongTime) {
+        if (!(webSocket instanceof RFCWebSocket)) {
+            return;
+        }
+        RFCWebSocket RFCWebSocket = (RFCWebSocket) webSocket;
+        if (RFCWebSocket.getLastPong() < minimumPongTime) {
+            Logger.trace("Closing connection due to no pong received: {}", RFCWebSocket);
+            RFCWebSocket.closeConnection(Draft.ABNORMAL_CLOSE, "The connection was closed because the other endpoint did not respond with a pong in time. For more information check: https://github.com/TooTallNate/Java-WebSocket/wiki/Lost-connection-detection");
+        } else {
+            if (RFCWebSocket.isOpen()) {
+                RFCWebSocket.sendPing();
+            } else {
+                Logger.trace("Trying to ping a non open connection: {}", RFCWebSocket);
+            }
+        }
     }
 
     /**
      * Users may implement this interface to override the default DNS lookup offered
      * by the OS.
-     *
-     * @since 1.4.1
      */
-    public interface DnsResolver {
+    interface DnsResolver {
 
         /**
          * Resolves the IP address for the given URI.
-         * <p>
          * This method should never return null. If it's not able to resolve the IP
          * address then it should throw an UnknownHostException
          *
@@ -1007,12 +930,12 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     }
 
-    static class WriteThread implements Runnable {
+    class WriteThread implements Runnable {
 
-        private final RFCWebSocket webSocketClient;
+        private final RFCWebSocket rfc;
 
         WriteThread(RFCWebSocket webSocketClient) {
-            this.webSocketClient = webSocketClient;
+            this.rfc = webSocketClient;
         }
 
         @Override
@@ -1021,10 +944,10 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             try {
                 runWriteData();
             } catch (IOException e) {
-                webSocketClient.handleIOException(e);
+                rfc.handleIOException(e);
             } finally {
                 closeSocket();
-                webSocketClient.writeThread = null;
+                rfc.writeThread = null;
             }
         }
 
@@ -1036,14 +959,14 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         private void runWriteData() throws IOException {
             try {
                 while (!Thread.interrupted()) {
-                    ByteBuffer buffer = webSocketClient.outQueue.take();
-                    webSocketClient.ostream.write(buffer.array(), 0, buffer.limit());
-                    webSocketClient.ostream.flush();
+                    ByteBuffer buffer = rfc.outQueue.take();
+                    rfc.ostream.write(buffer.array(), 0, buffer.limit());
+                    rfc.ostream.flush();
                 }
             } catch (InterruptedException e) {
-                for (ByteBuffer buffer : webSocketClient.outQueue) {
-                    webSocketClient.ostream.write(buffer.array(), 0, buffer.limit());
-                    webSocketClient.ostream.flush();
+                for (ByteBuffer buffer : rfc.outQueue) {
+                    rfc.ostream.write(buffer.array(), 0, buffer.limit());
+                    rfc.ostream.flush();
                 }
                 Thread.currentThread().interrupt();
             }
@@ -1054,11 +977,11 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
          */
         private void closeSocket() {
             try {
-                if (webSocketClient.socket != null) {
-                    webSocketClient.socket.close();
+                if (rfc.socket != null) {
+                    rfc.socket.close();
                 }
             } catch (IOException ex) {
-                webSocketClient.onWebsocketError(ex);
+                rfc.onWebsocketError(ex);
             }
         }
     }
