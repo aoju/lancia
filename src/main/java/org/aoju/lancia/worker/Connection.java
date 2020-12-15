@@ -72,8 +72,8 @@ public class Connection extends EventEmitter implements Consumer<String> {
         this.url = url;
         this.transport = transport;
         this.delay = delay;
-        if (this.transport instanceof WebSocketTransport) {
-            ((WebSocketTransport) this.transport).addConsumer(this);
+        if (this.transport instanceof SocketTransport) {
+            ((SocketTransport) this.transport).addConsumer(this);
         }
     }
 

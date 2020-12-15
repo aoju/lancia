@@ -45,7 +45,7 @@ public class TransportFactory {
      */
     public static Transport create(String browserWSEndpoint) {
         try {
-            return new WebSocketTransport(browserWSEndpoint);
+            return new SocketTransport(browserWSEndpoint);
         } catch (InstrumentException e) {
             Logger.warn(e.getMessage());
             return new PipeTransport();

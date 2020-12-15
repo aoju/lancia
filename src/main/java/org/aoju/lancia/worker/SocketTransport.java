@@ -37,12 +37,12 @@ import java.util.function.Consumer;
  * @version 6.1.3
  * @since JDK 1.8+
  */
-public class WebSocketTransport implements Transport {
+public class SocketTransport implements Transport {
 
     private final RFCWebSocket socket;
     private Consumer<String> consumer;
 
-    public WebSocketTransport(String browserWSEndpoint) {
+    public SocketTransport(String browserWSEndpoint) {
         this.socket = new RFCWebSocket(URI.create(browserWSEndpoint)) {
 
             @Override
