@@ -44,12 +44,7 @@ import org.aoju.lancia.worker.CDPSession;
 import org.aoju.lancia.worker.EventEmitter;
 import org.aoju.lancia.worker.ListenerWrapper;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -193,7 +188,7 @@ public class Builder {
     }
 
     public static final String join(String root, String... args) {
-        return java.nio.file.Paths.get(root, args).toString();
+        return Paths.get(root, args).toString();
     }
 
     /**
@@ -382,16 +377,6 @@ public class Builder {
         }
     }
 
-    public static final void copyProperties(Object src, Object dest) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
-        Class<?> destClass = dest.getClass();
-        BeanInfo srcBean = Introspector.getBeanInfo(src.getClass());
-        PropertyDescriptor[] propertyDescriptors = srcBean.getPropertyDescriptors();
-        for (PropertyDescriptor descriptor : propertyDescriptors) {
-            PropertyDescriptor destDescriptor = new PropertyDescriptor(descriptor.getName(), destClass);
-            destDescriptor.getWriteMethod().invoke(dest, descriptor.getReadMethod().invoke(src));
-        }
-    }
-
     public static Object waitForEvent(EventEmitter eventEmitter, String eventName, Predicate predicate, int timeout, String abortPromise) throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
         final Object[] result = {null};
@@ -427,7 +412,7 @@ public class Builder {
         List<String> argsList = new ArrayList<>();
         for (Object arg : args) {
             if (arg == null) {
-                argsList.add("undefined");
+                argsList.add("Undefined");
             } else {
                 try {
                     argsList.add(Variables.OBJECTMAPPER.writeValueAsString(arg));
