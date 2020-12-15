@@ -409,11 +409,4 @@ public class Draft {
         NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
     }
 
-    /**
-     * Enum which represents type of handshake is required for a close
-     */
-    public enum CloseType {
-        NONE, ONEWAY, TWOWAY
-    }
-
 }
