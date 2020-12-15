@@ -25,9 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * Represents one end (client or server) of a single WebSocketImpl connection.
- * Takes care of the "handshake" phase, then allows for easy sending of
- * text frames, and receiving frames through an event-based model.
+ * 表示单个连接的一端(客户端)。处理“握手”阶段，然后允许简单地发送文本帧，并通过基于事件的模型接收帧
  */
 public abstract class RFCWebSocket implements WebSocket, Runnable {
 
@@ -39,97 +37,91 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     public static final String CLOSED = "CLOSED";
     /**
-     * indicates a normal closure, meaning whatever purpose the
-     * connection was established for has been fulfilled.
+     * 指示正常关闭，意味着无论建立连接的目的是什么，它都已实现
      */
     public static final int NORMAL = 1000;
     /**
-     * 1002 indicates that an endpoint is terminating the connection due
-     * to a protocol error.
+     * 1002表示端点由于协议错误正在终止连接
      */
     public static final int PROTOCOL_ERROR = 1002;
     /**
-     * 1006 is a reserved value and MUST NOT be set as a status code in a
-     * Close control frame by an endpoint. It is designated for use in
-     * applications expecting a status code to indicate that the
-     * connection was closed abnormally, e.g. without sending or
-     * receiving a Close control frame.
+     * 1006是一个保留值，终端不能将其设置为关闭控制帧中的状态码
      */
     public static final int ABNORMAL_CLOSE = 1006;
     /**
-     * The connection had never been established
+     * 这种联系从未被证实过
      */
     public static final int NEVER_CONNECTED = -1;
     /**
-     * The connection was flushed and closed
+     * 连接已刷新并关闭
      */
     public static final int FLASHPOLICY = -3;
     /**
-     * Handshake specific field for the key
+     * 键的握手特定字段
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
     /**
-     * Handshake specific field for the upgrade
+     * 升级的握手特定字段
      */
     private static final String UPGRADE = "Upgrade";
     /**
-     * Handshake specific field for the connection
+     * 连接的握手特定字段
      */
     private static final String CONNECTION = "Connection";
     /**
-     * Attribut to synchronize the write
+     * Attribut来同步写操作
      */
     private final Object object = new Object();
     /**
-     * The SocketFactory for this WebSocketClient
+     * 这个套接字的SocketFactory
      */
     private final SocketFactory socketFactory = null;
     /**
-     * The used proxy, if any
+     * 使用的代理(如果有的话)
      */
     private final Proxy proxy = Proxy.NO_PROXY;
     /**
-     * The draft which is used by this websocket
+     * 这个websocket使用的草稿
      */
     private final Message message;
     /**
-     * The socket timeout value to be used in milliseconds.
+     * 以毫秒为单位的套接字超时值
      */
     private final int connectTimeout;
     /**
-     * Queue of buffers that need to be sent to the client.
+     * 需要发送到客户端的缓冲区队列
      */
     public BlockingQueue<ByteBuffer> outQueue;
     /**
-     * Queue of buffers that need to be processed
+     * 需要处理的缓冲区队列
      */
     public BlockingQueue<ByteBuffer> inQueue;
     /**
-     * The socket for this WebSocketClient
+     * 套接字客户端
      */
     public Socket socket;
     /**
-     * The used OutputStream
+     * 自定义输出流
      */
     public OutputStream ostream;
     /**
-     * The thread to write outgoing message
+     * 写传出消息的线程
      */
     public Thread writeThread;
     /**
-     * The URI this channel is supposed to connect to.
+     * 此通道要连接到的URI
      */
     protected URI uri;
     /**
-     * The current state of the connection
+     * 连接的当前状态
      */
     private volatile String readyState = NOT_YET_CONNECTED;
     /**
-     * the bytes of an incomplete received handshake
+     * 接收到的临时的握手字节
      */
     private ByteBuffer tmpHandshakeBytes = ByteBuffer.allocate(0);
     /**
-     * stores the handshake sent by this websocket ( Role.CLIENT only )
+     * 存储此websocket发送的握手
      */
     private String closeMessage = null;
     private Integer closeCode = null;
@@ -137,19 +129,19 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     private String descriptor = "*";
     private String host;
     /**
-     * When true no further frames may be submitted to be sent
+     * 如果为true，则不再有帧被提交发送
      */
     private boolean flushandCloseState = false;
     /**
-     * The thread to connect and read message
+     * 用于连接和读取消息的线程
      */
     private Thread connectReadThread;
     /**
-     * The additional headers to use
+     * 要使用的附加头
      */
     private Map<String, String> headers;
     /**
-     * The latch for connectBlocking()
+     * 用于connectBlocking()的锁
      */
     private CountDownLatch connectLatch = new CountDownLatch(1);
     /**
@@ -157,52 +149,47 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      */
     private CountDownLatch closeLatch = new CountDownLatch(1);
     /**
-     * Attribute which allows you to deactivate the Nagle's algorithm
+     * 允许您停用Nagle算法的属性
      */
     private boolean tcpNoDelay;
     /**
-     * Attribute which allows you to enable/disable the SO_REUSEADDR socket option.
+     * 允许您启用/禁用SO_REUSEADDR套接字选项的属性
      */
     private boolean reuseAddr;
 
     /**
-     * Constructs a WebSocketClient instance and sets it to the connect to the
-     * specified URI. The channel does not attampt to connect automatically. The connection
-     * will be established once you call <var>connect</var>.
+     * 构造一个WebSocket实例并将其设置为连接到指定的URI
+     * 频道未尝试自动连接一旦调用<code>connect</code>将建立连接
      *
-     * @param serverUri the server URI to connect to
+     * @param serverUri 要连接的服务器URI
      */
     public RFCWebSocket(URI serverUri) {
         this(serverUri, new Message());
     }
 
     /**
-     * Constructs a WebSocketClient instance and sets it to the connect to the
-     * specified URI. The channel does not attampt to connect automatically. The connection
-     * will be established once you call <var>connect</var>.
+     * 构造一个WebSocket实例并将其设置为连接到指定的URI
+     * 频道未尝试自动连接一旦调用<code>connect</code>将建立连接
      *
-     * @param serverUri the server URI to connect to
-     * @param message   The draft which should be used for this connection
+     * @param serverUri 要连接的服务器URI
+     * @param message   用于连接的协议消息
      */
     public RFCWebSocket(URI serverUri, Message message) {
         this(serverUri, message, null, 0);
     }
 
     /**
-     * Constructs a WebSocketClient instance and sets it to the connect to the
-     * specified URI. The channel does not attampt to connect automatically. The connection
-     * will be established once you call <var>connect</var>.
+     * 构造一个WebSocket实例并将其设置为连接到指定的URI
+     * 频道未尝试自动连接一旦调用<code>connect</code>将建立连接
      *
-     * @param serverUri      the server URI to connect to
-     * @param message        The draft which should be used for this connection
-     * @param httpHeaders    Additional HTTP-Headers
-     * @param connectTimeout The Timeout for the connection
+     * @param serverUri      要连接的服务器URI
+     * @param message        用于连接的协议消息
+     * @param httpHeaders    额外的 Http Header
+     * @param connectTimeout 超时时间
      */
     public RFCWebSocket(URI serverUri, Message message, Map<String, String> httpHeaders, int connectTimeout) {
         if (serverUri == null) {
             throw new IllegalArgumentException();
-        } else if (message == null) {
-            throw new IllegalArgumentException("null as draft is permitted for `WebSocketServer` only!");
         }
         this.message = message.newInstance();
         this.uri = serverUri;
@@ -255,9 +242,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         return 0;
     }
 
-    /**
-     * Send Text data to the other end.
-     */
     @Override
     public boolean send(String text) {
         if (text == null)
@@ -290,9 +274,9 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
-     * Method to decode the provided ByteBuffer
+     * 解码提供的ByteBuffer的方法
      *
-     * @param byteBuffer the ByteBuffer to decode
+     * @param byteBuffer 要解码的ByteBuffer
      */
     public void decode(ByteBuffer byteBuffer) {
         assert (byteBuffer.hasRemaining());
@@ -314,10 +298,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         }
     }
 
-    /**
-     * Returns whether the handshake phase has is completed.
-     * In case of a broken handshake this will be never the case.
-     **/
     private boolean decodeHandshake(ByteBuffer byteBuffer) {
         ByteBuffer socketBuffer;
         if (tmpHandshakeBytes.capacity() == 0) {
@@ -365,16 +345,15 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
     }
 
     /**
-     * This will close the connection immediately without a proper close handshake.
-     * The code and the message therefore won't be transfered over the wire also they will be forwarded to onClose/onWebsocketClose.
+     * 这将立即关闭连接，而没有适当的关闭握手
      *
-     * @param code    the closing code
-     * @param message the closing message
-     * @param remote  Indicates who "generated" <code>code</code>.<br>
-     *                <code>true</code> means that this endpoint received the <code>code</code> from the other endpoint.<br>
-     *                false means this endpoint decided to send the given code,<br>
-     *                <code>remote</code> may also be true if this endpoint started the closing handshake since the other endpoint may not simply echo the <code>code</code> but close the connection the same time this endpoint does do but with an other <code>code</code>. <br>
-     **/
+     * @param code    结束代码
+     * @param message 结束消息
+     * @param remote  <code>true</code>表示此端点从另一个端点接收了<code>code</code>
+     *                <code>false</code>表示此端点决定发送给定的代码，如果此端点开始了关闭握手，
+     *                则<code>remote</code>也可能为true，因为另一个端点可能不会简单地回显<code>code</code>
+     *                但在此端点执行相同操作的同时关闭连接，但使用另一个<code>code</code>进行连接
+     */
     public synchronized void closeConnection(int code, String message, boolean remote) {
         if (readyState == CLOSED) {
             return;
@@ -559,11 +538,15 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     /**
      * 调用子类的实现onWebsocketMessage
+     *
+     * @param message 消息
      */
     protected abstract void onWebsocketMessage(String message);
 
     /**
      * 调用子类的实现onWebsocketError
+     *
+     * @param ex 异常信息
      */
     protected abstract void onWebsocketError(Exception ex);
 
@@ -892,7 +875,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
         private ByteString translateSingle(ByteBuffer buffer) {
             if (buffer == null)
                 throw new IllegalArgumentException();
-            int maxpacketsize = buffer.remaining();
+            int maxPacketsize = buffer.remaining();
             this.realPacketSize = 2;
 
             buffer.get( /*0*/);
@@ -910,8 +893,8 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             realPacketSize += (mask ? 4 : 0);
             realPacketSize += payloadLength;
 
-            if (maxpacketsize < realPacketSize) {
-                Logger.trace("Incomplete frame: maxpacketsize < realpacketsize");
+            if (maxPacketsize < realPacketSize) {
+                Logger.trace("Incomplete frame: maxPacketsize < realPacketSize");
                 throw new InstrumentException("" + realPacketSize);
             }
             ByteBuffer payload = ByteBuffer.allocate(payloadLength);

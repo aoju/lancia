@@ -65,6 +65,7 @@ public class SocketTransport implements Transport {
 
     @Override
     public void send(String message) {
+        Logger.debug(message);
         this.socket.send(message);
     }
 
