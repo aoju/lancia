@@ -69,7 +69,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      */
     private static final String CONNECTION = "Connection";
     /**
-     * Attribut来同步写操作
+     * Attribute来同步写操作
      */
     private final Object object = new Object();
     /**
@@ -805,7 +805,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
                 List<ByteString> frames = new LinkedList<>();
                 ByteString cur;
                 if (byteBuffer != null) {
-
                     buffer.mark();
                     // 接收的字节数
                     int availableNextByteCount = buffer.remaining();
@@ -911,7 +910,6 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
             payload.flip();
             return ByteString.of(payload);
         }
-
     }
 
     class Threads implements Runnable {
