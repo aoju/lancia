@@ -44,10 +44,8 @@ public class SocketTransport implements Transport {
 
     public SocketTransport(String browserWSEndpoint) {
         this.socket = new RFCWebSocket(URI.create(browserWSEndpoint)) {
-
             @Override
             public void onWebsocketMessage(String message) {
-                Logger.debug(message);
                 consumer.accept(message);
             }
 
