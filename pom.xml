@@ -10,8 +10,8 @@
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
-    <description>Bus Core</description>
-    <url>https://github.com/aoju/bus</url>
+    <description>Lancia</description>
+    <url>https://github.com/aoju/lancia</url>
 
     <licenses>
         <license>
@@ -21,21 +21,21 @@
     </licenses>
 
     <scm>
-        <connection>scm:git@github.com:aoju/bus.git</connection>
-        <developerConnection>scm:git@github.com:aoju/bus.git</developerConnection>
-        <url>git@github.com:aoju/bus.git</url>
+        <connection>scm:git@github.com:aoju/lancia.git</connection>
+        <developerConnection>scm:git@github.com:aoju/lancia.git</developerConnection>
+        <url>git@github.com:aoju/lancia.git</url>
     </scm>
 
     <developers>
         <developer>
             <name>Kimi Liu</name>
-            <url>https://github.com/aoju/bus.git</url>
+            <url>https://github.com/aoju/lancia.git</url>
         </developer>
     </developers>
 
     <issueManagement>
         <system>Github Issue</system>
-        <url>https://github.com/aoju/bus/issues</url>
+        <url>https://github.com/aoju/lancia/issues</url>
     </issueManagement>
 
     <properties>
