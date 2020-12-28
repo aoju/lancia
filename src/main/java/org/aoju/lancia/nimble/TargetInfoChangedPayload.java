@@ -31,7 +31,7 @@ import org.aoju.lancia.kernel.page.TargetInfo;
  * 当有关目标的某些信息已更改时发出。仅发生在targetCreated和targetDestroyed之间
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class TargetInfoChangedPayload {

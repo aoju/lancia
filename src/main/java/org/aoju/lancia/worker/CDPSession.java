@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * CDPSession实例被用来谈论原始的Chrome Devtools协议
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class CDPSession extends EventEmitter {

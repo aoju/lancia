@@ -33,7 +33,7 @@ import java.util.function.BiFunction;
  * 任务队列
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class TaskQueue<R> {

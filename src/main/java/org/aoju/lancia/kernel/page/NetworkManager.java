@@ -44,7 +44,7 @@ import java.util.*;
  * 网络管理
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class NetworkManager extends EventEmitter {

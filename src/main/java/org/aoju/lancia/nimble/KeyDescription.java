@@ -27,7 +27,7 @@ package org.aoju.lancia.nimble;
 
 /**
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class KeyDescription {

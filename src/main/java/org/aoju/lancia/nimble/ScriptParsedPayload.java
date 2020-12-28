@@ -32,7 +32,7 @@ import org.aoju.lancia.nimble.runtime.StackTrace;
  * 当虚拟机解析脚本时触发。在启用调试器时，也会为所有已知的和未收集的脚本触发此事件
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class ScriptParsedPayload {

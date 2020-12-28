@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble;
  * 可访问性树中的属性
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class AXProperty {

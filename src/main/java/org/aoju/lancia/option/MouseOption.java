@@ -29,7 +29,7 @@ package org.aoju.lancia.option;
  * 鼠标选项参数
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class MouseOption {

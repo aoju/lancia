@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.runtime;
  * 有关在脚本编译或执行过程中引发的异常（或错误）的详细信息
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class ExceptionDetails {

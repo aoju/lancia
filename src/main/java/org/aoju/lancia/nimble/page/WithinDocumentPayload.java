@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.page;
  * 发生相同文档导航时触发，例如由于历史记录API的使用或锚点导航
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class WithinDocumentPayload {

@@ -31,7 +31,7 @@ import java.util.EventListener;
  * 监听器事件然后处理
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 @FunctionalInterface

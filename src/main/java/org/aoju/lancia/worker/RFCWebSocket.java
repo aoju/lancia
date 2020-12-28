@@ -27,6 +27,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * 表示单个连接的一端(客户端)。处理“握手”阶段，然后允许简单地发送文本帧，并通过基于事件的模型接收帧
+ *
+ * @author Kimi Liu
+ * @version 1.2.1
+ * @since JDK 1.8+
  */
 public abstract class RFCWebSocket implements WebSocket, Runnable {
 

@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.page;
  * 当JavaScript启动的对话框（警告，确认，提示或onbeforeunload）即将打开时触发
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class JavascriptDialogPayload {

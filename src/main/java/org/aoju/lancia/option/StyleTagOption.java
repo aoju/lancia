@@ -31,7 +31,7 @@ import org.aoju.lancia.kernel.page.Frame;
  * 在${@link Frame#addScriptTag(ScriptTagOption)}用到
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class StyleTagOption {

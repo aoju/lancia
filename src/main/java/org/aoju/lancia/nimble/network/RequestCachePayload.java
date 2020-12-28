@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.network;
  * 如果请求最终从缓存加载，则触发
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class RequestCachePayload {

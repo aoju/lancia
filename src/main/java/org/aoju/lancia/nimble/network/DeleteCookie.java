@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.network;
  * 删除具有匹配名称和url或域/路径对的浏览器cookie
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class DeleteCookie {

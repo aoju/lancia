@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 事件发布，事件监听，模仿nodejs的EventEmitter
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class EventEmitter implements Event {

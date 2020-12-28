@@ -69,7 +69,7 @@ import java.util.regex.Pattern;
  * 公共方法
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class Builder {

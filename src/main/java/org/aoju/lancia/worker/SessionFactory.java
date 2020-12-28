@@ -29,7 +29,7 @@ package org.aoju.lancia.worker;
  * 会话信息
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 @FunctionalInterface

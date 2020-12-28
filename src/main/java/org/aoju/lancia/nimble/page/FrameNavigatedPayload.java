@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.page;
  * 框架导航完成后触发。现在，框架已与新的加载器关联
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class FrameNavigatedPayload {

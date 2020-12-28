@@ -38,7 +38,7 @@ import java.util.List;
  * Firefox启动支持
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class FirefoxLauncher implements Launcher {

@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit;
  * 目标内容
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class Target {

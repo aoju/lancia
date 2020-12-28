@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
  * Coverage收集有关页面使用的JavaScript和CSS部分的信息
  *
  * @author Kimi Liu
- * @version 6.1.3
+ * @version 1.2.1
  * @since JDK 1.8+
  */
 public class Coverage {
