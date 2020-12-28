@@ -2,6 +2,7 @@ package org.aoju.lancia.worker;
 
 import org.aoju.bus.core.io.ByteString;
 import org.aoju.bus.core.lang.Charset;
+import org.aoju.bus.core.lang.Header;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.Symbol;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -56,18 +57,7 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
      * 连接已刷新并关闭
      */
     public static final int FLASHPOLICY = -3;
-    /**
-     * 键的握手特定字段
-     */
-    private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
-    /**
-     * 升级的握手特定字段
-     */
-    private static final String UPGRADE = "Upgrade";
-    /**
-     * 连接的握手特定字段
-     */
-    private static final String CONNECTION = "Connection";
+
     /**
      * Attribute来同步写操作
      */
@@ -407,11 +397,11 @@ public abstract class RFCWebSocket implements WebSocket, Runnable {
 
     public void startHandshake() throws InstrumentException {
         TreeMap<String, String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        map.put("Host", this.host);
-        map.put(UPGRADE, "websocket");
-        map.put(CONNECTION, UPGRADE);
-        map.put(SEC_WEB_SOCKET_KEY, RandomKit.randomString(16));
-        map.put("Sec-WebSocket-Version", "13");
+        map.put(Header.HOST, this.host);
+        map.put(Header.UPGRADE, "websocket");
+        map.put(Header.CONNECTION, Header.UPGRADE);
+        map.put(Header.SEC_WEBSOCKET_KEY, RandomKit.randomString(16));
+        map.put(Header.SEC_WEBSOCKET_VERSION, "13");
 
         StringBuilder bui = new StringBuilder(100);
         bui.append("GET ")

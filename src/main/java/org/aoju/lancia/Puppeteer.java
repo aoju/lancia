@@ -95,8 +95,7 @@ public class Puppeteer {
     }
 
     private static Browser rawLaunch(boolean headless) throws IOException {
-        Puppeteer puppeteer = new Puppeteer();
-        return Puppeteer.rawLaunch(new LaunchBuilder().withHeadless(headless).build(), puppeteer);
+        return Puppeteer.rawLaunch(new LaunchBuilder().headless(headless).build(), new Puppeteer());
     }
 
     /**
@@ -116,8 +115,9 @@ public class Puppeteer {
     public static Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport, String product) {
         Puppeteer puppeteer = new Puppeteer();
 
-        if (StringKit.isNotEmpty(product))
+        if (StringKit.isNotEmpty(product)) {
             puppeteer.setProductName(product);
+        }
         adapterLauncher(puppeteer);
         return puppeteer.getLauncher().connect(options, browserWSEndpoint, browserURL, transport);
     }
@@ -174,8 +174,8 @@ public class Puppeteer {
         String productName;
         Launcher launcher;
         Standard env;
-        if (StringKit.isEmpty(productName = puppeteer.getProductName()) && !puppeteer.getIsPuppeteerCore()) {
-
+        if (StringKit.isEmpty(productName = puppeteer.getProductName())
+                && !puppeteer.getIsPuppeteerCore()) {
             if ((env = puppeteer.getEnv()) == null) {
                 puppeteer.setEnv(env = System::getenv);
             }

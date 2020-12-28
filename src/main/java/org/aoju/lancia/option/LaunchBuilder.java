@@ -46,7 +46,7 @@ public class LaunchBuilder {
         options = new LaunchOption();
     }
 
-    public LaunchBuilder withExecutablePath(String executablePath) {
+    public LaunchBuilder executablePath(String executablePath) {
         options.setExecutablePath(executablePath);
         return this;
     }
@@ -57,7 +57,7 @@ public class LaunchBuilder {
      * @param ignoreAllDefaultArgs true为忽略所有启动参数
      * @return LaunchOptionsBuilder
      */
-    public LaunchBuilder withIgnoreDefaultArgs(boolean ignoreAllDefaultArgs) {
+    public LaunchBuilder ignoreDefaultArgs(boolean ignoreAllDefaultArgs) {
         options.setIgnoreAllDefaultArgs(ignoreAllDefaultArgs);
         return this;
     }
@@ -68,32 +68,32 @@ public class LaunchBuilder {
      * @param ignoreDefaultArgs 要忽略的启动参数
      * @return LaunchOptionsBuilder
      */
-    public LaunchBuilder withIgnoreDefaultArgs(List<String> ignoreDefaultArgs) {
+    public LaunchBuilder ignoreDefaultArgs(List<String> ignoreDefaultArgs) {
         options.setIgnoreDefaultArgs(ignoreDefaultArgs);
         return this;
     }
 
-    public LaunchBuilder withHandleSIGINT(boolean handleSIGINT) {
+    public LaunchBuilder handleSIGINT(boolean handleSIGINT) {
         options.setHandleSIGINT(handleSIGINT);
         return this;
     }
 
-    public LaunchBuilder withHandleSIGTERM(boolean handleSIGTERM) {
+    public LaunchBuilder handleSIGTERM(boolean handleSIGTERM) {
         options.setHandleSIGTERM(handleSIGTERM);
         return this;
     }
 
-    public LaunchBuilder withHandleSIGHUP(boolean handleSIGHUP) {
+    public LaunchBuilder handleSIGHUP(boolean handleSIGHUP) {
         options.setHandleSIGHUP(handleSIGHUP);
         return this;
     }
 
-    public LaunchBuilder withEnv(Standard env) {
+    public LaunchBuilder env(Standard env) {
         options.setEnv(env);
         return this;
     }
 
-    public LaunchBuilder withPipe(boolean pipe) {
+    public LaunchBuilder pipe(boolean pipe) {
         options.setPipe(pipe);
         return this;
     }
@@ -103,37 +103,37 @@ public class LaunchBuilder {
         return this;
     }
 
-    public LaunchBuilder withIgnoreHTTPSErrors(boolean ignoreHTTPSErrors) {
+    public LaunchBuilder ignoreHTTPSErrors(boolean ignoreHTTPSErrors) {
         options.setIgnoreHTTPSErrors(ignoreHTTPSErrors);
         return this;
     }
 
-    public LaunchBuilder withViewport(Viewport viewport) {
+    public LaunchBuilder viewport(Viewport viewport) {
         options.setViewport(viewport);
         return this;
     }
 
-    public LaunchBuilder withSlowMo(int slowMo) {
+    public LaunchBuilder slowMo(int slowMo) {
         options.setSlowMo(slowMo);
         return this;
     }
 
-    public LaunchBuilder withHeadless(boolean headless) {
+    public LaunchBuilder headless(boolean headless) {
         options.setHeadless(headless);
         return this;
     }
 
-    public LaunchBuilder withArgs(List<String> args) {
+    public LaunchBuilder args(List<String> args) {
         options.setArgs(args);
         return this;
     }
 
-    public LaunchBuilder withUserDataDir(String userDataDir) {
+    public LaunchBuilder userDataDir(String userDataDir) {
         options.setUserDataDir(userDataDir);
         return this;
     }
 
-    public LaunchBuilder withDevtools(boolean devtools) {
+    public LaunchBuilder devtools(boolean devtools) {
         options.setDevtools(devtools);
         return this;
     }
