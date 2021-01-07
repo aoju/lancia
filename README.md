@@ -68,8 +68,8 @@ wkhtmltopdf|1、调用方式简单(只需执行一行脚本)；2、生成pdf质�
 ## API介绍
 
 要理解API选项，需要了解[Puppeteer](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md)
-谷歌官方 Chrome node库。
-这个API在内部使用。(用来渲染html代码)(https://github.com/aoju/lancia/blob/master/src/app/frames/core/render.core.class.js)
+谷歌官方 Chrome node库。 这个API在内部使用。(
+用来渲染html代码)(https://github.com/aoju/lancia/blob/nodejs/src/app/shared/utils/render.utils.class.js)
 
 很简单，来看看。渲染流程::
 
