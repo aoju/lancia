@@ -6,7 +6,7 @@
 
     <groupId>org.aoju</groupId>
     <artifactId>lancia</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
@@ -42,7 +42,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.compiler.version>1.8</project.compiler.version>
-        <bus.version>6.1.6</bus.version>
+        <bus.version>6.1.9</bus.version>
         <jna.version>5.6.0</jna.version>
         <logback.version>1.2.3</logback.version>
         <jackson.version>2.10.0</jackson.version>
