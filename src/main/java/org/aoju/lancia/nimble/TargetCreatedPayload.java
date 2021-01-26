@@ -31,7 +31,7 @@ import org.aoju.lancia.kernel.page.TargetInfo;
  * 在创建可能的检查目标时发出
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class TargetCreatedPayload {

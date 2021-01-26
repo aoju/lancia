@@ -33,7 +33,7 @@ import org.aoju.lancia.nimble.network.RequestPayload;
  * 请求被暂停，直到客户端用continueWithAuth响应
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class AuthorizePayload {

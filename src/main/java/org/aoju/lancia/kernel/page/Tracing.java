@@ -44,7 +44,7 @@ import java.util.Set;
  * which can be opened in Chrome DevTools or [timeline viewer](https://chromedevtools.github.io/timeline-viewer/)
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class Tracing {

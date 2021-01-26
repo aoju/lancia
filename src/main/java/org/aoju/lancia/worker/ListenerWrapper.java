@@ -29,7 +29,7 @@ package org.aoju.lancia.worker;
  * 监听器包装
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class ListenerWrapper<T> {

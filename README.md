@@ -165,7 +165,7 @@ screenshot.clip.height | number | - | 指定页剪切区域的高度.
 <dependency>
     <groupId>org.aoju</groupId>
     <artifactId>lancia</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
 </dependency>
 ```
 

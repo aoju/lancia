@@ -34,7 +34,7 @@ import java.util.List;
  * 导航到页面的用的选项参数
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class NavigateOption {

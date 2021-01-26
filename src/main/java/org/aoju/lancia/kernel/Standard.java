@@ -29,7 +29,7 @@ package org.aoju.lancia.kernel;
  * 环境变量的接口:可以使用System:getEnv来实现
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 @FunctionalInterface

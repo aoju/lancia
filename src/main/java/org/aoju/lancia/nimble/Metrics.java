@@ -41,7 +41,7 @@ package org.aoju.lancia.nimble;
  * JSHeapTotalSize  总的页面堆内存大小。
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class Metrics {

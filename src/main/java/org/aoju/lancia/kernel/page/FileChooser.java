@@ -36,7 +36,7 @@ import java.util.List;
  * 通过文件选择器，您可以对请求文件的页面做出反应
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class FileChooser {

@@ -46,7 +46,7 @@ import java.util.function.Consumer;
  * 浏览器级别的连接
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class Connection extends EventEmitter implements Consumer<String> {

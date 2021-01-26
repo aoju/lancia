@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.runtime;
  * 在创建新的执行上下文时发出
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class ExecutionCreatedPayload {

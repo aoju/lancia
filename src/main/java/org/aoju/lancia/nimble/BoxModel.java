@@ -31,7 +31,7 @@ import java.util.List;
  * 盒模型
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class BoxModel {

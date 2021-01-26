@@ -31,7 +31,7 @@ import org.aoju.lancia.kernel.page.Request;
  * 当页面即将发送HTTP请求时触发
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class RequestWillPayload {

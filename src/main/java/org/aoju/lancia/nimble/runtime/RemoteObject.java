@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.runtime;
  * 引用原始JavaScript对象的镜像对象
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class RemoteObject {

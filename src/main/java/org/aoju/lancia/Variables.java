@@ -37,7 +37,7 @@ import java.util.*;
  * 存放所用到的常量
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class Variables {

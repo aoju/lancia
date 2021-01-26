@@ -29,7 +29,7 @@ package org.aoju.lancia.kernel.page;
  * 可以模拟的手机设备枚举类
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public enum Device {

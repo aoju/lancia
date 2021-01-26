@@ -49,7 +49,7 @@ import java.util.regex.Pattern;
 
 /**
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class ExecutionContext {

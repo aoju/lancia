@@ -31,7 +31,7 @@ import org.aoju.lancia.nimble.runtime.StackTrace;
  * 有关请求启动器的信息
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 public class Initiator {

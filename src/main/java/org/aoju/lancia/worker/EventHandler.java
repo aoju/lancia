@@ -29,7 +29,7 @@ package org.aoju.lancia.worker;
  * 自定义事件处理器的接口，想要监听浏览器某个事件然后处理，必须实现这个处理器
  *
  * @author Kimi Liu
- * @version 1.2.1
+ * @version 1.2.2
  * @since JDK 1.8+
  */
 @FunctionalInterface
