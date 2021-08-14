@@ -26,9 +26,8 @@
 package org.aoju.lancia.kernel.page;
 
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
@@ -84,8 +83,8 @@ public class ExecutionContext {
         Assert.isTrue(this.world != null, "Cannot adopt handle without DOMWorld");
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", elementHandle.getRemoteObject().getObjectId());
-        JsonNode nodeInfo = this.client.send("DOM.describeNode", params, true);
-        return this.adoptBackendNodeId(nodeInfo.get("node").get("backendNodeId").asInt());
+        JSONObject nodeInfo = this.client.send("DOM.describeNode", params, true);
+        return this.adoptBackendNodeId(nodeInfo.getJSONObject("node").getInteger("backendNodeId"));
     }
 
     public Object evaluateHandle(String pageFunction, List<Object> args) {
@@ -108,16 +107,13 @@ public class ExecutionContext {
             params.put("returnByValue", returnByValue);
             params.put("awaitPromise", true);
             params.put("userGesture", true);
-            JsonNode result = this.client.send("Runtime.evaluate", params, true);
-            JsonNode exceptionDetails = result.get("exceptionDetails");
-            try {
-                if (exceptionDetails != null)
-                    throw new RuntimeException("Evaluation failed: " + Builder.getExceptionMessage(Variables.OBJECTMAPPER.treeToValue(exceptionDetails, ExceptionDetails.class)));
-                RemoteObject remoteObject = Variables.OBJECTMAPPER.treeToValue(result.get("result"), RemoteObject.class);
-                return returnByValue ? Builder.valueFromRemoteObject(remoteObject) : createJSHandle(this, remoteObject);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            JSONObject result = this.client.send("Runtime.evaluate", params, true);
+            JSONObject exceptionDetails = result.getJSONObject("exceptionDetails");
+            if (exceptionDetails != null)
+                throw new RuntimeException("Evaluation failed: " + Builder.getExceptionMessage(JSON.toJavaObject(exceptionDetails, ExceptionDetails.class)));
+            RemoteObject remoteObject = JSON.toJavaObject(result.getJSONObject("result"), RemoteObject.class);
+            return returnByValue ? Builder.valueFromRemoteObject(remoteObject) : createJSHandle(this, remoteObject);
+
         }
 
         if (!Variables.PageEvaluateType.FUNCTION.equals(type))
@@ -136,7 +132,7 @@ public class ExecutionContext {
         params.put("returnByValue", returnByValue);
         params.put("awaitPromise", true);
         params.put("userGesture", true);
-        JsonNode callFunctionOnPromise;
+        JSONObject callFunctionOnPromise;
         try {
             callFunctionOnPromise = this.client.send("Runtime.callFunctionOn", params, true);
         } catch (Exception e) {
@@ -148,15 +144,12 @@ public class ExecutionContext {
         if (callFunctionOnPromise == null) {
             return null;
         }
-        JsonNode exceptionDetails = callFunctionOnPromise.get("exceptionDetails");
+        JSONObject exceptionDetails = callFunctionOnPromise.getJSONObject("exceptionDetails");
         RemoteObject remoteObject;
-        try {
-            if (exceptionDetails != null)
-                throw new InstrumentException("Evaluation failed: " + Builder.getExceptionMessage(Variables.OBJECTMAPPER.treeToValue(exceptionDetails, ExceptionDetails.class)));
-            remoteObject = Variables.OBJECTMAPPER.treeToValue(callFunctionOnPromise.get("result"), RemoteObject.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        if (exceptionDetails != null)
+            throw new InstrumentException("Evaluation failed: " + Builder.getExceptionMessage(JSON.toJavaObject(exceptionDetails, ExceptionDetails.class)));
+        remoteObject = JSON.toJavaObject(callFunctionOnPromise.getJSONObject("result"), RemoteObject.class);
+
         return returnByValue ? Builder.valueFromRemoteObject(remoteObject) : createJSHandle(this, remoteObject);
     }
 
@@ -165,16 +158,13 @@ public class ExecutionContext {
         Assert.isTrue(StringKit.isNotEmpty(prototypeHandle.getRemoteObject().getObjectId()), "Prototype JSHandle must not be referencing primitive value");
         Map<String, Object> params = new HashMap<>();
         params.put("prototypeObjectId", prototypeHandle.getRemoteObject().getObjectId());
-        JsonNode response = this.client.send("Runtime.queryObjects", params, true);
-        try {
-            return createJSHandle(this, Variables.OBJECTMAPPER.treeToValue(response.get("objects"), RemoteObject.class));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject response = this.client.send("Runtime.queryObjects", params, true);
+        return createJSHandle(this, JSON.toJavaObject(response.getJSONObject("objects"), RemoteObject.class));
+
     }
 
     public Object convertArgument(ExecutionContext th, Object arg) {
-        ObjectNode objectNode = Variables.OBJECTMAPPER.createObjectNode();
+        JSONObject objectNode = new JSONObject();
         if (arg == null) {
             return null;
         }
@@ -200,10 +190,10 @@ public class ExecutionContext {
             if (objectHandle.getRemoteObject().getUnserializableValue() != null)
                 return objectNode.put("unserializableValue", objectHandle.getRemoteObject().getUnserializableValue());
             if (StringKit.isEmpty(objectHandle.getRemoteObject().getObjectId()))
-                return objectNode.putPOJO("value", objectHandle.getRemoteObject().getValue());
+                return objectNode.put("value", objectHandle.getRemoteObject().getValue());
             return objectNode.put("objectId", objectHandle.getRemoteObject().getObjectId());
         }
-        return objectNode.putPOJO("value", arg);
+        return objectNode.put("value", arg);
     }
 
     private JSHandle createJSHandle(ExecutionContext executionContext, RemoteObject remoteObject) {
@@ -214,12 +204,9 @@ public class ExecutionContext {
         Map<String, Object> params = new HashMap<>();
         params.put("backendNodeId", backendNodeId);
         params.put("executionContextId", this.contextId);
-        JsonNode object = this.client.send("DOM.resolveNode", params, true);
-        try {
-            return (ElementHandle) createJSHandle(this, Variables.OBJECTMAPPER.treeToValue(object.get("object"), RemoteObject.class));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject object = this.client.send("DOM.resolveNode", params, true);
+        return (ElementHandle) createJSHandle(this, JSON.toJavaObject(object.getJSONObject("object"), RemoteObject.class));
+
     }
 
     public CDPSession getClient() {

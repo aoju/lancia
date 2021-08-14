@@ -25,12 +25,6 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.util.*;
 
 /**
@@ -137,10 +131,10 @@ public class Variables {
     /**
      * fastjson的一个实例
      */
-    public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
-            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+//    public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
+//            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
+//            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+//            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     /**
      * 从浏览器的websocket接受到消息中有以下这些字段，在处理消息用到这些字段

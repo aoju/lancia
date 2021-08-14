@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Http;
 import org.aoju.bus.core.lang.Normal;
@@ -92,16 +92,16 @@ public class Builder {
      */
     private static ExecutorService COMMON_EXECUTOR = null;
 
-    public static String createProtocolError(JsonNode node) {
-        JsonNode methodNode = node.get(Variables.RECV_MESSAGE_METHOD_PROPERTY);
-        JsonNode errNode = node.get(Variables.RECV_MESSAGE_ERROR_PROPERTY);
-        JsonNode errorMsg = errNode.get(Variables.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
+    public static String createProtocolError(JSONObject node) {
+        JSONObject methodNode = node.getJSONObject(Variables.RECV_MESSAGE_METHOD_PROPERTY);
+        JSONObject errNode = node.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
+        JSONObject errorMsg = errNode.getJSONObject(Variables.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
         String method = Normal.EMPTY;
         if (methodNode != null) {
-            method = methodNode.asText();
+            method = methodNode.toJSONString();
         }
         String message = "Protocol error " + method + ": " + errorMsg;
-        JsonNode dataNode = errNode.get(Variables.RECV_MESSAGE_ERROR_DATA_PROPERTY);
+        JSONObject dataNode = errNode.getJSONObject(Variables.RECV_MESSAGE_ERROR_DATA_PROPERTY);
         if (dataNode != null) {
             message += " " + dataNode.toString();
         }
@@ -240,18 +240,17 @@ public class Builder {
             int byteLength = 0;
 
             while (!eof) {
-                JsonNode response = client.send("IO.read", params, true);
-                JsonNode eofNode = response.get(Variables.RECV_MESSAGE_STREAM_EOF_PROPERTY);
-                JsonNode base64EncodedNode = response.get(Variables.RECV_MESSAGE_BASE64ENCODED_PROPERTY);
-                JsonNode dataNode = response.get(Variables.RECV_MESSAGE_STREAM_DATA_PROPERTY);
-                String dataText;
+                JSONObject response = client.send("IO.read", params, true);
+                String eofNode = response.getString(Variables.RECV_MESSAGE_STREAM_EOF_PROPERTY);
+                Boolean base64EncodedNode = response.getBoolean(Variables.RECV_MESSAGE_BASE64ENCODED_PROPERTY);
+                String dataText = response.getString(Variables.RECV_MESSAGE_STREAM_DATA_PROPERTY);
 
-                if (dataNode != null && StringKit.isNotEmpty(dataText = dataNode.asText())) {
+                if (StringKit.isNotEmpty(dataText)) {
                     try {
-                        if (base64EncodedNode != null && base64EncodedNode.asBoolean()) {
+                        if (base64EncodedNode != null && base64EncodedNode) {
                             bytes = Base64.getDecoder().decode(dataText);
                         } else {
-                            bytes = dataNode.asText().getBytes();
+                            bytes = dataText.getBytes();
                         }
                         bufs.add(bytes);
                         byteLength += bytes.length;
@@ -269,7 +268,7 @@ public class Builder {
                         IoKit.close(reader);
                     }
                 }
-                eof = eofNode == null || eofNode.asBoolean();
+                eof = eofNode == null || Boolean.parseBoolean(eofNode);
             }
             client.send("IO.close", params, true);
             return getBytes(bufs, byteLength);
@@ -414,11 +413,7 @@ public class Builder {
             if (arg == null) {
                 argsList.add("Undefined");
             } else {
-                try {
-                    argsList.add(Variables.OBJECTMAPPER.writeValueAsString(arg));
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
+                argsList.add(JSON.toJSONString(arg));
             }
         }
         return MessageFormat.format("({0})({1})", fun, String.join(",", argsList));

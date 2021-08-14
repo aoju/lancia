@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
@@ -100,13 +100,13 @@ public class Tracing {
      * 停止追踪
      */
     public void stop() {
-        BrowserListener<JsonNode> traceListener = new BrowserListener<JsonNode>() {
+        BrowserListener<JSONObject> traceListener = new BrowserListener<JSONObject>() {
             @Override
-            public void onBrowserEvent(JsonNode event) {
+            public void onBrowserEvent(JSONObject event) {
                 Tracing tracing;
                 try {
                     tracing = (Tracing) this.getTarget();
-                    Builder.readProtocolStream(tracing.getClient(), event.get(Variables.RECV_MESSAGE_STREAM_PROPERTY).asText(), tracing.getPath(), true);
+                    Builder.readProtocolStream(tracing.getClient(), event.getString(Variables.RECV_MESSAGE_STREAM_PROPERTY), tracing.getPath(), true);
                 } catch (IOException ignored) {
 
                 }

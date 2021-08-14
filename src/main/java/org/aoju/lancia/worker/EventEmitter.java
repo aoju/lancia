@@ -25,12 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
@@ -128,8 +128,8 @@ public class EventEmitter implements Event {
                         resolveType = listener.getResolveType();
                     }
 
-                    if (JsonNode.class.isAssignableFrom(params.getClass())) {
-                        event = readJsonObject(resolveType, (JsonNode) params);
+                    if (JSONObject.class.isAssignableFrom(params.getClass())) {
+                        event = readJsonObject(resolveType, (JSONObject) params);
                     } else {
                         event = params;
                     }
@@ -167,7 +167,7 @@ public class EventEmitter implements Event {
     }
 
     /**
-     * 如果clazz属于JsonNode.class则不用转换类型，如果不是，则将jsonNode转化成clazz类型对象
+     * 如果clazz属于JSONObject.class则不用转换类型，如果不是，则将JSONObject转化成clazz类型对象
      *
      * @param clazz  目标类型
      * @param params event的具体内容
@@ -175,15 +175,15 @@ public class EventEmitter implements Event {
      * @return T
      * @throws IOException 转化失败抛出的异常
      */
-    private <T> T readJsonObject(Class<T> clazz, JsonNode params) throws IOException {
+    private <T> T readJsonObject(Class<T> clazz, JSONObject params) throws IOException {
         if (params == null) {
             throw new IllegalArgumentException(
                     "Failed converting null response to clazz " + clazz.getName());
         }
-        if (JsonNode.class.isAssignableFrom(clazz)) {
+        if (JSONObject.class.isAssignableFrom(clazz)) {
             return (T) params;
         }
-        return Variables.OBJECTMAPPER.treeToValue(params, clazz);
+        return JSON.toJavaObject(params, clazz);
     }
 
     public int getListenerCount(String method) {

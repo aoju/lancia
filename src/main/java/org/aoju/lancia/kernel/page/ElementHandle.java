@@ -25,13 +25,13 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.BoxModel;
 import org.aoju.lancia.nimble.BoxModelValue;
 import org.aoju.lancia.nimble.ClickablePoint;
@@ -84,11 +84,11 @@ public class ElementHandle extends JSHandle {
     public Frame contentFrame() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JsonNode nodeInfo = this.client.send("DOM.describeNode", params, true);
-        JsonNode frameId = nodeInfo.get("node").get("frameId");
-        if (frameId == null || StringKit.isEmpty(frameId.asText()))
+        JSONObject nodeInfo = this.client.send("DOM.describeNode", params, true);
+        String frameId = nodeInfo.getJSONObject("node").getString("frameId");
+        if (frameId == null || StringKit.isEmpty(frameId))
             return null;
-        return this.frameManager.frame(frameId.asText());
+        return this.frameManager.frame(frameId);
     }
 
     public void scrollIntoViewIfNeeded() {
@@ -114,37 +114,31 @@ public class ElementHandle extends JSHandle {
                 "  return false;\n" +
                 "}";
         Object error = this.evaluate(pageFunction, Arrays.asList(this.page.getJavascriptEnabled()));
-        try {
-            if (error != null && error.getClass().equals(Boolean.class) && (boolean) error)
-                throw new RuntimeException(Variables.OBJECTMAPPER.writeValueAsString(error));
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        if (error != null && error.getClass().equals(Boolean.class) && (boolean) error)
+            throw new RuntimeException(JSON.toJSONString(error));
+
 
     }
 
     private ClickablePoint clickablePoint() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JsonNode result = this.client.send("DOM.getContentQuads", params, true);
-        JsonNode layoutMetrics = this.client.send("Page.getLayoutMetrics", null, true);
-        if (result == null || result.get("quads").size() == 0)
+        JSONObject result = this.client.send("DOM.getContentQuads", params, true);
+        JSONObject layoutMetrics = this.client.send("Page.getLayoutMetrics", null, true);
+        if (result == null || result.getJSONArray("quads").size() == 0)
             throw new RuntimeException("Node is either not visible or not an HTMLElement");
-        JsonNode layoutViewport = layoutMetrics.get("layoutViewport");
-        JsonNode clientWidth = layoutViewport.get("clientWidth");
-        JsonNode clientHeight = layoutViewport.get("clientHeight");
-        JsonNode quadsNode = result.get("quads");
-        Iterator<JsonNode> elements = quadsNode.elements();
+        JSONObject layoutViewport = layoutMetrics.getJSONObject("layoutViewport");
+        Integer clientWidth = layoutViewport.getInteger("clientWidth");
+        Integer clientHeight = layoutViewport.getInteger("clientHeight");
+        List<JSONObject> quadsNode = result.getObject("quads",new TypeReference<List<JSONObject>>() {});
+        Iterator<JSONObject> elements = quadsNode.iterator();
         List<List<ClickablePoint>> quads = new ArrayList<>();
         while (elements.hasNext()) {
-            JsonNode quadNode = elements.next();
-            List<Integer> quad = new ArrayList<>();
-            Iterator<JsonNode> iterator = quadNode.elements();
-            while (iterator.hasNext()) {
-                quad.add(iterator.next().asInt());
-            }
+            JSONObject quadNode = elements.next();
+            List<Integer> list = quadNode.toJavaObject(new TypeReference<List<Integer>>() {});
+            List<Integer> quad = new ArrayList<>(list);
             List<ClickablePoint> clickOptions = this.fromProtocolQuad(quad);
-            intersectQuadWithViewport(clickOptions, clientWidth.asInt(), clientHeight.asInt());
+            intersectQuadWithViewport(clickOptions, clientWidth, clientHeight);
             quads.add(clickOptions);
         }
         List<List<ClickablePoint>> collect = quads.stream().filter(quad -> computeQuadArea(quad) > 1).collect(Collectors.toList());
@@ -163,12 +157,9 @@ public class ElementHandle extends JSHandle {
     private BoxModelValue getBoxModel() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JsonNode result = this.client.send("DOM.getBoxModel", params, true);
-        try {
-            return Variables.OBJECTMAPPER.treeToValue(result, BoxModelValue.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject result = this.client.send("DOM.getBoxModel", params, true);
+        return JSON.parseObject(JSON.toJSONString(result), BoxModelValue.class);
+
     }
 
     public String screenshot(ScreenshotOption options) throws IOException {
@@ -195,9 +186,9 @@ public class ElementHandle extends JSHandle {
         Assert.isTrue(boundingBox != null, "Node is either not visible or not an HTMLElement");
         Assert.isTrue(boundingBox.getWidth() != 0, "Node has 0 width.");
         Assert.isTrue(boundingBox.getHeight() != 0, "Node has 0 height.");
-        JsonNode response = this.client.send("Page.getLayoutMetrics", null, true);
-        double pageX = response.get("layoutViewport").get("pageX").asDouble();
-        double pageY = response.get("layoutViewport").get("pageY").asDouble();
+        JSONObject response = this.client.send("Page.getLayoutMetrics", null, true);
+        double pageX = response.getJSONObject("layoutViewport").getDouble("pageX");
+        double pageY = response.getJSONObject("layoutViewport").getDouble("pageY");
         Clip clip = boundingBox;
         clip.setX(clip.getX() + pageX);
         clip.setY(clip.getY() + pageY);
@@ -454,8 +445,8 @@ public class ElementHandle extends JSHandle {
         String objectId = this.remoteObject.getObjectId();
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", objectId);
-        JsonNode node = this.client.send("DOM.describeNode", params, true);
-        int backendNodeId = node.get("node").get("backendNodeId").asInt();
+        JSONObject node = this.client.send("DOM.describeNode", params, true);
+        int backendNodeId = node.getJSONObject("node").getInteger("backendNodeId");
         if (files.size() == 0) {
             String pageFunction = "(element) => {\n" +
                     "                    element.files = new DataTransfer().files;\n" +

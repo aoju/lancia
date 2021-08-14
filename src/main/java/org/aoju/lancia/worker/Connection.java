@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
@@ -87,7 +87,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         return client.getConnection();
     }
 
-    public JsonNode send(String method, Map<String, Object> params, boolean isWait) {
+    public JSONObject send(String method, Map<String, Object> params, boolean isWait) {
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
@@ -109,7 +109,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         }
     }
 
-    public JsonNode send(String method, Map<String, Object> params, boolean isWait, CountDownLatch outLatch) {
+    public JSONObject send(String method, Map<String, Object> params, boolean isWait, CountDownLatch outLatch) {
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
@@ -152,18 +152,13 @@ public class Connection extends EventEmitter implements Consumer<String> {
     public long rawSend(Messages message, boolean putCallback, Map<Long, Messages> callbacks) {
         long id = lastId.incrementAndGet();
         message.setId(id);
-        try {
-            if (putCallback) {
-                callbacks.put(id, message);
-            }
-            String sendMsg = Variables.OBJECTMAPPER.writeValueAsString(message);
-            transport.send(sendMsg);
-            Logger.trace("SEND -> " + sendMsg);
-            return id;
-        } catch (JsonProcessingException e) {
-            Logger.error("parse message fail:", e);
+        if (putCallback) {
+            callbacks.put(id, message);
         }
-        return -1;
+        String sendMsg = JSON.toJSONString(message);
+        transport.send(sendMsg);
+        Logger.trace("SEND -> " + sendMsg);
+        return id;
     }
 
     /**
@@ -183,48 +178,46 @@ public class Connection extends EventEmitter implements Consumer<String> {
         Logger.trace("<- RECV " + message);
         try {
             if (StringKit.isNotEmpty(message)) {
-                JsonNode readTree = Variables.OBJECTMAPPER.readTree(message);
-                JsonNode methodNode = readTree.get(Variables.RECV_MESSAGE_METHOD_PROPERTY);
+                JSONObject readTree = JSON.parseObject(message);
+                String methodNode = readTree.getString(Variables.RECV_MESSAGE_METHOD_PROPERTY);
                 String method = null;
                 if (methodNode != null) {
-                    method = methodNode.asText();
+                    method = methodNode;
                 }
                 if ("Target.attachedToTarget".equals(method)) {// attached to target -> page attached to browser
-                    JsonNode paramsNode = readTree.get(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-                    JsonNode sessionId = paramsNode.get(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                    JsonNode typeNode = paramsNode.get(Variables.RECV_MESSAGE_TARGETINFO_PROPERTY).get(Variables.RECV_MESSAGE_TYPE_PROPERTY);
-                    CDPSession cdpSession = new CDPSession(this, typeNode.asText(), sessionId.asText());
-                    sessions.put(sessionId.asText(), cdpSession);
+                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
+                    String sessionId = paramsNode.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    String typeNode = paramsNode.getJSONObject(Variables.RECV_MESSAGE_TARGETINFO_PROPERTY).getString(Variables.RECV_MESSAGE_TYPE_PROPERTY);
+                    CDPSession cdpSession = new CDPSession(this, typeNode, sessionId);
+                    sessions.put(sessionId, cdpSession);
                 } else if ("Target.detachedFromTarget".equals(method)) {// 页面与浏览器脱离关系
-                    JsonNode paramsNode = readTree.get(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-                    JsonNode sessionId = paramsNode.get(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                    String sessionIdString = sessionId.asText();
-                    CDPSession cdpSession = sessions.get(sessionIdString);
+                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
+                    String sessionId = paramsNode.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    CDPSession cdpSession = sessions.get(sessionId);
                     if (cdpSession != null) {
                         cdpSession.onClosed();
-                        sessions.remove(sessionIdString);
+                        sessions.remove(sessionId);
                     }
                 }
-                JsonNode objectSessionId = readTree.get(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                JsonNode objectId = readTree.get(Variables.RECV_MESSAGE_ID_PROPERTY);
+                String objectSessionId = readTree.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                Long objectId = readTree.getLong(Variables.RECV_MESSAGE_ID_PROPERTY);
                 if (objectSessionId != null) {//cdpsession消息，当然cdpsession来处理
-                    String objectSessionIdString = objectSessionId.asText();
-                    CDPSession cdpSession = this.sessions.get(objectSessionIdString);
+                    CDPSession cdpSession = this.sessions.get(objectSessionId);
                     if (cdpSession != null) {
                         cdpSession.onMessage(readTree);
                     }
                 } else if (objectId != null) {// long类型的id,说明属于这次发送消息后接受的回应
-                    long id = objectId.asLong();
+                    long id = objectId;
                     Messages callback = this.callbacks.get(id);
                     if (callback != null) {
                         try {
-                            JsonNode error = readTree.get(Variables.RECV_MESSAGE_ERROR_PROPERTY);
+                            JSONObject error = readTree.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
                             if (error != null) {
                                 if (callback.getCountDownLatch() != null) {
                                     callback.setErrorText(Builder.createProtocolError(readTree));
                                 }
                             } else {
-                                JsonNode result = readTree.get(Variables.RECV_MESSAGE_RESULT_PROPERTY);
+                                JSONObject result = readTree.getJSONObject(Variables.RECV_MESSAGE_RESULT_PROPERTY);
                                 callback.setResult(result);
                             }
                         } finally {
@@ -242,7 +235,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                         }
                     }
                 } else {// 是我们监听的事件，把它事件
-                    JsonNode paramsNode = readTree.get(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
+                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
                     this.emit(method, paramsNode);
                 }
             }
@@ -262,8 +255,8 @@ public class Connection extends EventEmitter implements Consumer<String> {
         Map<String, Object> params = new HashMap<>();
         params.put("targetId", targetInfo.getTargetId());
         params.put("flatten", true);
-        JsonNode result = this.send("Target.attachToTarget", params, true);
-        return this.sessions.get(result.get(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY).asText());
+        JSONObject result = this.send("Target.attachToTarget", params, true);
+        return this.sessions.get(result.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY));
     }
 
 

@@ -25,13 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.*;
 import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.CDPSession;
@@ -127,17 +126,17 @@ public class JSCoverage {
         Builder.commonExecutor().submit(() -> {
             Map<String, Object> params = new HashMap<>();
             params.put("scriptId", event.getScriptId());
-            JsonNode response = client.send("Debugger.getScriptSource", params, true);
+            JSONObject response = client.send("Debugger.getScriptSource", params, true);
             scriptURLs.put(event.getScriptId(), event.getUrl());
-            scriptSources.put(event.getScriptId(), response.get("scriptSource").asText());
+            scriptSources.put(event.getScriptId(), response.getString("scriptSource"));
         });
     }
 
-    public List<CoverageEntry> stop() throws JsonProcessingException {
+    public List<CoverageEntry> stop() {
         Assert.isTrue(this.enabled, "JSCoverage is not enabled");
         this.enabled = false;
 
-        JsonNode result = this.client.send("Profiler.takePreciseCoverage", null, true);
+        JSONObject result = this.client.send("Profiler.takePreciseCoverage", null, true);
         this.client.send("Profiler.stopPreciseCoverage", null, false);
         this.client.send("Profiler.disable", null, false);
         this.client.send("Debugger.disable", null, false);
@@ -146,7 +145,7 @@ public class JSCoverage {
         Builder.removeEventListeners(this.eventListeners);
 
         List<CoverageEntry> coverage = new ArrayList<>();
-        TakePreciseCoverage profileResponse = Variables.OBJECTMAPPER.treeToValue(result, TakePreciseCoverage.class);
+        TakePreciseCoverage profileResponse = JSON.toJavaObject(result, TakePreciseCoverage.class);
         if (CollKit.isEmpty(profileResponse.getResult())) {
             return coverage;
         }

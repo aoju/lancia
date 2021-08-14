@@ -25,8 +25,9 @@
  ********************************************************************************/
 package org.aoju.lancia.launch;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Http;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -259,16 +260,15 @@ public class ChromeLauncher implements Launcher {
             } else {
                 throw new IllegalArgumentException("Exactly one of browserWSEndpoint, browserURL or transport must be passed to puppeteer.connect");
             }
-            JsonNode result = connection.send("Target.getBrowserContexts", null, true);
+            JSONObject result = connection.send("Target.getBrowserContexts", null, true);
 
-            JavaType javaType = Variables.OBJECTMAPPER.getTypeFactory().constructParametricType(ArrayList.class, String.class);
             List<String> browserContextIds;
             Function<Object, Object> closeFunction = (t) -> {
                 connection.send("Browser.close", null, false);
                 return null;
             };
 
-            browserContextIds = Variables.OBJECTMAPPER.readerFor(javaType).readValue(result.get("browserContextIds"));
+            browserContextIds = result.getObject("browserContextIds",TypeReference.LIST_STRING);
             return Browser.create(connection, browserContextIds, options.getIgnoreHTTPSErrors(), options.getViewport(), null, closeFunction);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -292,9 +292,9 @@ public class ChromeLauncher implements Launcher {
             throw new RuntimeException("BrowserURL: " + browserURL + ",HTTP " + responseCode);
         }
         String result = Builder.toString(conn.getInputStream());
-        JsonNode jsonNode = Variables.OBJECTMAPPER.readTree(result);
+        JSONObject jsonObject = JSON.parseObject(result);
 
-        return jsonNode.get("webSocketDebuggerUrl").asText();
+        return jsonObject.getString("webSocketDebuggerUrl");
     }
 
     public boolean getIsPuppeteerCore() {

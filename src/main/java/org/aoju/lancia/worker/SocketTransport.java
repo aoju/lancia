@@ -73,7 +73,7 @@ public class SocketTransport implements Transport {
 
             @Override
             public void onWebsocketError(Exception ex) {
-                Logger.error(ex.getMessage());
+                Logger.error(ex,ex.getMessage());
             }
         };
         try {

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -215,8 +215,8 @@ public class Browser extends EventEmitter {
     }
 
     public Context createIncognitoBrowserContext() {
-        JsonNode result = this.connection.send("Target.createBrowserContext", null, true);
-        String browserContextId = result.get("browserContextId").asText();
+        JSONObject result = this.connection.send("Target.createBrowserContext", null, true);
+        String browserContextId = result.getString("browserContextId");
         Context context = new Context(this.connection, this, browserContextId);
         this.contexts.put(browserContextId, context);
         return context;
@@ -307,13 +307,13 @@ public class Browser extends EventEmitter {
     }
 
     public String version() {
-        JsonNode version = this.getVersion();
-        return version.get("product").asText();
+        JSONObject version = this.getVersion();
+        return version.getString("product");
     }
 
     public String userAgent() {
-        JsonNode version = this.getVersion();
-        return version.get("userAgent").asText();
+        JSONObject version = this.getVersion();
+        return version.getString("userAgent");
     }
 
     public void close() {
@@ -325,7 +325,7 @@ public class Browser extends EventEmitter {
         this.connection.dispose();
     }
 
-    private JsonNode getVersion() {
+    private JSONObject getVersion() {
         return this.connection.send("Browser.getVersion", null, true);
     }
 
@@ -365,9 +365,9 @@ public class Browser extends EventEmitter {
         if (StringKit.isNotEmpty(contextId)) {
             params.put("browserContextId", contextId);
         }
-        JsonNode recevie = this.connection.send("Target.createTarget", params, true);
+        JSONObject recevie = this.connection.send("Target.createTarget", params, true);
         if (recevie != null) {
-            Target target = this.targets.get(recevie.get(Variables.RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY).asText());
+            Target target = this.targets.get(recevie.getString(Variables.RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY));
             Assert.isTrue(target.waitInitializedPromise(), "Failed to create target for page");
             return target.page();
         } else {

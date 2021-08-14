@@ -25,11 +25,11 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
 import org.aoju.lancia.worker.CDPSession;
 
@@ -99,18 +99,15 @@ public class JSHandle {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
         params.put("ownProperties", true);
-        JsonNode response = this.client.send("Runtime.getProperties", params, true);
+        JSONObject response = this.client.send("Runtime.getProperties", params, true);
         Map<String, JSHandle> result = new HashMap<>();
-        Iterator<JsonNode> iterator = response.get("result").iterator();
+        List<JSONObject> list =  response.getObject("result",new TypeReference<List<JSONObject>>(){});
+        Iterator<JSONObject> iterator = list.iterator();
         while (iterator.hasNext()) {
-            JsonNode property = iterator.next();
-            if (!property.get("enumerable").asBoolean())
+            JSONObject property = iterator.next();
+            if (!property.getBoolean("enumerable"))
                 continue;
-            try {
-                result.put(property.get("name").asText(), createJSHandle(this.context, Variables.OBJECTMAPPER.treeToValue(property.get("value"), RemoteObject.class)));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            result.put(property.getString("name"), createJSHandle(this.context, JSON.toJavaObject(property.getJSONObject("value"), RemoteObject.class)));
         }
         return result;
     }
@@ -122,12 +119,9 @@ public class JSHandle {
             params.put("objectId", this.remoteObject.getObjectId());
             params.put("returnByValue", true);
             params.put("awaitPromise", true);
-            JsonNode response = this.client.send("Runtime.callFunctionOn", params, true);
-            try {
-                return Builder.valueFromRemoteObject(Variables.OBJECTMAPPER.treeToValue(response.get("result"), RemoteObject.class));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            JSONObject response = this.client.send("Runtime.callFunctionOn", params, true);
+            return Builder.valueFromRemoteObject(JSON.parseObject(JSON.toJSONString(response.get("result")), RemoteObject.class));
+
         }
         return Builder.valueFromRemoteObject(this.remoteObject);
     }

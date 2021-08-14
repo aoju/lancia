@@ -25,10 +25,9 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.exception.InstrumentException;
-import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.runtime.ConsoleCalledPayload;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;
@@ -65,17 +64,14 @@ public class Worker extends EventEmitter {
         super();
         this.client = client;
         this.url = url;
-        BrowserListener<JsonNode> executionContextListener = new BrowserListener<JsonNode>() {
+        BrowserListener<JSONObject> executionContextListener = new BrowserListener<JSONObject>() {
             @Override
-            public void onBrowserEvent(JsonNode event) {
-                try {
-                    Worker worker = (Worker) this.getTarget();
-                    ExecutionDescription contextDescription = Variables.OBJECTMAPPER.treeToValue(event.get("context"), ExecutionDescription.class);
-                    ExecutionContext executionContext = new ExecutionContext(client, contextDescription, null);
-                    worker.executionContextCallback(executionContext);
-                } catch (JsonProcessingException e) {
-                    Logger.error("executionContextCreated event json process error ", e);
-                }
+            public void onBrowserEvent(JSONObject event) {
+                Worker worker = (Worker) this.getTarget();
+                ExecutionDescription contextDescription = JSON.parseObject(JSON.toJSONString(event.get("context")), ExecutionDescription.class);
+                ExecutionContext executionContext = new ExecutionContext(client, contextDescription, null);
+                worker.executionContextCallback(executionContext);
+
             }
         };
         executionContextListener.setMothod("Runtime.executionContextCreated");
@@ -92,15 +88,12 @@ public class Worker extends EventEmitter {
         consoleLis.setMothod("Runtime.consoleAPICalled");
         this.client.addListener(consoleLis.getMothod(), consoleLis);
 
-        BrowserListener<JsonNode> exceptionLis = new BrowserListener<JsonNode>() {
+        BrowserListener<JSONObject> exceptionLis = new BrowserListener<JSONObject>() {
             @Override
-            public void onBrowserEvent(JsonNode event) {
-                try {
-                    ExceptionDetails exceptionDetails = Variables.OBJECTMAPPER.treeToValue(event.get("exceptionDetails"), ExceptionDetails.class);
-                    exceptionThrown.accept(exceptionDetails);
-                } catch (JsonProcessingException e) {
-                    Logger.error("exceptionThrown event json process error ", e);
-                }
+            public void onBrowserEvent(JSONObject event) {
+                ExceptionDetails exceptionDetails = JSON.toJavaObject(event.getJSONObject("exceptionDetails"), ExceptionDetails.class);
+                exceptionThrown.accept(exceptionDetails);
+
             }
         };
         exceptionLis.setMothod("Runtime.exceptionThrown");

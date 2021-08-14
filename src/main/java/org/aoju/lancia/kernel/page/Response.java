@@ -25,7 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Variables;
@@ -137,12 +138,12 @@ public class Response {
             }
             Map<String, Object> params = new HashMap<>();
             params.put("requestId", this.request.requestId());
-            JsonNode response = this.client.send("Network.getResponseBody", params, true);
+            JSONObject response = this.client.send("Network.getResponseBody", params, true);
             if (response != null) {
-                if (response.get("base64Encoded").asBoolean()) {
-                    contentPromise = Base64.getDecoder().decode(response.get("body").asText());
+                if (response.getBoolean("base64Encoded")) {
+                    contentPromise = Base64.getDecoder().decode(response.getString("body"));
                 } else {
-                    contentPromise = response.get("body").asText().getBytes(Charset.UTF_8);
+                    contentPromise = response.getString("body").getBytes(Charset.UTF_8);
                 }
             }
         }
@@ -157,7 +158,7 @@ public class Response {
 
     public <T> T json(Class<T> clazz) throws IOException, InterruptedException {
         String content = this.text();
-        return Variables.OBJECTMAPPER.readValue(content, clazz);
+        return JSON.parseObject(content, clazz);
     }
 
     public Request request() {

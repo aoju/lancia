@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -291,14 +291,11 @@ public class FrameManager extends EventEmitter {
 
         this.client.send("Page.enable", null, false);
         /* @type Protocol.Page.getFrameTreeReturnValue*/
-        JsonNode result = this.client.send("Page.getFrameTree", null, true);
+        JSONObject result = this.client.send("Page.getFrameTree", null, true);
 
         FrameTree frameTree;
-        try {
-            frameTree = Variables.OBJECTMAPPER.treeToValue(result.get("frameTree"), FrameTree.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        frameTree = JSON.toJavaObject(result.getJSONObject("frameTree"), FrameTree.class);
+
         this.handleFrameTree(frameTree);
 
         Map<String, Object> params = new HashMap<>();
@@ -520,7 +517,7 @@ public class FrameManager extends EventEmitter {
         params.put("referrer", referrer);
         params.put("frameId", frameId);
         try {
-            JsonNode response = client.send("Page.navigate", params, true, null, timeout);
+            JSONObject response = client.send("Page.navigate", params, true, null, timeout);
             this.setNavigateResult("success");
             if (response == null) {
                 return false;

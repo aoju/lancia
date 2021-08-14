@@ -25,8 +25,10 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -294,20 +296,16 @@ public class Page extends EventEmitter {
         javascriptDialogOpeningLis.setTarget(this);
         this.client.addListener(javascriptDialogOpeningLis.getMothod(), javascriptDialogOpeningLis);
 
-        BrowserListener<JsonNode> exceptionThrownLis = new BrowserListener<JsonNode>() {
+        BrowserListener<JSONObject> exceptionThrownLis = new BrowserListener<JSONObject>() {
             @Override
-            public void onBrowserEvent(JsonNode event) {
+            public void onBrowserEvent(JSONObject event) {
                 Page page = (Page) this.getTarget();
-                JsonNode exceptionDetails = event.get("exceptionDetails");
-                try {
-                    if (exceptionDetails == null) {
-                        return;
-                    }
-                    ExceptionDetails value = Variables.OBJECTMAPPER.treeToValue(exceptionDetails, ExceptionDetails.class);
-                    page.handleException(value);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                JSONObject exceptionDetails = event.getJSONObject("exceptionDetails");
+                if (exceptionDetails == null) {
+                    return;
                 }
+                ExceptionDetails value = JSON.toJavaObject(exceptionDetails, ExceptionDetails.class);
+                page.handleException(value);
 
             }
         };
@@ -845,20 +843,17 @@ public class Page extends EventEmitter {
         if (urls == null) urls = new ArrayList<>();
         if (urls.size() == 0) urls.add(this.url());
         params.put("urls", urls);
-        JsonNode result = this.client.send("Network.getCookies", params, true);
-        JsonNode cookiesNode = result.get("cookies");
-        Iterator<JsonNode> elements = cookiesNode.elements();
+        JSONObject result = this.client.send("Network.getCookies", params, true);
+        JSONArray cookiesNode = result.getJSONArray("cookies");
+        Iterator<Object> elements = cookiesNode.iterator();
         List<Cookie> cookies = new ArrayList<>();
         while (elements.hasNext()) {
-            JsonNode cookieNode = elements.next();
+            JSONObject cookieNode = (JSONObject) elements.next();
             Cookie cookie;
-            try {
-                cookie = Variables.OBJECTMAPPER.treeToValue(cookieNode, Cookie.class);
-                cookie.setPriority(null);
-                cookies.add(cookie);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            cookie = JSON.toJavaObject(cookieNode, Cookie.class);
+            cookie.setPriority(null);
+            cookies.add(cookie);
+
         }
         return cookies;
     }
@@ -995,9 +990,9 @@ public class Page extends EventEmitter {
             clip = processClip(options.getClip());
         }
         if (options.getFullPage()) {
-            JsonNode metrics = this.client.send("Page.getLayoutMetrics", null, true);
-            double width = Math.ceil(metrics.get("contentSize").get("width").asDouble());
-            double height = Math.ceil(metrics.get("contentSize").get("height").asDouble());
+            JSONObject metrics = this.client.send("Page.getLayoutMetrics", null, true);
+            double width = Math.ceil(metrics.getJSONObject("contentSize").getDouble("width"));
+            double height = Math.ceil(metrics.getJSONObject("contentSize").getDouble("height"));
             clip = new ClipOverwrite(0, 0, width, height, 1);
             ScreenOrientation screenOrientation;
             if (this.viewport.getIsLandscape()) {
@@ -1028,13 +1023,13 @@ public class Page extends EventEmitter {
         params.put("format", format);
         params.put("quality", options.getQuality());
         params.put("clip", clip);
-        JsonNode result = this.client.send("Page.captureScreenshot", params, true);
+        JSONObject result = this.client.send("Page.captureScreenshot", params, true);
         if (shouldSetDefaultBackground) {
             this.client.send("Emulation.setDefaultBackgroundColorOverride", null, true);
         }
         if (options.getFullPage() && this.viewport != null)
             this.setViewport(this.viewport);
-        String data = result.get("data").asText();
+        String data = result.getString("data");
 //            byte[] buffer = decoder.decodeBuffer(data);
         byte[] buffer = Base64.getDecoder().decode(data);
         if (StringKit.isNotEmpty(options.getPath())) {
@@ -1136,11 +1131,8 @@ public class Page extends EventEmitter {
     private void onBindingCalled(BindingCalledPayload event) {
         String payloadStr = event.getPayload();
         Payload payload;
-        try {
-            payload = Variables.OBJECTMAPPER.readValue(payloadStr, Payload.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        payload = JSON.parseObject(payloadStr, Payload.class);
+
         String expression;
         try {
             Object result = this.pageBindings.get(event.getName()).apply(payload.getArgs());
@@ -1205,11 +1197,7 @@ public class Page extends EventEmitter {
             if (StringKit.isNotEmpty(remoteObject.getObjectId()))
                 textTokens.add(arg.toString());
             else {
-                try {
-                    textTokens.add(Variables.OBJECTMAPPER.writeValueAsString(Builder.valueFromRemoteObject(remoteObject)));
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
+                textTokens.add(JSON.toJSONString(Builder.valueFromRemoteObject(remoteObject)));
             }
         }
         Location location = stackTrace != null && stackTrace.getCallFrames().size() > 0 ? new Location(stackTrace.getCallFrames().get(0).getUrl(), stackTrace.getCallFrames().get(0).getLineNumber(), stackTrace.getCallFrames().get(0).getColumnNumber()) : new Location();
@@ -1452,11 +1440,7 @@ public class Page extends EventEmitter {
                 if (arg == null) {
                     argsList.add("undefined");
                 } else {
-                    try {
-                        argsList.add(Variables.OBJECTMAPPER.writeValueAsString(arg));
-                    } catch (JsonProcessingException e) {
-                        argsList.add("undefined");
-                    }
+                    argsList.add(JSON.toJSONString(arg));
                 }
             });
             String source = "(" + pageFunction + ")(" + String.join(",", argsList) + ")";
@@ -1604,17 +1588,13 @@ public class Page extends EventEmitter {
      * @throws InvocationTargetException 异常
      */
     public Metrics metrics() throws IllegalAccessException, IntrospectionException, InvocationTargetException {
-        JsonNode responseNode = this.client.send("Performance.getMetrics", null, true);
+        JSONObject responseNode = this.client.send("Performance.getMetrics", null, true);
         List<Metric> metrics = new ArrayList<>();
-        Iterator<JsonNode> elements = responseNode.get("metrics").elements();
-        while (elements.hasNext()) {
-            JsonNode next = elements.next();
-            try {
-                Metric value = Variables.OBJECTMAPPER.treeToValue(next, Metric.class);
-                metrics.add(value);
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+        List<JSONObject> list = responseNode.getObject("metrics",new TypeReference<List<JSONObject>>(){});
+        for (JSONObject next : list) {
+            Metric value = JSON.toJavaObject(next, Metric.class);
+            metrics.add(value);
+
         }
         return this.buildMetricsObject(metrics);
     }
@@ -1692,12 +1672,12 @@ public class Page extends EventEmitter {
         params.put("marginRight", marginRight);
         params.put("pageRanges", options.getPageRanges());
         params.put("preferCSSPageSize", options.getPreferCSSPageSize());
-        JsonNode result = this.client.send("Page.printToPDF", params, true);
+        JSONObject result = this.client.send("Page.printToPDF", params, true);
 
         if (result != null) {
-            JsonNode handle = result.get(Variables.RECV_MESSAGE_STREAM_PROPERTY);
+            String handle = result.getString(Variables.RECV_MESSAGE_STREAM_PROPERTY);
             Assert.isTrue(handle != null, "Page.printToPDF result has no stream handle. Please check your chrome version. result=" + result.toString());
-            return (byte[]) Builder.readProtocolStream(this.client, handle.asText(), options.getPath(), false);
+            return (byte[]) Builder.readProtocolStream(this.client, handle, options.getPath(), false);
         }
         throw new InstrumentException("Page.printToPDF no response");
     }
@@ -1790,13 +1770,10 @@ public class Page extends EventEmitter {
     }
 
     private Response go(int delta, NavigateOption options) {
-        JsonNode historyNode = this.client.send("Page.getNavigationHistory", null, true);
+        JSONObject historyNode = this.client.send("Page.getNavigationHistory", null, true);
         GetNavigationHistory history;
-        try {
-            history = Variables.OBJECTMAPPER.treeToValue(historyNode, GetNavigationHistory.class);
-        } catch (JsonProcessingException e) {
-            throw new InstrumentException(e);
-        }
+        history = JSON.toJavaObject(historyNode, GetNavigationHistory.class);
+
         NavigationEntry entry = history.getEntries().get(history.getCurrentIndex() + delta);
         if (entry == null)
             return null;
