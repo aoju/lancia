@@ -518,9 +518,6 @@ public class SocketTransport implements Transport {
             if (text == null)
                 throw new IllegalArgumentException("Cannot send 'null' data to a WebSocketImpl.");
             ByteBuffer byteBuffer = ByteBuffer.wrap(text.getBytes(Charset.UTF_8));
-            if (!isOpen()) {
-                throw new InstrumentException();
-            }
             if (byteBuffer == null) {
                 throw new IllegalArgumentException();
             }

@@ -87,9 +87,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onRequestPaused(event);
             }
         };
-        requestPausedListener.setMothod("Fetch.requestPaused");
+        requestPausedListener.setMethod("Fetch.requestPaused");
         requestPausedListener.setTarget(this);
-        this.client.addListener(requestPausedListener.getMothod(), requestPausedListener);
+        this.client.addListener(requestPausedListener.getMethod(), requestPausedListener);
 
         BrowserListener<AuthorizePayload> authRequiredListener = new BrowserListener<AuthorizePayload>() {
             @Override
@@ -98,9 +98,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onAuthRequired(event);
             }
         };
-        authRequiredListener.setMothod("Fetch.authRequired");
+        authRequiredListener.setMethod("Fetch.authRequired");
         authRequiredListener.setTarget(this);
-        this.client.addListener(authRequiredListener.getMothod(), authRequiredListener);
+        this.client.addListener(authRequiredListener.getMethod(), authRequiredListener);
 
         BrowserListener<RequestWillPayload> requestWillBeSentListener = new BrowserListener<RequestWillPayload>() {
             @Override
@@ -109,9 +109,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onRequestWillBeSent(event);
             }
         };
-        requestWillBeSentListener.setMothod("Network.requestWillBeSent");
+        requestWillBeSentListener.setMethod("Network.requestWillBeSent");
         requestWillBeSentListener.setTarget(this);
-        this.client.addListener(requestWillBeSentListener.getMothod(), requestWillBeSentListener);
+        this.client.addListener(requestWillBeSentListener.getMethod(), requestWillBeSentListener);
 
         BrowserListener<RequestCachePayload> requestServedFromCacheListener = new BrowserListener<RequestCachePayload>() {
             @Override
@@ -120,9 +120,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onRequestServedFromCache(event);
             }
         };
-        requestServedFromCacheListener.setMothod("Network.requestServedFromCache");
+        requestServedFromCacheListener.setMethod("Network.requestServedFromCache");
         requestServedFromCacheListener.setTarget(this);
-        this.client.addListener(requestServedFromCacheListener.getMothod(), requestServedFromCacheListener);
+        this.client.addListener(requestServedFromCacheListener.getMethod(), requestServedFromCacheListener);
 
         BrowserListener<ReceivedPayload> responseReceivedListener = new BrowserListener<ReceivedPayload>() {
             @Override
@@ -131,9 +131,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onResponseReceived(event);
             }
         };
-        responseReceivedListener.setMothod("Network.responseReceived");
+        responseReceivedListener.setMethod("Network.responseReceived");
         responseReceivedListener.setTarget(this);
-        this.client.addListener(responseReceivedListener.getMothod(), responseReceivedListener);
+        this.client.addListener(responseReceivedListener.getMethod(), responseReceivedListener);
 
         BrowserListener<FinishedPayload> loadingFinishedListener = new BrowserListener<FinishedPayload>() {
             @Override
@@ -142,9 +142,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onLoadingFinished(event);
             }
         };
-        loadingFinishedListener.setMothod("Network.loadingFinished");
+        loadingFinishedListener.setMethod("Network.loadingFinished");
         loadingFinishedListener.setTarget(this);
-        this.client.addListener(loadingFinishedListener.getMothod(), loadingFinishedListener);
+        this.client.addListener(loadingFinishedListener.getMethod(), loadingFinishedListener);
 
         BrowserListener<FailedPayload> loadingFailedListener = new BrowserListener<FailedPayload>() {
             @Override
@@ -153,9 +153,9 @@ public class NetworkManager extends EventEmitter {
                 manager.onLoadingFailed(event);
             }
         };
-        loadingFailedListener.setMothod("Network.loadingFailed");
+        loadingFailedListener.setMethod("Network.loadingFailed");
         loadingFailedListener.setTarget(this);
-        this.client.addListener(loadingFailedListener.getMothod(), loadingFailedListener);
+        this.client.addListener(loadingFailedListener.getMethod(), loadingFailedListener);
 
     }
 

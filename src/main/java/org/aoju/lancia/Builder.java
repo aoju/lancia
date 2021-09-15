@@ -389,7 +389,7 @@ public class Builder {
                 latch.countDown();
             }
         };
-        listener.setMothod(eventName);
+        listener.setMethod(eventName);
         ListenerWrapper wrapper = addEventListener(eventEmitter, eventName, listener);
         try {
             boolean await = latch.await(timeout, TimeUnit.MILLISECONDS);

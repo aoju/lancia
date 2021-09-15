@@ -114,7 +114,7 @@ public class Context extends EventEmitter {
      *
      * @param handler 事件处理器
      */
-    public void onTrgetcreated(EventHandler<Target> handler) {
+    public void onTargetcreated(EventHandler<Target> handler) {
         this.on(Variables.Event.BROWSERCONTEXT_TARGETCREATED.getName(), handler);
     }
 

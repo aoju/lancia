@@ -119,8 +119,8 @@ public class Browser extends EventEmitter {
             }
         };
         disconnectedLis.setTarget(this);
-        disconnectedLis.setMothod(Variables.Event.CONNECTION_DISCONNECTED.getName());
-        this.connection.addListener(disconnectedLis.getMothod(), disconnectedLis);
+        disconnectedLis.setMethod(Variables.Event.CONNECTION_DISCONNECTED.getName());
+        this.connection.addListener(disconnectedLis.getMethod(), disconnectedLis);
 
         BrowserListener<TargetCreatedPayload> targetCreatedLis = new BrowserListener<TargetCreatedPayload>() {
             @Override
@@ -130,8 +130,8 @@ public class Browser extends EventEmitter {
             }
         };
         targetCreatedLis.setTarget(this);
-        targetCreatedLis.setMothod("Target.targetCreated");
-        this.connection.addListener(targetCreatedLis.getMothod(), targetCreatedLis);
+        targetCreatedLis.setMethod("Target.targetCreated");
+        this.connection.addListener(targetCreatedLis.getMethod(), targetCreatedLis);
 
         BrowserListener<TargetDestroyedPayload> targetDestroyedLis = new BrowserListener<TargetDestroyedPayload>() {
             @Override
@@ -141,8 +141,8 @@ public class Browser extends EventEmitter {
             }
         };
         targetDestroyedLis.setTarget(this);
-        targetDestroyedLis.setMothod("Target.targetDestroyed");
-        this.connection.addListener(targetDestroyedLis.getMothod(), targetDestroyedLis);
+        targetDestroyedLis.setMethod("Target.targetDestroyed");
+        this.connection.addListener(targetDestroyedLis.getMethod(), targetDestroyedLis);
 
         BrowserListener<TargetInfoChangedPayload> targetInfoChangedLis = new BrowserListener<TargetInfoChangedPayload>() {
             @Override
@@ -152,8 +152,8 @@ public class Browser extends EventEmitter {
             }
         };
         targetInfoChangedLis.setTarget(this);
-        targetInfoChangedLis.setMothod("Target.targetInfoChanged");
-        this.connection.addListener(targetInfoChangedLis.getMothod(), targetInfoChangedLis);
+        targetInfoChangedLis.setMethod("Target.targetInfoChanged");
+        this.connection.addListener(targetInfoChangedLis.getMethod(), targetInfoChangedLis);
     }
 
     /**
@@ -404,7 +404,7 @@ public class Browser extends EventEmitter {
      *
      * @param handler 事件处理器
      */
-    public void onTrgetcreated(EventHandler<Target> handler) {
+    public void onTargetcreated(EventHandler<Target> handler) {
         this.on(Variables.Event.BROWSER_TARGETCREATED.getName(), handler);
     }
 

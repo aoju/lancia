@@ -101,8 +101,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         frameAttachedListener.setTarget(this);
-        frameAttachedListener.setMothod("Page.frameAttached");
-        this.client.addListener(frameAttachedListener.getMothod(), frameAttachedListener);
+        frameAttachedListener.setMethod("Page.frameAttached");
+        this.client.addListener(frameAttachedListener.getMethod(), frameAttachedListener);
         // 2 Page.frameNavigated
         BrowserListener<FrameNavigatedPayload> frameNavigatedListener = new BrowserListener<FrameNavigatedPayload>() {
             @Override
@@ -112,8 +112,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         frameNavigatedListener.setTarget(this);
-        frameNavigatedListener.setMothod("Page.frameNavigated");
-        this.client.addListener(frameNavigatedListener.getMothod(), frameNavigatedListener);
+        frameNavigatedListener.setMethod("Page.frameNavigated");
+        this.client.addListener(frameNavigatedListener.getMethod(), frameNavigatedListener);
 
         // 3 Page.navigatedWithinDocument
         BrowserListener<WithinDocumentPayload> navigatedWithinDocumentListener = new BrowserListener<WithinDocumentPayload>() {
@@ -124,8 +124,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         navigatedWithinDocumentListener.setTarget(this);
-        navigatedWithinDocumentListener.setMothod("Page.navigatedWithinDocument");
-        this.client.addListener(navigatedWithinDocumentListener.getMothod(), navigatedWithinDocumentListener);
+        navigatedWithinDocumentListener.setMethod("Page.navigatedWithinDocument");
+        this.client.addListener(navigatedWithinDocumentListener.getMethod(), navigatedWithinDocumentListener);
 
         // 4 Page.frameDetached
         BrowserListener<FrameDetachedPayload> frameDetachedListener = new BrowserListener<FrameDetachedPayload>() {
@@ -136,8 +136,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         frameDetachedListener.setTarget(this);
-        frameDetachedListener.setMothod("Page.frameDetached");
-        this.client.addListener(frameDetachedListener.getMothod(), frameDetachedListener);
+        frameDetachedListener.setMethod("Page.frameDetached");
+        this.client.addListener(frameDetachedListener.getMethod(), frameDetachedListener);
 
         // 5 Page.frameStoppedLoading
         BrowserListener<FrameStoppedPayload> frameStoppedLoadingListener = new BrowserListener<FrameStoppedPayload>() {
@@ -148,8 +148,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         frameStoppedLoadingListener.setTarget(this);
-        frameStoppedLoadingListener.setMothod("Page.frameStoppedLoading");
-        this.client.addListener(frameStoppedLoadingListener.getMothod(), frameStoppedLoadingListener);
+        frameStoppedLoadingListener.setMethod("Page.frameStoppedLoading");
+        this.client.addListener(frameStoppedLoadingListener.getMethod(), frameStoppedLoadingListener);
 
         // 6 Runtime.executionContextCreated
         BrowserListener<ExecutionCreatedPayload> executionContextCreatedListener = new BrowserListener<ExecutionCreatedPayload>() {
@@ -160,8 +160,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         executionContextCreatedListener.setTarget(this);
-        executionContextCreatedListener.setMothod("Runtime.executionContextCreated");
-        this.client.addListener(executionContextCreatedListener.getMothod(), executionContextCreatedListener);
+        executionContextCreatedListener.setMethod("Runtime.executionContextCreated");
+        this.client.addListener(executionContextCreatedListener.getMethod(), executionContextCreatedListener);
 
         // 7 Runtime.executionContextDestroyed
         BrowserListener<ExecutionDestroyedPayload> executionContextDestroyedListener = new BrowserListener<ExecutionDestroyedPayload>() {
@@ -172,8 +172,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         executionContextDestroyedListener.setTarget(this);
-        executionContextDestroyedListener.setMothod("Runtime.executionContextDestroyed");
-        this.client.addListener(executionContextDestroyedListener.getMothod(), executionContextDestroyedListener);
+        executionContextDestroyedListener.setMethod("Runtime.executionContextDestroyed");
+        this.client.addListener(executionContextDestroyedListener.getMethod(), executionContextDestroyedListener);
 
         // 8 Runtime.executionContextsCleared
         BrowserListener<Object> executionContextsClearedListener = new BrowserListener<Object>() {
@@ -184,8 +184,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         executionContextsClearedListener.setTarget(this);
-        executionContextsClearedListener.setMothod("Runtime.executionContextsCleared");
-        this.client.addListener(executionContextsClearedListener.getMothod(), executionContextsClearedListener);
+        executionContextsClearedListener.setMethod("Runtime.executionContextsCleared");
+        this.client.addListener(executionContextsClearedListener.getMethod(), executionContextsClearedListener);
 
         // 9 Page.lifecycleEvent
         BrowserListener<LifecycleEventPayload> lifecycleEventListener = new BrowserListener<LifecycleEventPayload>() {
@@ -196,8 +196,8 @@ public class FrameManager extends EventEmitter {
             }
         };
         lifecycleEventListener.setTarget(this);
-        lifecycleEventListener.setMothod("Page.lifecycleEvent");
-        this.client.addListener(lifecycleEventListener.getMothod(), lifecycleEventListener);
+        lifecycleEventListener.setMethod("Page.lifecycleEvent");
+        this.client.addListener(lifecycleEventListener.getMethod(), lifecycleEventListener);
     }
 
     private void onLifecycleEvent(LifecycleEventPayload event) {
@@ -470,7 +470,10 @@ public class FrameManager extends EventEmitter {
         if (!isBlock) {
             Map<String, Object> params = new HashMap<>();
             params.put("url", url);
-            params.put("referrer", referrer);
+            // jackJson 不序列化null值对 HashMap里面的 null值不起作用
+            if (referrer != null) {
+                params.put("referrer", referrer);
+            }
             params.put("frameId", frame.getId());
             this.client.send("Page.navigate", params, false);
             return null;
@@ -517,7 +520,10 @@ public class FrameManager extends EventEmitter {
     private boolean navigate(CDPSession client, String url, String referrer, String frameId, int timeout) {
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
-        params.put("referrer", referrer);
+        // jackJson 不序列化null值对 HashMap里面的 null值不起作用
+        if (referrer != null) {
+            params.put("referrer", referrer);
+        }
         params.put("frameId", frameId);
         try {
             JsonNode response = client.send("Page.navigate", params, true, null, timeout);

@@ -86,8 +86,7 @@ public class Puppeteer {
     }
 
     public static Browser launch(LaunchOption options) throws IOException {
-        Puppeteer puppeteer = new Puppeteer();
-        return Puppeteer.rawLaunch(options, puppeteer);
+        return Puppeteer.rawLaunch(options, new Puppeteer());
     }
 
     private static Browser rawLaunch() throws IOException {
@@ -160,7 +159,7 @@ public class Puppeteer {
      * be closed when the parent java process is closed.
      */
     private static Browser rawLaunch(LaunchOption options, Puppeteer puppeteer) throws IOException {
-        if (!StringKit.isNotBlank(options.getProduct())) {
+        if (StringKit.isNotBlank(options.getProduct())) {
             puppeteer.setProductName(options.getProduct());
         }
         adapterLauncher(puppeteer);

@@ -78,9 +78,9 @@ public class Worker extends EventEmitter {
                 }
             }
         };
-        executionContextListener.setMothod("Runtime.executionContextCreated");
+        executionContextListener.setMethod("Runtime.executionContextCreated");
         executionContextListener.setTarget(this);
-        this.client.addListener(executionContextListener.getMothod(), executionContextListener, true);
+        this.client.addListener(executionContextListener.getMethod(), executionContextListener, true);
 
         this.client.send("Runtime.enable", null, false);
         BrowserListener<ConsoleCalledPayload> consoleLis = new BrowserListener<ConsoleCalledPayload>() {
@@ -89,8 +89,8 @@ public class Worker extends EventEmitter {
                 consoleAPICalled.call(event.getType(), event.getArgs().stream().map(item -> jsHandleFactory(item)).collect(Collectors.toList()), event.getStackTrace());
             }
         };
-        consoleLis.setMothod("Runtime.consoleAPICalled");
-        this.client.addListener(consoleLis.getMothod(), consoleLis);
+        consoleLis.setMethod("Runtime.consoleAPICalled");
+        this.client.addListener(consoleLis.getMethod(), consoleLis);
 
         BrowserListener<JsonNode> exceptionLis = new BrowserListener<JsonNode>() {
             @Override
@@ -103,8 +103,8 @@ public class Worker extends EventEmitter {
                 }
             }
         };
-        exceptionLis.setMothod("Runtime.exceptionThrown");
-        this.client.addListener(exceptionLis.getMothod(), exceptionLis);
+        exceptionLis.setMethod("Runtime.exceptionThrown");
+        this.client.addListener(exceptionLis.getMethod(), exceptionLis);
     }
 
     public JSHandle jsHandleFactory(RemoteObject remoteObject) {

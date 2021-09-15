@@ -136,10 +136,10 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_WORKERCREATED.getName(), worker);
             }
         };
-        attachedListener.setMothod("Target.attachedToTarget");
+        attachedListener.setMethod("Target.attachedToTarget");
         attachedListener.setTarget(this);
         attachedListener.setResolveType(Target.class);
-        this.client.addListener(attachedListener.getMothod(), attachedListener);
+        this.client.addListener(attachedListener.getMethod(), attachedListener);
 
         BrowserListener<Target> detachedListener = new BrowserListener<Target>() {
             @Override
@@ -153,10 +153,10 @@ public class Page extends EventEmitter {
                 page.workers().remove(event.getSessionId());
             }
         };
-        detachedListener.setMothod("Target.detachedFromTarget");
+        detachedListener.setMethod("Target.detachedFromTarget");
         detachedListener.setTarget(this);
         detachedListener.setResolveType(Target.class);
-        this.client.addListener(detachedListener.getMothod(), detachedListener);
+        this.client.addListener(detachedListener.getMethod(), detachedListener);
 
         BrowserListener<Object> frameAttachedListener = new BrowserListener<Object>() {
             @Override
@@ -165,9 +165,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_FRAMEATTACHED.getName(), event);
             }
         };
-        frameAttachedListener.setMothod(Variables.Event.FRAME_MANAGER_FRAME_ATTACHED.getName());
+        frameAttachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_ATTACHED.getName());
         frameAttachedListener.setTarget(this);
-        this.frameManager.addListener(frameAttachedListener.getMothod(), frameAttachedListener);
+        this.frameManager.addListener(frameAttachedListener.getMethod(), frameAttachedListener);
 
         BrowserListener<Object> frameDetachedListener = new BrowserListener<Object>() {
             @Override
@@ -176,9 +176,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_FRAMEDETACHED.getName(), event);
             }
         };
-        frameDetachedListener.setMothod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
+        frameDetachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
         frameDetachedListener.setTarget(this);
-        this.frameManager.addListener(frameDetachedListener.getMothod(), frameDetachedListener);
+        this.frameManager.addListener(frameDetachedListener.getMethod(), frameDetachedListener);
 
         BrowserListener<Object> frameNavigatedListener = new BrowserListener<Object>() {
             @Override
@@ -187,9 +187,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_FRAMENAVIGATED.getName(), event);
             }
         };
-        frameNavigatedListener.setMothod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName());
+        frameNavigatedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName());
         frameNavigatedListener.setTarget(this);
-        this.frameManager.addListener(frameNavigatedListener.getMothod(), frameNavigatedListener);
+        this.frameManager.addListener(frameNavigatedListener.getMethod(), frameNavigatedListener);
 
         NetworkManager networkManager = this.frameManager.getNetworkManager();
 
@@ -200,9 +200,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_REQUEST.getName(), event);
             }
         };
-        requestLis.setMothod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
+        requestLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
         requestLis.setTarget(this);
-        networkManager.addListener(requestLis.getMothod(), requestLis);
+        networkManager.addListener(requestLis.getMethod(), requestLis);
 
         BrowserListener<Response> responseLis = new BrowserListener<Response>() {
             @Override
@@ -211,9 +211,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_RESPONSE.getName(), event);
             }
         };
-        responseLis.setMothod(Variables.Event.NETWORK_MANAGER_RESPONSE.getName());
+        responseLis.setMethod(Variables.Event.NETWORK_MANAGER_RESPONSE.getName());
         responseLis.setTarget(this);
-        networkManager.addListener(responseLis.getMothod(), responseLis);
+        networkManager.addListener(responseLis.getMethod(), responseLis);
 
         BrowserListener<Request> requestFailedLis = new BrowserListener<Request>() {
             @Override
@@ -222,9 +222,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_REQUESTFAILED.getName(), event);
             }
         };
-        requestFailedLis.setMothod(Variables.Event.NETWORK_MANAGER_REQUEST_FAILED.getName());
+        requestFailedLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST_FAILED.getName());
         requestFailedLis.setTarget(this);
-        networkManager.addListener(requestFailedLis.getMothod(), requestFailedLis);
+        networkManager.addListener(requestFailedLis.getMethod(), requestFailedLis);
 
         BrowserListener<Request> requestFinishedLis = new BrowserListener<Request>() {
             @Override
@@ -233,9 +233,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_REQUESTFINISHED.getName(), event);
             }
         };
-        requestFinishedLis.setMothod(Variables.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName());
+        requestFinishedLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName());
         requestFinishedLis.setTarget(this);
-        networkManager.addListener(requestFinishedLis.getMothod(), requestFinishedLis);
+        networkManager.addListener(requestFinishedLis.getMethod(), requestFinishedLis);
 
         this.fileChooserInterceptors = new CopyOnWriteArraySet<>();
 
@@ -246,9 +246,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_DOMContentLoaded.getName(), event);
             }
         };
-        domContentEventFiredLis.setMothod("Page.domContentEventFired");
+        domContentEventFiredLis.setMethod("Page.domContentEventFired");
         domContentEventFiredLis.setTarget(this);
-        this.client.addListener(domContentEventFiredLis.getMothod(), domContentEventFiredLis);
+        this.client.addListener(domContentEventFiredLis.getMethod(), domContentEventFiredLis);
 
         BrowserListener<Object> loadEventFiredLis = new BrowserListener<Object>() {
             @Override
@@ -257,9 +257,9 @@ public class Page extends EventEmitter {
                 page.emit(Variables.Event.PAGE_LOAD.getName(), event);
             }
         };
-        loadEventFiredLis.setMothod("Page.loadEventFired");
+        loadEventFiredLis.setMethod("Page.loadEventFired");
         loadEventFiredLis.setTarget(this);
-        this.client.addListener(loadEventFiredLis.getMothod(), loadEventFiredLis);
+        this.client.addListener(loadEventFiredLis.getMethod(), loadEventFiredLis);
 
         BrowserListener<ConsoleCalledPayload> consoleAPICalledLis = new BrowserListener<ConsoleCalledPayload>() {
             @Override
@@ -268,9 +268,9 @@ public class Page extends EventEmitter {
                 page.onConsoleAPI(event);
             }
         };
-        consoleAPICalledLis.setMothod("Runtime.consoleAPICalled");
+        consoleAPICalledLis.setMethod("Runtime.consoleAPICalled");
         consoleAPICalledLis.setTarget(this);
-        this.client.addListener(consoleAPICalledLis.getMothod(), consoleAPICalledLis);
+        this.client.addListener(consoleAPICalledLis.getMethod(), consoleAPICalledLis);
 
         BrowserListener<BindingCalledPayload> bindingCalledLis = new BrowserListener<BindingCalledPayload>() {
             @Override
@@ -279,9 +279,9 @@ public class Page extends EventEmitter {
                 page.onBindingCalled(event);
             }
         };
-        bindingCalledLis.setMothod("Runtime.bindingCalled");
+        bindingCalledLis.setMethod("Runtime.bindingCalled");
         bindingCalledLis.setTarget(this);
-        this.client.addListener(bindingCalledLis.getMothod(), bindingCalledLis);
+        this.client.addListener(bindingCalledLis.getMethod(), bindingCalledLis);
 
         BrowserListener<JavascriptDialogPayload> javascriptDialogOpeningLis = new BrowserListener<JavascriptDialogPayload>() {
             @Override
@@ -290,9 +290,9 @@ public class Page extends EventEmitter {
                 page.onDialog(event);
             }
         };
-        javascriptDialogOpeningLis.setMothod("Page.javascriptDialogOpening");
+        javascriptDialogOpeningLis.setMethod("Page.javascriptDialogOpening");
         javascriptDialogOpeningLis.setTarget(this);
-        this.client.addListener(javascriptDialogOpeningLis.getMothod(), javascriptDialogOpeningLis);
+        this.client.addListener(javascriptDialogOpeningLis.getMethod(), javascriptDialogOpeningLis);
 
         BrowserListener<JsonNode> exceptionThrownLis = new BrowserListener<JsonNode>() {
             @Override
@@ -311,9 +311,9 @@ public class Page extends EventEmitter {
 
             }
         };
-        exceptionThrownLis.setMothod("Runtime.exceptionThrown");
+        exceptionThrownLis.setMethod("Runtime.exceptionThrown");
         exceptionThrownLis.setTarget(this);
-        this.client.addListener(exceptionThrownLis.getMothod(), exceptionThrownLis);
+        this.client.addListener(exceptionThrownLis.getMethod(), exceptionThrownLis);
 
         BrowserListener<Object> targetCrashedLis = new BrowserListener<Object>() {
             @Override
@@ -322,9 +322,9 @@ public class Page extends EventEmitter {
                 page.onTargetCrashed();
             }
         };
-        targetCrashedLis.setMothod("Inspector.targetCrashed");
+        targetCrashedLis.setMethod("Inspector.targetCrashed");
         targetCrashedLis.setTarget(this);
-        this.client.addListener(targetCrashedLis.getMothod(), targetCrashedLis);
+        this.client.addListener(targetCrashedLis.getMethod(), targetCrashedLis);
 
         BrowserListener<MetricPayload> metricsLis = new BrowserListener<MetricPayload>() {
             @Override
@@ -337,9 +337,9 @@ public class Page extends EventEmitter {
                 }
             }
         };
-        metricsLis.setMothod("Inspector.targetCrashed");
+        metricsLis.setMethod("Inspector.targetCrashed");
         metricsLis.setTarget(this);
-        this.client.addListener(metricsLis.getMothod(), metricsLis);
+        this.client.addListener(metricsLis.getMethod(), metricsLis);
 
         BrowserListener<EntryAddedPayload> entryAddedLis = new BrowserListener<EntryAddedPayload>() {
             @Override
@@ -348,9 +348,9 @@ public class Page extends EventEmitter {
                 page.onLogEntryAdded(event);
             }
         };
-        entryAddedLis.setMothod("Log.entryAdded");
+        entryAddedLis.setMethod("Log.entryAdded");
         entryAddedLis.setTarget(this);
-        this.client.addListener(entryAddedLis.getMothod(), entryAddedLis);
+        this.client.addListener(entryAddedLis.getMethod(), entryAddedLis);
 
         BrowserListener<FileChooserPayload> fileChooserOpenedLis = new BrowserListener<FileChooserPayload>() {
             @Override
@@ -359,9 +359,9 @@ public class Page extends EventEmitter {
                 page.onFileChooser(event);
             }
         };
-        fileChooserOpenedLis.setMothod("Page.fileChooserOpened");
+        fileChooserOpenedLis.setMethod("Page.fileChooserOpened");
         fileChooserOpenedLis.setTarget(this);
-        this.client.addListener(fileChooserOpenedLis.getMothod(), fileChooserOpenedLis);
+        this.client.addListener(fileChooserOpenedLis.getMethod(), fileChooserOpenedLis);
 
     }
 
@@ -399,7 +399,7 @@ public class Page extends EventEmitter {
         this.on(Variables.Event.PAGE_CONSOLE.getName(), handler);
     }
 
-    public void onDialg(EventHandler<Dialog> handler) {
+    public void onDialog(EventHandler<Dialog> handler) {
         this.on(Variables.Event.PAGE_DIALOG.getName(), handler);
     }
 
@@ -2101,8 +2101,8 @@ public class Page extends EventEmitter {
                 throw new InstrumentException("Target closed");
             }
         };
-        disConnectLis.setMothod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
-        this.client.addListener(disConnectLis.getMothod(), disConnectLis, true);
+        disConnectLis.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
+        this.client.addListener(disConnectLis.getMethod(), disConnectLis, true);
         return disConnectLis;
     }
 

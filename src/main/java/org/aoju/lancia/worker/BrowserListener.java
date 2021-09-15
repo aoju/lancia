@@ -57,11 +57,11 @@ public class BrowserListener<T> implements Listener<T> {
         this.resolveType = resolveType;
     }
 
-    public String getMothod() {
+    public String getMethod() {
         return mothod;
     }
 
-    public void setMothod(String mothod) {
+    public void setMethod(String mothod) {
         this.mothod = mothod;
     }
 

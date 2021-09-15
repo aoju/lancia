@@ -124,9 +124,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
                 runner.kill();
             }
         };
-        exitListener.setMothod("exit");
+        exitListener.setMethod("exit");
         exitListener.setTarget(this);
-        this.listeners.add(Builder.addEventListener(this, exitListener.getMothod(), exitListener));
+        this.listeners.add(Builder.addEventListener(this, exitListener.getMethod(), exitListener));
 
         if (options.getHandleSIGINT()) {
             BrowserListener<Object> sigintListener = new BrowserListener<Object>() {
@@ -136,9 +136,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     runner.kill();
                 }
             };
-            sigintListener.setMothod("SIGINT");
+            sigintListener.setMethod("SIGINT");
             sigintListener.setTarget(this);
-            this.listeners.add(Builder.addEventListener(this, sigintListener.getMothod(), sigintListener));
+            this.listeners.add(Builder.addEventListener(this, sigintListener.getMethod(), sigintListener));
         }
 
         if (options.getHandleSIGTERM()) {
@@ -149,9 +149,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     runner.close();
                 }
             };
-            sigtermListener.setMothod("SIGTERM");
+            sigtermListener.setMethod("SIGTERM");
             sigtermListener.setTarget(this);
-            this.listeners.add(Builder.addEventListener(this, sigtermListener.getMothod(), sigtermListener));
+            this.listeners.add(Builder.addEventListener(this, sigtermListener.getMethod(), sigtermListener));
         }
 
         if (options.getHandleSIGHUP()) {
@@ -162,9 +162,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     runner.close();
                 }
             };
-            sighubListener.setMothod("SIGHUP");
+            sighubListener.setMethod("SIGHUP");
             sighubListener.setTarget(this);
-            this.listeners.add(Builder.addEventListener(this, sighubListener.getMothod(), sighubListener));
+            this.listeners.add(Builder.addEventListener(this, sighubListener.getMethod(), sighubListener));
         }
     }
 

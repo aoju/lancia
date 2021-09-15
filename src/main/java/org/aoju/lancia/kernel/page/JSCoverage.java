@@ -85,8 +85,8 @@ public class JSCoverage {
             }
         };
         scriptParsedLis.setTarget(this);
-        scriptParsedLis.setMothod("Debugger.scriptParsed");
-        this.eventListeners.add(Builder.addEventListener(this.client, scriptParsedLis.getMothod(), scriptParsedLis));
+        scriptParsedLis.setMethod("Debugger.scriptParsed");
+        this.eventListeners.add(Builder.addEventListener(this.client, scriptParsedLis.getMethod(), scriptParsedLis));
 
         BrowserListener<Object> clearedLis = new BrowserListener<Object>() {
             @Override
@@ -96,8 +96,8 @@ public class JSCoverage {
             }
         };
         clearedLis.setTarget(this);
-        clearedLis.setMothod("Runtime.executionContextsCleared");
-        this.eventListeners.add(Builder.addEventListener(this.client, clearedLis.getMothod(), clearedLis));
+        clearedLis.setMethod("Runtime.executionContextsCleared");
+        this.eventListeners.add(Builder.addEventListener(this.client, clearedLis.getMethod(), clearedLis));
 
 
         this.client.send("Profiler.enable", null, false);

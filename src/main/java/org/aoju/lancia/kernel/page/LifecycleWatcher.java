@@ -101,7 +101,7 @@ public class LifecycleWatcher {
             }
         };
         disconnecteListener.setTarget(this);
-        disconnecteListener.setMothod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
+        disconnecteListener.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
 
         BrowserListener<Object> lifecycleEventListener = new BrowserListener<Object>() {
             @Override
@@ -111,7 +111,7 @@ public class LifecycleWatcher {
             }
         };
         lifecycleEventListener.setTarget(this);
-        lifecycleEventListener.setMothod(Variables.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
+        lifecycleEventListener.setMethod(Variables.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
 
         BrowserListener<Frame> documentListener = new BrowserListener<Frame>() {
             @Override
@@ -121,7 +121,7 @@ public class LifecycleWatcher {
             }
         };
         documentListener.setTarget(this);
-        documentListener.setMothod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
+        documentListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
 
         BrowserListener<Frame> detachedListener = new BrowserListener<Frame>() {
             @Override
@@ -131,7 +131,7 @@ public class LifecycleWatcher {
             }
         };
         detachedListener.setTarget(this);
-        detachedListener.setMothod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
+        detachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
 
         BrowserListener<Request> requestListener = new BrowserListener<Request>() {
             @Override
@@ -141,12 +141,12 @@ public class LifecycleWatcher {
             }
         };
         requestListener.setTarget(this);
-        requestListener.setMothod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
-        eventListeners.add(Builder.addEventListener(this.frameManager.getClient(), disconnecteListener.getMothod(), disconnecteListener));
-        eventListeners.add(Builder.addEventListener(this.frameManager, lifecycleEventListener.getMothod(), lifecycleEventListener));
-        eventListeners.add(Builder.addEventListener(frameManager, documentListener.getMothod(), documentListener));
-        eventListeners.add(Builder.addEventListener(frameManager, detachedListener.getMothod(), detachedListener));
-        eventListeners.add(Builder.addEventListener(frameManager.getNetworkManager(), requestListener.getMothod(), requestListener));
+        requestListener.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
+        eventListeners.add(Builder.addEventListener(this.frameManager.getClient(), disconnecteListener.getMethod(), disconnecteListener));
+        eventListeners.add(Builder.addEventListener(this.frameManager, lifecycleEventListener.getMethod(), lifecycleEventListener));
+        eventListeners.add(Builder.addEventListener(frameManager, documentListener.getMethod(), documentListener));
+        eventListeners.add(Builder.addEventListener(frameManager, detachedListener.getMethod(), detachedListener));
+        eventListeners.add(Builder.addEventListener(frameManager.getNetworkManager(), requestListener.getMethod(), requestListener));
         this.checkLifecycleComplete();
     }
 
