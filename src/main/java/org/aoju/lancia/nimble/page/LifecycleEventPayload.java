@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.page;
  * 针对顶层页面生命周期事件（例如导航，加载，绘制等）触发
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class LifecycleEventPayload {

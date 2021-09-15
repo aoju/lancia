@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * 在页面对象上会发出“ workercreated”和“ workerdestroyed”事件，以表示工人的生命周期。
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class Worker extends EventEmitter {

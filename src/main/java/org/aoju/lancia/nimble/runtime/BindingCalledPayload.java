@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.runtime;
  * 当上下文被取消时发出
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class BindingCalledPayload {

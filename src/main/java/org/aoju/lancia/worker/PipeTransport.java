@@ -38,7 +38,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * 与chromuim通过pipe通信暂时没实现
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class PipeTransport implements Transport {

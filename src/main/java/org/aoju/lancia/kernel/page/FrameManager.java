@@ -51,7 +51,7 @@ import java.util.concurrent.TimeUnit;
  * 框架管理
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class FrameManager extends EventEmitter {
@@ -499,7 +499,7 @@ public class FrameManager extends EventEmitter {
                 long end = System.currentTimeMillis();
                 boolean await = documentLatch.await(timeout - (end - start), TimeUnit.MILLISECONDS);
                 if (!await) {
-                    throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
+                    //throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
                 }
                 if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
                     return watcher.navigationResponse();

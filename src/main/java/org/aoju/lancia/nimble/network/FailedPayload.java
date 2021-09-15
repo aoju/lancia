@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.network;
  * HTTP请求加载失败时触发
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class FailedPayload {

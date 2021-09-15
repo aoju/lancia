@@ -30,7 +30,7 @@ package org.aoju.lancia.nimble.runtime;
  * 允许跟踪跨调试器调用。有关用法，请参见`Runtime.StackTrace`和`Debugger.paused`
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class StackTraceId {

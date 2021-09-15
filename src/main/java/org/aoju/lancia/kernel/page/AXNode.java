@@ -42,7 +42,7 @@ import java.util.function.Predicate;
 
 /**
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class AXNode {

@@ -53,7 +53,7 @@ import java.util.stream.Collectors;
  * ElementHandle表示页内DOM元素。可以使用page.$方法创建ElementHandles
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class ElementHandle extends JSHandle {

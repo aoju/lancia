@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
  * 发送到浏览器的消息
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class Messages {

@@ -29,7 +29,7 @@ package org.aoju.lancia.nimble.network;
  * 签名证书时间戳(SCT)的详细信息
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class SignedCertificate {

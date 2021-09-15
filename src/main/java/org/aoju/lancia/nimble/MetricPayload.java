@@ -31,7 +31,7 @@ import java.util.List;
  * 指标的当前值
  *
  * @author Kimi Liu
- * @version 1.2.2
+ * @version 1.2.8
  * @since JDK 1.8+
  */
 public class MetricPayload {
