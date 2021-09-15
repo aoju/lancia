@@ -147,7 +147,6 @@ public class Fetcher {
      * 下载浏览器，如果项目目录下不存在对应版本时
      * 如果不指定版本，则使用默认配置版本
      *
-     * @param version 浏览器版本
      * @return the Revision
      * @throws InterruptedException 异常
      * @throws ExecutionException   异常
