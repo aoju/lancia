@@ -35,7 +35,7 @@ package org.aoju.lancia.worker;
  */
 public class BrowserListener<T> implements Listener<T> {
 
-    private String mothod;
+    private String method;
 
     private Class<T> resolveType;
 
@@ -58,11 +58,11 @@ public class BrowserListener<T> implements Listener<T> {
     }
 
     public String getMethod() {
-        return mothod;
+        return method;
     }
 
-    public void setMethod(String mothod) {
-        this.mothod = mothod;
+    public void setMethod(String method) {
+        this.method = method;
     }
 
     public EventHandler<T> getHandler() {

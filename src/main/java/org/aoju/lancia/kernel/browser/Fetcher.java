@@ -126,7 +126,7 @@ public class Fetcher {
      */
     public Fetcher(String projectRoot, FetcherOption options) {
         this.product = (StringKit.isNotEmpty(options.getProduct()) ? options.getProduct() : "chrome").toLowerCase();
-        Assert.isTrue("chrome".equals(product) || "firefox".equals(product), "Unkown product: " + options.getProduct());
+        Assert.isTrue("chrome".equals(product) || "firefox".equals(product), "Unknown product: " + options.getProduct());
         this.downloadsFolder = StringKit.isNotEmpty(options.getPath()) ? options.getPath() : Builder.join(projectRoot, ".local-browser");
         this.downloadHost = StringKit.isNotEmpty(options.getHost()) ? options.getHost() : DOWNLOAD_URL.get(this.product).get("host");
         this.platform = StringKit.isNotEmpty(options.getPlatform()) ? options.getPlatform() : null;

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -34,7 +34,10 @@ import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.CDPSession;
 import org.aoju.lancia.worker.ListenerWrapper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Kimi Liu
@@ -111,9 +114,9 @@ public class CSSCoverage {
         Builder.commonExecutor().submit(() -> {
             Map<String, Object> params = new HashMap<>();
             params.put("styleSheetId", header.getStyleSheetId());
-            JsonNode response = client.send("CSS.getStyleSheetText", params, true);
+            JSONObject response = client.send("CSS.getStyleSheetText", params, true);
             stylesheetURLs.put(header.getStyleSheetId(), header.getSourceURL());
-            stylesheetSources.put(header.getStyleSheetId(), response.get("text").asText());
+            stylesheetSources.put(header.getStyleSheetId(), response.getString("text"));
         });
 
     }
@@ -122,7 +125,7 @@ public class CSSCoverage {
         Assert.isTrue(this.enabled, "CSSCoverage is not enabled");
         this.enabled = false;
 
-        JsonNode ruleTrackingResponse = this.client.send("CSS.stopRuleUsageTracking", null, true);
+        JSONObject ruleTrackingResponse = this.client.send("CSS.stopRuleUsageTracking", null, true);
 
         this.client.send("CSS.disable", null, false);
         this.client.send("DOM.disable", null, false);
@@ -130,20 +133,19 @@ public class CSSCoverage {
         Builder.removeEventListeners(this.eventListeners);
 
         Map<String, List<CoverageRange>> styleSheetIdToCoverage = new HashMap<>();
-        JsonNode ruleUsageNode = ruleTrackingResponse.get("ruleUsage");
-        Iterator<JsonNode> elements = ruleUsageNode.elements();
-        while (elements.hasNext()) {
-            JsonNode entry = elements.next();
-            List<CoverageRange> ranges = styleSheetIdToCoverage.get(entry.get("styleSheetId").asText());
+        JSONObject ruleUsageNode = ruleTrackingResponse.getJSONObject("ruleUsage");
+        for (String key : ruleUsageNode.keySet()) {
+            JSONObject entry = ruleUsageNode.getJSONObject(key);
+            List<CoverageRange> ranges = styleSheetIdToCoverage.get(entry.getString("styleSheetId"));
             if (ranges == null) {
                 ranges = new ArrayList<>();
-                styleSheetIdToCoverage.put(entry.get("styleSheetId").asText(), ranges);
+                styleSheetIdToCoverage.put(entry.getString("styleSheetId"), ranges);
             }
-            boolean used = entry.get("used").asBoolean();
+            boolean used = entry.getBoolean("used");
             if (used)
-                ranges.add(new CoverageRange(entry.get("startOffset").asInt(), entry.get("endOffset").asInt(), 1));
+                ranges.add(new CoverageRange(entry.getInteger("startOffset"), entry.getInteger("endOffset"), 1));
             else
-                ranges.add(new CoverageRange(entry.get("startOffset").asInt(), entry.get("endOffset").asInt(), 0));
+                ranges.add(new CoverageRange(entry.getInteger("startOffset"), entry.getInteger("endOffset"), 0));
         }
 
 

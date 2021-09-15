@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -240,7 +240,7 @@ public class NetworkManager extends EventEmitter {
             Map<String, Object> params = new HashMap<>();
             params.put("handleAuthRequests", true);
             List<Object> patterns = new ArrayList<>();
-            patterns.add(Variables.OBJECTMAPPER.createObjectNode().put("urlPattern", "*"));
+            patterns.add(new JSONObject().put("urlPattern", "*"));
             params.put("patterns", patterns);
             this.client.send("Fetch.enable", params, true);
         } else {
@@ -274,7 +274,7 @@ public class NetworkManager extends EventEmitter {
             this.attemptedAuthentications.add(event.getRequestId());
         }
         String username, password;
-        ObjectNode respParams = Variables.OBJECTMAPPER.createObjectNode();
+        JSONObject respParams = new JSONObject();
         respParams.put("response", response);
         if (this.credentials != null) {
             if (StringKit.isNotEmpty(username = credentials.getUsername())) {

@@ -25,12 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.SerializedAXNode;
 import org.aoju.lancia.worker.CDPSession;
 
@@ -51,20 +51,21 @@ public class Accessibility {
         this.client = client;
     }
 
-    public SerializedAXNode snapshot(boolean interestingOnly, ElementHandle root) throws JsonProcessingException, IllegalAccessException, IntrospectionException, InvocationTargetException {
-
-        JsonNode nodes = this.client.send("Accessibility.getFullAXTree", null, false);
+    public SerializedAXNode snapshot(boolean interestingOnly, ElementHandle root) throws IllegalAccessException, IntrospectionException, InvocationTargetException {
+        JSONObject nodes = this.client.send("Accessibility.getFullAXTree", null, false);
         String backendNodeId = null;
         if (root != null) {
             Map<String, Object> params = new HashMap<>();
             params.put("objectId", root.getRemoteObject().getObjectId());
-            JsonNode node = this.client.send("DOM.describeNode", params, true);
-            backendNodeId = node.get("backendNodeId").asText();
+            JSONObject node = this.client.send("DOM.describeNode", params, true);
+            backendNodeId = node.getString("backendNodeId");
         }
-        Iterator<JsonNode> elements = nodes.elements();
+        List<JSONObject> list = nodes.toJavaObject(new TypeReference<List<JSONObject>>() {
+        });
+        Iterator<JSONObject> elements = list.iterator();
         List<org.aoju.lancia.nimble.AXNode> payloads = new ArrayList<>();
         while (elements.hasNext()) {
-            payloads.add(Variables.OBJECTMAPPER.treeToValue(elements.next(), org.aoju.lancia.nimble.AXNode.class));
+            payloads.add(JSON.toJavaObject(elements.next(), org.aoju.lancia.nimble.AXNode.class));
         }
         AXNode defaultRoot = AXNode.createTree(payloads);
         AXNode needle = defaultRoot;

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -83,7 +83,7 @@ public class CDPSession extends EventEmitter {
      * @param timeout  超时时间
      * @return 结果
      */
-    public JsonNode send(String method, Map<String, Object> params, boolean isBlock, CountDownLatch outLatch, int timeout) {
+    public JSONObject send(String method, Map<String, Object> params, boolean isBlock, CountDownLatch outLatch, int timeout) {
         if (connection == null) {
             throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
@@ -133,7 +133,7 @@ public class CDPSession extends EventEmitter {
      * @param isBlock 是否阻塞，阻塞会等待结果放回
      * @return result
      */
-    public JsonNode send(String method, Map<String, Object> params, boolean isBlock) {
+    public JSONObject send(String method, Map<String, Object> params, boolean isBlock) {
         if (connection == null) {
             throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
@@ -173,20 +173,19 @@ public class CDPSession extends EventEmitter {
         this.connection.send("Target.detachFromTarget", params, false);
     }
 
-    public void onMessage(JsonNode node) {
-        JsonNode id = node.get(Variables.RECV_MESSAGE_ID_PROPERTY);
-        if (id != null) {
-            Long idLong = id.asLong();
+    public void onMessage(JSONObject node) {
+        Long idLong = node.getLong(Variables.RECV_MESSAGE_ID_PROPERTY);
+        if (idLong != null) {
             Messages callback = this.callbacks.get(idLong);
             if (callback != null) {
                 try {
-                    JsonNode errNode = node.get(Variables.RECV_MESSAGE_ERROR_PROPERTY);
+                    JSONObject errNode = node.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
                     if (errNode != null) {
                         if (callback.getCountDownLatch() != null) {
                             callback.setErrorText(Builder.createProtocolError(node));
                         }
                     } else {
-                        JsonNode result = node.get(Variables.RECV_MESSAGE_RESULT_PROPERTY);
+                        JSONObject result = node.getJSONObject(Variables.RECV_MESSAGE_RESULT_PROPERTY);
                         callback.setResult(result);
                     }
                 } finally {
@@ -204,10 +203,11 @@ public class CDPSession extends EventEmitter {
 
             }
         } else {
-            JsonNode paramsNode = node.get(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-            JsonNode method = node.get(Variables.RECV_MESSAGE_METHOD_PROPERTY);
-            if (method != null)
-                this.emit(method.asText(), paramsNode);
+            JSONObject paramsNode = node.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
+            String method = node.getString(Variables.RECV_MESSAGE_METHOD_PROPERTY);
+            if (method != null) {
+                this.emit(method, paramsNode);
+            }
         }
     }
 

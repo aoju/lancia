@@ -25,7 +25,6 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.lancia.nimble.CoverageEntry;
 import org.aoju.lancia.nimble.CoverageRange;
@@ -119,7 +118,7 @@ public class Coverage {
         this.jsCoverage.start(resetOnNavigation, reportAnonymousScripts);
     }
 
-    public List<CoverageEntry> stopJSCoverage() throws JsonProcessingException {
+    public List<CoverageEntry> stopJSCoverage() {
         return this.jsCoverage.stop();
     }
 

@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
@@ -76,7 +76,7 @@ public class FrameManager extends EventEmitter {
 
     /**
      * 导航到新的网页的结果
-     * "success" "timeout" "termination"
+     * "success" "timeout" "termination","error"
      */
     private String navigateResult;
 
@@ -289,17 +289,9 @@ public class FrameManager extends EventEmitter {
 
 
     public void initialize() {
-
         this.client.send("Page.enable", null, false);
-        /* @type Protocol.Page.getFrameTreeReturnValue*/
-        JsonNode result = this.client.send("Page.getFrameTree", null, true);
-
-        FrameTree frameTree;
-        try {
-            frameTree = Variables.OBJECTMAPPER.treeToValue(result.get("frameTree"), FrameTree.class);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+        JSONObject result = this.client.send("Page.getFrameTree", null, true);
+        FrameTree frameTree = JSON.toJavaObject(result.getJSONObject("frameTree"), FrameTree.class);
         this.handleFrameTree(frameTree);
 
         Map<String, Object> params = new HashMap<>();
@@ -464,7 +456,7 @@ public class FrameManager extends EventEmitter {
                 long end = System.currentTimeMillis();
                 boolean await = documentLatch.await(timeout - (end - start), TimeUnit.MILLISECONDS);
                 if (!await) {
-                    //throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
+                    throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
                 }
                 if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
                     return watcher.navigationResponse();
@@ -475,38 +467,12 @@ public class FrameManager extends EventEmitter {
             } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigating frame was detached");
             } else {
+                Logger.error("Unknown result " + navigateResult);
                 throw new InstrumentException("Unkown result " + navigateResult);
             }
         } finally {
             watcher.dispose();
         }
-    }
-
-    private boolean navigate(CDPSession client, String url, String referrer, String frameId, int timeout) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("url", url);
-        // JSON不序列化null值对 HashMap里面的 null值不起作用
-        if (referrer != null) {
-            params.put("referrer", referrer);
-        }
-        params.put("frameId", frameId);
-        try {
-            JsonNode response = client.send("Page.navigate", params, true, null, timeout);
-            this.setNavigateResult(Variables.Result.SUCCESS.getResult());
-            if (response == null) {
-                return false;
-            }
-            if (response.get("errorText") != null) {
-                throw new InstrumentException(response.get("errorText").toString() + " at " + url);
-            }
-            if (response.get("loaderId") != null) {
-                return true;
-            }
-        } catch (InstrumentException e) {
-            this.setNavigateResult(Variables.Result.ERROR.getResult());
-            Logger.error(e.getMessage());
-        }
-        return false;
     }
 
     public Response waitForFrameNavigation(Frame frame, NavigateOption options, CountDownLatch reloadLatch) {
@@ -539,7 +505,6 @@ public class FrameManager extends EventEmitter {
         }
         try {
             this.documentLatch = new CountDownLatch(1);
-
             // 可以发出reload的信号
             if (reloadLatch != null) {
                 reloadLatch.countDown();
@@ -556,13 +521,40 @@ public class FrameManager extends EventEmitter {
             } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigating frame was detached");
             } else {
-                throw new InstrumentException("UnNokwn result " + navigateResult);
+                throw new InstrumentException("Unknown result " + navigateResult);
             }
         } catch (InterruptedException e) {
-            throw new InstrumentException("UnNokwn result " + e.getMessage());
+            throw new InstrumentException("Unknown result " + e.getMessage());
         } finally {
             watcher.dispose();
         }
+    }
+
+    private boolean navigate(CDPSession client, String url, String referrer, String frameId, int timeout) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("url", url);
+        // JSON不序列化null值对 HashMap里面的 null值不起作用
+        if (referrer != null) {
+            params.put("referrer", referrer);
+        }
+        params.put("frameId", frameId);
+        try {
+            JSONObject response = client.send("Page.navigate", params, true, null, timeout);
+            this.setNavigateResult(Variables.Result.SUCCESS.getResult());
+            if (response == null) {
+                return false;
+            }
+            if (response.get("errorText") != null) {
+                throw new InstrumentException(response.get("errorText").toString() + " at " + url);
+            }
+            if (response.get("loaderId") != null) {
+                return true;
+            }
+        } catch (InstrumentException e) {
+            this.setNavigateResult(Variables.Result.ERROR.getResult());
+            Logger.error(e.getMessage());
+        }
+        return false;
     }
 
     private void assertNoLegacyNavigationOptions(List<String> waitUtil) {

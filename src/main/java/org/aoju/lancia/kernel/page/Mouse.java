@@ -156,7 +156,7 @@ public class Mouse {
             return 1;
         if ("right".equals(buttonName))
             return 2;
-        throw new IllegalArgumentException("Unkown ButtonName: " + buttonName);
+        throw new IllegalArgumentException("Unknown ButtonName: " + buttonName);
     }
 
     /**

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.StringKit;
@@ -195,7 +195,7 @@ public class Request {
      * @param headers  请求头
      * @return Future
      */
-    public JsonNode continueRequest(String url, String method, String postData, Map<String, String> headers) {
+    public JSONObject continueRequest(String url, String method, String postData, Map<String, String> headers) {
         if (url().startsWith("data:"))
             return null;
 
@@ -238,7 +238,7 @@ public class Request {
      * @param body        响应体
      * @return Future
      */
-    public JsonNode respond(int status, Map<String, String> headers, String contentType, String body) {
+    public JSONObject respond(int status, Map<String, String> headers, String contentType, String body) {
         if (url().startsWith("data:"))
             return null;
 
@@ -282,8 +282,7 @@ public class Request {
      * @param errorCode errorCode错误码
      * @return Future
      */
-    public JsonNode abort(ErrorCode errorCode) {
-        // Request interception is not supported for data: urls.
+    public JSONObject abort(ErrorCode errorCode) {
         if (url().startsWith("data:"))
             return null;
 
@@ -375,6 +374,22 @@ public class Request {
 
     protected void setFromMemoryCache(boolean fromMemoryCache) {
         this.fromMemoryCache = fromMemoryCache;
+    }
+
+    public void setInterceptionId(String interceptionId) {
+        this.interceptionId = interceptionId;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
     }
 
 }

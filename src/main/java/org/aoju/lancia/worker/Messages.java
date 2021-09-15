@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.JsonNode;
+
+import com.alibaba.fastjson.JSONObject;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -47,16 +47,14 @@ public class Messages {
 
     private String method;
 
-    @JsonIgnore
-    private boolean needRemove;
+    private transient boolean needRemove;
 
-    @JsonIgnore
-    private CountDownLatch countDownLatch;
+    private transient CountDownLatch countDownLatch;
 
     /**
      * 本次发送消息返回的结果
      */
-    private JsonNode result;
+    private JSONObject result;
 
     private String sessionId;
 
@@ -97,11 +95,11 @@ public class Messages {
         this.countDownLatch = countDownLatch;
     }
 
-    public JsonNode getResult() {
+    public JSONObject getResult() {
         return result;
     }
 
-    public void setResult(JsonNode result) {
+    public void setResult(JSONObject result) {
         this.result = result;
     }
 
