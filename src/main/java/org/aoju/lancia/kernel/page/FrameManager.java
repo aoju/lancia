@@ -32,6 +32,7 @@ import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
+import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Page;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.page.*;
@@ -409,42 +410,6 @@ public class FrameManager extends EventEmitter {
         this.emit(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName(), childFrame);
     }
 
-    public CDPSession getClient() {
-        return client;
-    }
-
-    public Page getPage() {
-        return page;
-    }
-
-    public void setPage(Page page) {
-        this.page = page;
-    }
-
-    public Timeout getTimeoutSettings() {
-        return timeout;
-    }
-
-    public NetworkManager getNetworkManager() {
-        return networkManager;
-    }
-
-    public Map<String, Frame> getFrames() {
-        return frames;
-    }
-
-    public Map<Integer, ExecutionContext> getContextIdToContext() {
-        return contextIdToContext;
-    }
-
-    public Set<String> getIsolatedWorlds() {
-        return isolatedWorlds;
-    }
-
-    public Frame getMainFrame() {
-        return mainFrame;
-    }
-
     public Response navigateFrame(Frame frame, String url, NavigateOption options, boolean isBlock) throws InterruptedException {
         String referrer;
         List<String> waitUntil;
@@ -470,7 +435,7 @@ public class FrameManager extends EventEmitter {
         if (!isBlock) {
             Map<String, Object> params = new HashMap<>();
             params.put("url", url);
-            // jackJson 不序列化null值对 HashMap里面的 null值不起作用
+            // JSON不序列化null值对 HashMap里面的 null值不起作用
             if (referrer != null) {
                 params.put("referrer", referrer);
             }
@@ -505,7 +470,7 @@ public class FrameManager extends EventEmitter {
                     return watcher.navigationResponse();
                 }
             }
-            if (Variables.Result.TIMEOUT.getResult().equals(navigateResult)) {
+            if (Variables.Result.ERROR.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
             } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigating frame was detached");
@@ -520,14 +485,14 @@ public class FrameManager extends EventEmitter {
     private boolean navigate(CDPSession client, String url, String referrer, String frameId, int timeout) {
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
-        // jackJson 不序列化null值对 HashMap里面的 null值不起作用
+        // JSON不序列化null值对 HashMap里面的 null值不起作用
         if (referrer != null) {
             params.put("referrer", referrer);
         }
         params.put("frameId", frameId);
         try {
             JsonNode response = client.send("Page.navigate", params, true, null, timeout);
-            this.setNavigateResult("success");
+            this.setNavigateResult(Variables.Result.SUCCESS.getResult());
             if (response == null) {
                 return false;
             }
@@ -537,27 +502,11 @@ public class FrameManager extends EventEmitter {
             if (response.get("loaderId") != null) {
                 return true;
             }
-
         } catch (InstrumentException e) {
-            this.setNavigateResult("timeout");
+            this.setNavigateResult(Variables.Result.ERROR.getResult());
+            Logger.error(e.getMessage());
         }
         return false;
-    }
-
-    public String getNavigateResult() {
-        return navigateResult;
-    }
-
-    public void setNavigateResult(String navigateResult) {
-        this.navigateResult = navigateResult;
-    }
-
-    public Frame getFrame(String frameId) {
-        return this.frames.get(frameId);
-    }
-
-    public Frame frame(String frameId) {
-        return this.frames.get(frameId);
     }
 
     public Response waitForFrameNavigation(Frame frame, NavigateOption options, CountDownLatch reloadLatch) {
@@ -589,10 +538,9 @@ public class FrameManager extends EventEmitter {
             return watcher.navigationResponse();
         }
         try {
-
             this.documentLatch = new CountDownLatch(1);
 
-            //可以发出reload的信号
+            // 可以发出reload的信号
             if (reloadLatch != null) {
                 reloadLatch.countDown();
             }
@@ -603,7 +551,7 @@ public class FrameManager extends EventEmitter {
             }
             if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
                 return watcher.navigationResponse();
-            } else if (Variables.Result.TIMEOUT.getResult().equals(navigateResult)) {
+            } else if (Variables.Result.ERROR.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded");
             } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigating frame was detached");
@@ -621,20 +569,48 @@ public class FrameManager extends EventEmitter {
         Assert.isTrue(!"networkidle".equals(waitUtil.get(0)), "ERROR: \"networkidle\" option is no longer supported. Use \"networkidle2\" instead");
     }
 
-    public Frame mainFrame() {
-        return this.mainFrame;
+    public Frame frame(String frameId) {
+        return this.frames.get(frameId);
     }
 
-    public NetworkManager networkManager() {
-        return this.networkManager;
+    public CDPSession getClient() {
+        return client;
     }
 
-    public String getDocumentNavigationPromiseType() {
-        return documentNavigationPromiseType;
+    public Timeout getTimeout() {
+        return timeout;
     }
 
-    public void setDocumentNavigationPromiseType(String documentNavigationPromiseType) {
-        this.documentNavigationPromiseType = documentNavigationPromiseType;
+    public NetworkManager getNetworkManager() {
+        return networkManager;
+    }
+
+    public Map<String, Frame> getFrames() {
+        return frames;
+    }
+
+    public Map<Integer, ExecutionContext> getContextIdToContext() {
+        return contextIdToContext;
+    }
+
+    public Set<String> getIsolatedWorlds() {
+        return isolatedWorlds;
+    }
+
+    public Page getPage() {
+        return page;
+    }
+
+    public void setPage(Page page) {
+        this.page = page;
+    }
+
+    public Frame getMainFrame() {
+        return mainFrame;
+    }
+
+    public void setMainFrame(Frame mainFrame) {
+        this.mainFrame = mainFrame;
     }
 
     public CountDownLatch getDocumentLatch() {
@@ -651,6 +627,30 @@ public class FrameManager extends EventEmitter {
 
     public void setContentLatch(CountDownLatch contentLatch) {
         this.contentLatch = contentLatch;
+    }
+
+    public String getNavigateResult() {
+        return navigateResult;
+    }
+
+    public void setNavigateResult(String navigateResult) {
+        this.navigateResult = navigateResult;
+    }
+
+    public boolean isEnsureNewDocumentNavigation() {
+        return ensureNewDocumentNavigation;
+    }
+
+    public void setEnsureNewDocumentNavigation(boolean ensureNewDocumentNavigation) {
+        this.ensureNewDocumentNavigation = ensureNewDocumentNavigation;
+    }
+
+    public String getDocumentNavigationPromiseType() {
+        return documentNavigationPromiseType;
+    }
+
+    public void setDocumentNavigationPromiseType(String documentNavigationPromiseType) {
+        this.documentNavigationPromiseType = documentNavigationPromiseType;
     }
 
 }

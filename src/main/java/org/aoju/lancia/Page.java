@@ -503,7 +503,7 @@ public class Page extends EventEmitter {
      * @return ElementHandle
      */
     public ElementHandle $(String selector) {
-        return this.mainFrame().$(selector);
+        return this.getMainFrame().$(selector);
     }
 
     /**
@@ -513,7 +513,7 @@ public class Page extends EventEmitter {
      * @return ElementHandle集合
      */
     public List<ElementHandle> $$(String selector) {
-        return this.mainFrame().$$(selector);
+        return this.getMainFrame().$$(selector);
     }
 
     /**
@@ -536,7 +536,7 @@ public class Page extends EventEmitter {
      * @return pageFunction 的返回值
      */
     public Object $$eval(String selector, String pageFunction, List<Object> args) {
-        return this.mainFrame().$$eval(selector, pageFunction, args);
+        return this.getMainFrame().$$eval(selector, pageFunction, args);
     }
 
     /**
@@ -545,8 +545,8 @@ public class Page extends EventEmitter {
      *
      * @return {@link Frame}
      */
-    public Frame mainFrame() {
-        return this.frameManager.mainFrame();
+    public Frame getMainFrame() {
+        return this.frameManager.getMainFrame();
     }
 
     /**
@@ -569,7 +569,7 @@ public class Page extends EventEmitter {
      * @return pageFunction 的返回值
      */
     public Object $eval(String selector, String pageFunction, List<Object> args) {
-        return this.mainFrame().$eval(selector, pageFunction, args);
+        return this.getMainFrame().$eval(selector, pageFunction, args);
     }
 
     /**
@@ -579,7 +579,7 @@ public class Page extends EventEmitter {
      * @return ElementHandle
      */
     public List<ElementHandle> $x(String expression) {
-        return this.mainFrame().$x(expression);
+        return this.getMainFrame().$x(expression);
     }
 
     /**
@@ -590,7 +590,7 @@ public class Page extends EventEmitter {
      * @throws IOException 异常
      */
     public ElementHandle addScriptTag(ScriptTagOption options) throws IOException {
-        return this.mainFrame().addScriptTag(options);
+        return this.getMainFrame().addScriptTag(options);
     }
 
     /**
@@ -601,7 +601,7 @@ public class Page extends EventEmitter {
      * @throws IOException 异常
      */
     public ElementHandle addStyleTag(StyleTagOption options) throws IOException {
-        return this.mainFrame().addStyleTag(options);
+        return this.getMainFrame().addStyleTag(options);
     }
 
     /**
@@ -612,7 +612,7 @@ public class Page extends EventEmitter {
      * @param credentials 验证信息
      */
     public void authenticate(Credentials credentials) {
-        this.frameManager.networkManager().authenticate(credentials);
+        this.frameManager.getNetworkManager().authenticate(credentials);
     }
 
     /**
@@ -675,7 +675,7 @@ public class Page extends EventEmitter {
      * @throws ExecutionException   异常
      */
     public void click(String selector, ClickOption options, boolean isBlock) throws InterruptedException, ExecutionException {
-        this.mainFrame().click(selector, options, isBlock);
+        this.getMainFrame().click(selector, options, isBlock);
     }
 
     /**
@@ -777,7 +777,7 @@ public class Page extends EventEmitter {
      * @return 选择器集合
      */
     public List<String> select(String selector, List<String> values) {
-        return this.mainFrame().select(selector, values);
+        return this.getMainFrame().select(selector, values);
     }
 
     /**
@@ -786,7 +786,7 @@ public class Page extends EventEmitter {
      * @return 页面标题
      */
     public String title() {
-        return this.mainFrame().title();
+        return this.getMainFrame().title();
     }
 
     /**
@@ -807,7 +807,7 @@ public class Page extends EventEmitter {
      * @param enabled 设置缓存的 enabled 状态
      */
     public void setCacheEnabled(boolean enabled) {
-        this.frameManager.networkManager().setCacheEnabled(enabled);
+        this.frameManager.getNetworkManager().setCacheEnabled(enabled);
     }
 
     /**
@@ -831,7 +831,7 @@ public class Page extends EventEmitter {
      *                networkidle2 - 只剩2个网络连接时（至少500毫秒之后），设置HTML内容完成
      */
     public void setContent(String html, NavigateOption options) {
-        this.frameManager.mainFrame().setContent(html, options);
+        this.frameManager.getMainFrame().setContent(html, options);
     }
 
     /**
@@ -917,7 +917,7 @@ public class Page extends EventEmitter {
      * @param headers 每个 HTTP 请求都会带上这些请求头。值必须是字符串
      */
     public void setExtraHTTPHeaders(Map<String, String> headers) {
-        this.frameManager.networkManager().setExtraHTTPHeaders(headers);
+        this.frameManager.getNetworkManager().setExtraHTTPHeaders(headers);
     }
 
     /**
@@ -973,7 +973,7 @@ public class Page extends EventEmitter {
      * @param enabled 设置 true, 启用离线模式。
      */
     public void setOfflineMode(boolean enabled) {
-        this.frameManager.networkManager().setOfflineMode(enabled);
+        this.frameManager.getNetworkManager().setOfflineMode(enabled);
     }
 
     /**
@@ -983,7 +983,7 @@ public class Page extends EventEmitter {
      * @param value 是否启用请求拦截器
      */
     public void setRequestInterception(boolean value) {
-        this.frameManager.networkManager().setRequestInterception(value);
+        this.frameManager.getNetworkManager().setRequestInterception(value);
     }
 
     private String screenshotTask(String format, ScreenshotOption options) throws IOException, ExecutionException, InterruptedException {
@@ -1344,10 +1344,8 @@ public class Page extends EventEmitter {
      * ${@link Page#setUserAgent(String)}
      *
      * @param options Device 模拟器枚举类
-     * @throws InterruptedException 线程被打断异常
-     * @throws ExecutionException   并发异常
      */
-    public void emulate(Device options) throws ExecutionException, InterruptedException {
+    public void emulate(Device options) {
         this.setViewport(options.getViewport());
         this.setUserAgent(options.getUserAgent());
     }
@@ -1358,7 +1356,7 @@ public class Page extends EventEmitter {
      * @param userAgent userAgent的值
      */
     public void setUserAgent(String userAgent) {
-        this.frameManager.networkManager().setUserAgent(userAgent);
+        this.frameManager.getNetworkManager().setUserAgent(userAgent);
     }
 
     /**
@@ -1377,7 +1375,7 @@ public class Page extends EventEmitter {
      * @param isBlock  是否阻塞，如果是false,那么将在另外的线程中完成，可以配合waitFor方法
      */
     public void tap(String selector, boolean isBlock) {
-        this.mainFrame().tap(selector, isBlock);
+        this.getMainFrame().tap(selector, isBlock);
     }
 
     /**
@@ -1523,7 +1521,7 @@ public class Page extends EventEmitter {
      * @param selector 要给焦点的元素的选择器selector。如果有多个匹配的元素，焦点给第一个元素。
      */
     public void focus(String selector) {
-        this.mainFrame().focus(selector);
+        this.getMainFrame().focus(selector);
     }
 
     /**
@@ -1579,7 +1577,7 @@ public class Page extends EventEmitter {
      * @param selector 要hover的元素的选择器。如果有多个匹配的元素，hover第一个。
      */
     public void hover(String selector) {
-        this.mainFrame().hover(selector);
+        this.getMainFrame().hover(selector);
     }
 
     /**
@@ -1724,7 +1722,7 @@ public class Page extends EventEmitter {
      * @return 代表页面元素的一个实例
      */
     public JSHandle queryObjects(JSHandle prototypeHandle) {
-        ExecutionContext context = this.mainFrame().executionContext();
+        ExecutionContext context = this.getMainFrame().executionContext();
         return context.queryObjects(prototypeHandle);
     }
 
@@ -1827,7 +1825,7 @@ public class Page extends EventEmitter {
      * @return 响应
      */
     public Response waitForNavigation(NavigateOption options) {
-        return this.frameManager.mainFrame().waitForNavigation(options, null);
+        return this.frameManager.getMainFrame().waitForNavigation(options, null);
     }
 
     /**
@@ -1840,7 +1838,7 @@ public class Page extends EventEmitter {
      * @return 响应
      */
     private Response waitForNavigation(NavigateOption options, CountDownLatch reloadLatch) {
-        return this.frameManager.mainFrame().waitForNavigation(options, reloadLatch);
+        return this.frameManager.getMainFrame().waitForNavigation(options, reloadLatch);
     }
 
     /**
@@ -1862,7 +1860,7 @@ public class Page extends EventEmitter {
      * @return 有可能是JShandle String等
      */
     public Object evaluate(String pageFunction, List<Object> args) {
-        return this.mainFrame().evaluate(pageFunction, args);
+        return this.getMainFrame().evaluate(pageFunction, args);
     }
 
     /**
@@ -1884,7 +1882,7 @@ public class Page extends EventEmitter {
      * @return 代表页面元素的实例
      */
     private JSHandle evaluateHandle(String pageFunction, List<Object> args) {
-        ExecutionContext context = this.mainFrame().executionContext();
+        ExecutionContext context = this.getMainFrame().executionContext();
         return (JSHandle) context.evaluateHandle(pageFunction, args);
     }
 
@@ -1948,7 +1946,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 打断异常
      */
     public JSHandle waitFor(String selectorOrFunctionOrTimeout, WaitForOption options, List<Object> args) throws InterruptedException {
-        return this.mainFrame().waitFor(selectorOrFunctionOrTimeout, options, args);
+        return this.getMainFrame().waitFor(selectorOrFunctionOrTimeout, options, args);
     }
 
     /**
@@ -2034,7 +2032,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 异常
      */
     public JSHandle waitForFunction(String pageFunction, WaitForOption options, List<Object> args) throws InterruptedException {
-        return this.mainFrame().waitForFunction(pageFunction, options, args);
+        return this.getMainFrame().waitForFunction(pageFunction, options, args);
     }
 
     /**
@@ -2087,7 +2085,7 @@ public class Page extends EventEmitter {
         BrowserListener<Object> listener = null;
         try {
             listener = sessionClosePromise();
-            return (Request) Builder.waitForEvent(this.frameManager.networkManager(), Variables.Event.NETWORK_MANAGER_REQUEST.getName(), predi, timeout, "Wait for request timeout");
+            return (Request) Builder.waitForEvent(this.frameManager.getNetworkManager(), Variables.Event.NETWORK_MANAGER_REQUEST.getName(), predi, timeout, "Wait for request timeout");
         } finally {
             if (listener != null)
                 this.client.removeListener(Variables.Event.CDPSESSION_DISCONNECTED.getName(), listener);
@@ -2167,7 +2165,7 @@ public class Page extends EventEmitter {
         BrowserListener<Object> listener = null;
         try {
             listener = sessionClosePromise();
-            return (Response) Builder.waitForEvent(this.frameManager.networkManager(), Variables.Event.NETWORK_MANAGER_RESPONSE.getName(), predi, timeout, "Wait for response timeout");
+            return (Response) Builder.waitForEvent(this.frameManager.getNetworkManager(), Variables.Event.NETWORK_MANAGER_RESPONSE.getName(), predi, timeout, "Wait for response timeout");
         } finally {
             if (listener != null)
                 this.client.removeListener(Variables.Event.CDPSESSION_DISCONNECTED.getName(), listener);
@@ -2194,7 +2192,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 打断异常
      */
     public ElementHandle waitForSelector(String selector, WaitForOption options) throws InterruptedException {
-        return this.mainFrame().waitForSelector(selector, options);
+        return this.getMainFrame().waitForSelector(selector, options);
     }
 
     /**
@@ -2205,7 +2203,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 打断异常
      */
     public JSHandle waitForXPath(String xpath) throws InterruptedException {
-        return this.mainFrame().waitForXPath(xpath, new WaitForOption());
+        return this.getMainFrame().waitForXPath(xpath, new WaitForOption());
     }
 
     /**
@@ -2217,7 +2215,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 打断异常
      */
     public JSHandle waitForXPath(String xpath, WaitForOption options) throws InterruptedException {
-        return this.mainFrame().waitForXPath(xpath, options);
+        return this.getMainFrame().waitForXPath(xpath, options);
     }
 
     /**
@@ -2226,7 +2224,7 @@ public class Page extends EventEmitter {
      * @return 页面地址
      */
     private String url() {
-        return this.mainFrame().url();
+        return this.getMainFrame().url();
     }
 
     protected CDPSession client() {
@@ -2271,7 +2269,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 异常
      */
     public void type(String selector, String text) throws InterruptedException {
-        this.mainFrame().type(selector, text, 0);
+        this.getMainFrame().type(selector, text, 0);
     }
 
     /**
@@ -2284,7 +2282,7 @@ public class Page extends EventEmitter {
      * @throws InterruptedException 异常
      */
     public void type(String selector, String text, int delay) throws InterruptedException {
-        this.mainFrame().type(selector, text, delay);
+        this.getMainFrame().type(selector, text, delay);
     }
 
     public boolean getJavascriptEnabled() {

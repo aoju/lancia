@@ -260,7 +260,8 @@ public class Variables {
         CONTENT_SUCCESS("Content-success"),
         SUCCESS("success"),
         TIMEOUT("timeout"),
-        TERMINATION("termination");
+        TERMINATION("termination"),
+        ERROR("error");
 
         private final String result;
 

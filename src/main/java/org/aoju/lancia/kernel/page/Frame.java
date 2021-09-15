@@ -84,8 +84,8 @@ public class Frame {
         this.detached = false;
         this.loaderId = Normal.EMPTY;
         this.lifecycleEvents = new HashSet<>();
-        this.mainWorld = new DOMWorld(frameManager, this, frameManager.getTimeoutSettings());
-        this.secondaryWorld = new DOMWorld(frameManager, this, frameManager.getTimeoutSettings());
+        this.mainWorld = new DOMWorld(frameManager, this, frameManager.getTimeout());
+        this.secondaryWorld = new DOMWorld(frameManager, this, frameManager.getTimeout());
         this.childFrames = new CopyOnWriteArraySet<>();
         if (this.parentFrame != null)
             this.parentFrame.getChildFrames().add(this);

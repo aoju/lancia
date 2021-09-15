@@ -161,7 +161,7 @@ public class LifecycleWatcher {
     public void lifecycleCallback() {
         this.lifecyclePromise = new Object();
         if (this.frameManager.getContentLatch() != null) {
-            this.frameManager.setNavigateResult("Content-success");
+            this.frameManager.setNavigateResult(Variables.Result.CONTENT_SUCCESS.getResult());
             this.frameManager.getContentLatch().countDown();
         }
     }
@@ -226,7 +226,7 @@ public class LifecycleWatcher {
     }
 
     public void terminationCallback() {
-        setNavigateResult("termination");
+        setNavigateResult(Variables.Result.TERMINATION.getResult());
     }
 
     public String createTimeoutPromise() {
@@ -244,17 +244,17 @@ public class LifecycleWatcher {
     public void newDocumentNavigationCompleteCallback() {
         this.newDocumentNavigationPromise = new Object();
         if ("new".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult("success");
+            setNavigateResult(Variables.Result.SUCCESS.getResult());
     }
 
     public void sameDocumentNavigationCompleteCallback() {
         this.sameDocumentNavigationPromise = new Object();
         if ("same".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult("success");
+            setNavigateResult(Variables.Result.SUCCESS.getResult());
     }
 
     private void setNavigateResult(String result) {
-        if (this.frameManager.getDocumentLatch() != null && !"Content-success".equals(result)) {
+        if (this.frameManager.getDocumentLatch() != null && !Variables.Result.CONTENT_SUCCESS.getResult().equals(result)) {
             this.frameManager.setNavigateResult(result);
             this.frameManager.getDocumentLatch().countDown();
         }

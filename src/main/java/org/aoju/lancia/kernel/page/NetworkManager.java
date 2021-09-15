@@ -318,7 +318,7 @@ public class NetworkManager extends EventEmitter {
                 redirectChain = request.redirectChain();
             }
         }
-        Frame frame = StringKit.isNotEmpty(event.getFrameId()) ? this.frameManager.getFrame(event.getFrameId()) : null;
+        Frame frame = StringKit.isNotEmpty(event.getFrameId()) ? this.frameManager.frame(event.getFrameId()) : null;
         Request request = new Request(this.client, frame, interceptionId, this.userRequestInterceptionEnabled, event, redirectChain);
         this.requestIdToRequest.put(event.getRequestId(), request);
         this.emit(Variables.Event.NETWORK_MANAGER_REQUEST.getName(), request);
