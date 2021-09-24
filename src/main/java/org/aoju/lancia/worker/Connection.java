@@ -240,8 +240,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 }
             }
         } catch (Exception e) {
-            InstrumentException InstrumentException = new InstrumentException(e);
-            throw InstrumentException;
+            throw new RuntimeException(e);
         }
     }
 
@@ -259,7 +258,6 @@ public class Connection extends EventEmitter implements Consumer<String> {
         return this.sessions.get(result.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY));
     }
 
-
     public String url() {
         return this.url;
     }
@@ -276,7 +274,6 @@ public class Connection extends EventEmitter implements Consumer<String> {
     public void accept(String t) {
         onMessage(t);
     }
-
 
     public void dispose() {
         this.onClose();

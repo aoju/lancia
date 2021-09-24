@@ -512,19 +512,19 @@ public class FrameManager extends EventEmitter {
 
             boolean await = documentLatch.await(timeout, TimeUnit.MILLISECONDS);
             if (!await) {
-                throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded");
+                throw new RuntimeException("Navigation timeout of " + timeout + " ms exceeded");
             }
             if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
                 return watcher.navigationResponse();
             } else if (Variables.Result.ERROR.getResult().equals(navigateResult)) {
-                throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded");
+                throw new RuntimeException("Navigation timeout of " + timeout + " ms exceeded");
             } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
-                throw new InstrumentException("Navigating frame was detached");
+                throw new RuntimeException("Navigating frame was detached");
             } else {
-                throw new InstrumentException("Unknown result " + navigateResult);
+                throw new RuntimeException("Unknown result " + navigateResult);
             }
         } catch (InterruptedException e) {
-            throw new InstrumentException("Unknown result " + e.getMessage());
+            throw new RuntimeException("Unknown result " + e.getMessage());
         } finally {
             watcher.dispose();
         }

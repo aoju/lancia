@@ -29,7 +29,6 @@ package org.aoju.lancia.kernel.page;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.lang.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -147,7 +146,7 @@ public class ExecutionContext {
         JSONObject exceptionDetails = callFunctionOnPromise.getJSONObject("exceptionDetails");
         RemoteObject remoteObject;
         if (exceptionDetails != null)
-            throw new InstrumentException("Evaluation failed: " + Builder.getExceptionMessage(JSON.toJavaObject(exceptionDetails, ExceptionDetails.class)));
+            throw new RuntimeException("Evaluation failed: " + Builder.getExceptionMessage(JSON.toJavaObject(exceptionDetails, ExceptionDetails.class)));
         remoteObject = JSON.toJavaObject(callFunctionOnPromise.getJSONObject("result"), RemoteObject.class);
 
         return returnByValue ? Builder.valueFromRemoteObject(remoteObject) : createJSHandle(this, remoteObject);

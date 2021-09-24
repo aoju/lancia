@@ -95,13 +95,13 @@ public class Builder {
     public static String createProtocolError(JSONObject node) {
         JSONObject methodNode = node.getJSONObject(Variables.RECV_MESSAGE_METHOD_PROPERTY);
         JSONObject errNode = node.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
-        JSONObject errorMsg = errNode.getJSONObject(Variables.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
+        String errorMsg = errNode.getString(Variables.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
         String method = Normal.EMPTY;
         if (methodNode != null) {
             method = methodNode.toJSONString();
         }
         String message = "Protocol error " + method + ": " + errorMsg;
-        JSONObject dataNode = errNode.getJSONObject(Variables.RECV_MESSAGE_ERROR_DATA_PROPERTY);
+        String dataNode = errNode.getString(Variables.RECV_MESSAGE_ERROR_DATA_PROPERTY);
         if (dataNode != null) {
             message += " " + dataNode;
         }

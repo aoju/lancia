@@ -91,7 +91,6 @@ public class CDPSession extends EventEmitter {
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
-
         try {
             if (isBlock) {
                 if (outLatch != null) {
@@ -118,7 +117,6 @@ public class CDPSession extends EventEmitter {
                     this.connection.rawSend(message, false, this.callbacks);
                 }
             }
-
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -141,7 +139,6 @@ public class CDPSession extends EventEmitter {
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
-
         try {
             if (isBlock) {
                 CountDownLatch latch = new CountDownLatch(1);
@@ -149,7 +146,7 @@ public class CDPSession extends EventEmitter {
                 long id = this.connection.rawSend(message, true, this.callbacks);
                 message.waitForResult(0, TimeUnit.MILLISECONDS);
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InstrumentException(message.getErrorText());
+                    throw new RuntimeException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -193,14 +190,12 @@ public class CDPSession extends EventEmitter {
                     if (callback.getNeedRemove()) {
                         this.callbacks.remove(idLong);
                     }
-
                     // 放行等待的线程
                     if (callback.getCountDownLatch() != null) {
                         callback.getCountDownLatch().countDown();
                         callback.setCountDownLatch(null);
                     }
                 }
-
             }
         } else {
             JSONObject paramsNode = node.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
