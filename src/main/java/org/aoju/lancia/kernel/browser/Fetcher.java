@@ -262,8 +262,6 @@ public class Fetcher {
                 Logger.error("Set executablePath:{} file executation permission fail.", revisionInfo.getExecutablePath());
             }
         }
-        //睡眠5s，让解压程序释放chrome.exe
-        Thread.sleep(5000L);
         return revisionInfo;
     }
 

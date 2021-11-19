@@ -28,6 +28,7 @@ package org.aoju.lancia.kernel.page;
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Charset;
+import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.ErrorCode;
 import org.aoju.lancia.nimble.HeaderEntry;
@@ -238,9 +239,10 @@ public class Request {
      * @param body        响应体
      * @return Future
      */
-    public JSONObject respond(int status, Map<String, String> headers, String contentType, String body) {
-        if (url().startsWith("data:"))
+    public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body) {
+        if (url().startsWith("data:")) {
             return null;
+        }
 
         Assert.isTrue(allowInterception, "Request Interception is not enabled!");
         Assert.isTrue(!interceptionHandled, "Request is already handled!");
@@ -252,9 +254,10 @@ public class Request {
         }
         Map<String, String> responseHeaders = new HashMap<>();
 
-        if (headers != null && headers.size() > 0) {
-            for (Map.Entry<String, String> entry : headers.entrySet())
-                responseHeaders.put(entry.getKey().toLowerCase(), entry.getValue());
+        if (CollKit.isNotEmpty(headers)) {
+            for (HeaderEntry header : headers) {
+                responseHeaders.put(header.getName().toLowerCase(), header.getValue());
+            }
         }
 
         if (StringKit.isNotEmpty(contentType)) {

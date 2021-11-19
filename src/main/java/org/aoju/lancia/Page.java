@@ -981,187 +981,6 @@ public class Page extends EventEmitter {
         this.frameManager.getNetworkManager().setRequestInterception(value);
     }
 
-    private String screenshotTask(String format, ScreenshotOption options) throws IOException, ExecutionException, InterruptedException {
-        Map<String, Object> params = new HashMap<>();
-        params.put("targetId", this.target.getTargetId());
-        this.client.send("Target.activateTarget", params, true);
-        ClipOverwrite clip = null;
-        if (options.getClip() != null) {
-            clip = processClip(options.getClip());
-        }
-        if (options.getFullPage()) {
-            JSONObject metrics = this.client.send("Page.getLayoutMetrics", null, true);
-            double width = Math.ceil(metrics.getJSONObject("contentSize").getDouble("width"));
-            double height = Math.ceil(metrics.getJSONObject("contentSize").getDouble("height"));
-            clip = new ClipOverwrite(0, 0, width, height, 1);
-            ScreenOrientation screenOrientation;
-            if (this.viewport.getIsLandscape()) {
-                screenOrientation = new ScreenOrientation(90, "landscapePrimary");
-            } else {
-                screenOrientation = new ScreenOrientation(0, "portraitPrimary");
-            }
-            params.clear();
-            params.put("mobile", this.viewport.getIsMobile());
-            params.put("width", width);
-            params.put("height", height);
-            params.put("deviceScaleFactor", this.viewport.getDeviceScaleFactor());
-            params.put("screenOrientation", screenOrientation);
-            this.client.send("Emulation.setDeviceMetricsOverride", params, true);
-        }
-        boolean shouldSetDefaultBackground = options.getOmitBackground() && "png".equals(format);
-        if (shouldSetDefaultBackground) {
-            params.clear();
-            Map<String, Integer> colorMap = new HashMap<>();
-            colorMap.put("r", 0);
-            colorMap.put("g", 0);
-            colorMap.put("b", 0);
-            colorMap.put("a", 0);
-            params.put("color", colorMap);
-            this.client.send("Emulation.setDefaultBackgroundColorOverride", params, true);
-        }
-        params.clear();
-        params.put("format", format);
-        params.put("quality", options.getQuality());
-        params.put("clip", clip);
-        JSONObject result = this.client.send("Page.captureScreenshot", params, true);
-        if (shouldSetDefaultBackground) {
-            this.client.send("Emulation.setDefaultBackgroundColorOverride", null, true);
-        }
-        if (options.getFullPage() && this.viewport != null)
-            this.setViewport(this.viewport);
-        String data = result.getString("data");
-//            byte[] buffer = decoder.decodeBuffer(data);
-        byte[] buffer = Base64.getDecoder().decode(data);
-        if (StringKit.isNotEmpty(options.getPath())) {
-            Files.write(Paths.get(options.getPath()), buffer, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        }
-        return data;
-    }
-
-    private ClipOverwrite processClip(Clip clip) {
-        long x = Math.round(clip.getX());
-        long y = Math.round(clip.getY());
-        long width = Math.round(clip.getWidth() + clip.getX() - x);
-        long height = Math.round(clip.getHeight() + clip.getY() - y);
-        return new ClipOverwrite(x, y, width, height, 1);
-    }
-
-    private void onFileChooser(FileChooserPayload event) {
-        Builder.commonExecutor().submit(() -> {
-            if (CollKit.isEmpty(this.fileChooserInterceptors))
-                return;
-            Frame frame = this.frameManager.frame(event.getFrameId());
-            ExecutionContext context = frame.executionContext();
-            ElementHandle element = context.adoptBackendNodeId(event.getBackendNodeId());
-            Set<FileChooserCallBack> interceptors = new HashSet<>(this.fileChooserInterceptors);
-            this.fileChooserInterceptors.clear();
-            FileChooser fileChooser = new FileChooser(this.client, element, event);
-            for (FileChooserCallBack interceptor : interceptors)
-                interceptor.setFileChooser(fileChooser);
-        });
-    }
-
-    private void onLogEntryAdded(EntryAddedPayload event) {
-        if (CollKit.isNotEmpty(event.getEntry().getArgs()))
-            event.getEntry().getArgs().forEach(arg -> Builder.releaseObject(this.client, arg, false));
-        if (!"worker".equals(event.getEntry().getSource()))
-            this.emit(Variables.Event.PAGE_CONSOLE.getName(), new ConsoleMessage(event.getEntry().getLevel(), event.getEntry().getText(), Collections.emptyList(), new Location(event.getEntry().getUrl(), event.getEntry().getLineNumber())));
-    }
-
-    private void emitMetrics(MetricPayload event) throws IllegalAccessException, IntrospectionException, InvocationTargetException {
-        PageMetric pageMetric = new PageMetric();
-        Metrics metrics = this.buildMetricsObject(event.getMetrics());
-        pageMetric.setMetrics(metrics);
-        pageMetric.setTitle(event.getTitle());
-        this.emit(Variables.Event.PAGE_METRICS.getName(), pageMetric);
-    }
-
-    private void onTargetCrashed() {
-        this.emit("error", new InstrumentException("Page crashed!"));
-    }
-
-    /**
-     * 当js对话框出现的时候触发，比如alert, prompt, confirm 或者 beforeunload。Puppeteer可以通过Dialog's accept 或者 dismiss来响应弹窗。
-     *
-     * @param event 触发事件
-     */
-    private void onDialog(JavascriptDialogPayload event) {
-        Variables.DialogType dialogType = null;
-        if ("alert".equals(event.getType()))
-            dialogType = Variables.DialogType.Alert;
-        else if ("confirm".equals(event.getType()))
-            dialogType = Variables.DialogType.Confirm;
-        else if ("prompt".equals(event.getType()))
-            dialogType = Variables.DialogType.Prompt;
-        else if ("beforeunload".equals(event.getType()))
-            dialogType = Variables.DialogType.BeforeUnload;
-        Assert.isTrue(dialogType != null, "Unknown javascript dialog type: " + event.getType());
-        Dialog dialog = new Dialog(this.client, dialogType, event.getMessage(), event.getDefaultPrompt());
-        this.emit(Variables.Event.PAGE_DIALOG.getName(), dialog);
-    }
-
-    private void onConsoleAPI(ConsoleCalledPayload event) {
-        if (event.getExecutionContextId() == 0) {
-            // DevTools protocol stores the last 1000 console messages. These
-            // messages are always reported even for removed execution contexts. In
-            // this case, they are marked with executionContextId = 0 and are
-            // reported upon enabling Runtime agent.
-            //
-            // Ignore these messages since:
-            // - there's no execution context we can use to operate with message
-            //   arguments
-            // - these messages are reported before Puppeteer clients can subscribe
-            //   to the 'console'
-            //   page event.
-            //
-            // @see https://github.com/puppeteer/puppeteer/issues/3865
-            return;
-        }
-        ExecutionContext context = this.frameManager.executionContextById(event.getExecutionContextId());
-        List<JSHandle> values = new ArrayList<>();
-        if (CollKit.isNotEmpty(event.getArgs())) {
-            for (int i = 0; i < event.getArgs().size(); i++) {
-                RemoteObject arg = event.getArgs().get(i);
-                values.add(JSHandle.createJSHandle(context, arg));
-            }
-        }
-        this.addConsoleMessage(event.getType(), values, event.getStackTrace());
-    }
-
-    private void onBindingCalled(BindingCalledPayload event) {
-        String payloadStr = event.getPayload();
-        Payload payload;
-        payload = JSON.parseObject(payloadStr, Payload.class);
-
-        String expression;
-        try {
-            Object result = this.pageBindings.get(event.getName()).apply(payload.getArgs());
-            expression = Builder.evaluationString(deliverResult(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), result);
-        } catch (Exception e) {
-            expression = Builder.evaluationString(deliverError(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), e, e.getMessage());
-        }
-        Map<String, Object> params = new HashMap<>();
-        params.put("expression", expression);
-        params.put("contextId", event.getExecutionContextId());
-        this.client.send("Runtime.evaluate", params, false);
-    }
-
-    private String deliverError() {
-        return "function deliverError(name, seq, message, stack) {\n" +
-                "      const error = new Error(message);\n" +
-                "      error.stack = stack;\n" +
-                "      window[name]['callbacks'].get(seq).reject(error);\n" +
-                "      window[name]['callbacks'].delete(seq);\n" +
-                "    }";
-    }
-
-    private String deliverResult() {
-        return "function deliverResult(name, seq, result) {\n" +
-                "      window[name]['callbacks'].get(seq).resolve(result);\n" +
-                "      window[name]['callbacks'].delete(seq);\n" +
-                "    }";
-    }
-
     /**
      * 如果是一个浏览器多个页面的情况，每个页面都可以有单独的viewport
      * 注意 在大部分情况下，改变 viewport 会重新加载页面以设置 isMobile 或者 hasTouch
@@ -1172,43 +991,6 @@ public class Page extends EventEmitter {
         boolean needsReload = this.emulationManager.emulateViewport(viewport);
         this.viewport = viewport;
         if (needsReload) this.reload(null);
-    }
-
-    protected void initialize() {
-        frameManager.initialize();
-        Map<String, Object> params = new HashMap<>();
-        params.put("autoAttach", true);
-        params.put("waitForDebuggerOnStart", false);
-        params.put("flatten", true);
-        this.client.send("Target.setAutoAttach", params, false);
-        params.clear();
-        this.client.send("Performance.enable", params, false);
-        this.client.send("Log.enable", params, true);
-    }
-
-    private void addConsoleMessage(String type, List<JSHandle> args, StackTrace stackTrace) {
-        if (this.getListenerCount(Variables.Event.PAGE_CONSOLE.getName()) == 0) {
-            args.forEach(arg -> arg.dispose(false));
-            return;
-        }
-        List<String> textTokens = new ArrayList<>();
-        for (JSHandle arg : args) {
-            RemoteObject remoteObject = arg.getRemoteObject();
-            if (StringKit.isNotEmpty(remoteObject.getObjectId()))
-                textTokens.add(arg.toString());
-            else {
-                textTokens.add(JSON.toJSONString(Builder.valueFromRemoteObject(remoteObject)));
-            }
-        }
-        Location location = stackTrace != null && stackTrace.getCallFrames().size() > 0 ? new Location(stackTrace.getCallFrames().get(0).getUrl(), stackTrace.getCallFrames().get(0).getLineNumber(), stackTrace.getCallFrames().get(0).getColumnNumber()) : new Location();
-        ConsoleMessage message = new ConsoleMessage(type, String.join(" ", textTokens), args, location);
-        this.emit(Variables.Event.PAGE_CONSOLE.getName(), message);
-    }
-
-    private void handleException(ExceptionDetails exceptionDetails) {
-        String message = Builder.getExceptionMessage(exceptionDetails);
-        RuntimeException err = new RuntimeException(message);
-        this.emit(Variables.Event.PAGE_PageError.getName(), err);
     }
 
     /**
@@ -1314,16 +1096,6 @@ public class Page extends EventEmitter {
             Map<String, Object> params = getProperties(cookie);
             this.client.send("Network.deleteCookies", params, true);
         }
-    }
-
-    private Map<String, Object> getProperties(DeleteCookie cookie) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
-        Map<String, Object> params = new HashMap<>();
-        BeanInfo beanInfo = Introspector.getBeanInfo(cookie.getClass());
-        PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
-        for (PropertyDescriptor descriptor : propertyDescriptors) {
-            params.put(descriptor.getName(), descriptor.getReadMethod().invoke(cookie));
-        }
-        return params;
     }
 
     /**
@@ -1479,26 +1251,6 @@ public class Page extends EventEmitter {
         for (int i = 0; i < frames.size(); i++) {
             completionService.take().get();
         }
-    }
-
-    private String addPageBinding() {
-        return "function addPageBinding(bindingName) {\n" +
-                "      const win = (window);\n" +
-                "      const binding = (win[bindingName]);\n" +
-                "      win[bindingName] = (...args) => {\n" +
-                "        const me = window[bindingName];\n" +
-                "        let callbacks = me['callbacks'];\n" +
-                "        if (!callbacks) {\n" +
-                "          callbacks = new Map();\n" +
-                "          me['callbacks'] = callbacks;\n" +
-                "        }\n" +
-                "        const seq = (me['lastSeq'] || 0) + 1;\n" +
-                "        me['lastSeq'] = seq;\n" +
-                "        const promise = new Promise((resolve, reject) => callbacks.set(seq, {resolve, reject}));\n" +
-                "        binding(JSON.stringify({name: bindingName, seq, args}));\n" +
-                "        return promise;\n" +
-                "      };\n" +
-                "    }";
     }
 
     /**
@@ -1709,32 +1461,6 @@ public class Page extends EventEmitter {
         return context.queryObjects(prototypeHandle);
     }
 
-    private Double convertPrintParameterToInches(String parameter) {
-        if (StringKit.isEmpty(parameter)) {
-            return null;
-        }
-        double pixels;
-        if (Builder.isNumber(parameter)) {
-            pixels = Double.parseDouble(parameter);
-        } else if (parameter.endsWith("px") || parameter.endsWith("in") || parameter.endsWith("cm") || parameter.endsWith("mm")) {
-
-            String unit = parameter.substring(parameter.length() - 2).toLowerCase();
-            String valueText;
-            if (unitToPixels.containsKey(unit)) {
-                valueText = parameter.substring(0, parameter.length() - 2);
-            } else {
-                unit = "px";
-                valueText = parameter;
-            }
-            double value = Double.parseDouble(valueText);
-            Assert.isTrue(!Double.isNaN(value), "Failed to parse parameter value: " + parameter);
-            pixels = value * unitToPixels.get(unit);
-        } else {
-            throw new IllegalArgumentException("page.pdf() Cannot handle parameter type: " + parameter);
-        }
-        return pixels / 96;
-    }
-
     /**
      * 重新加载页面
      *
@@ -1755,34 +1481,6 @@ public class Page extends EventEmitter {
 
         // 等待页面导航结果返回
         return this.waitForNavigation(options, reloadLatch);
-    }
-
-    private Metrics buildMetricsObject(List<Metric> metrics) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
-        Metrics result = new Metrics();
-        if (CollKit.isNotEmpty(metrics)) {
-            for (Metric metric : metrics) {
-                if (Variables.SUPPORTED_METRICS.contains(metric.getName())) {
-                    PropertyDescriptor descriptor = new PropertyDescriptor(metric.getName(), Metrics.class);
-                    descriptor.getWriteMethod().invoke(result, metric.getValue());
-                }
-            }
-        }
-        return result;
-    }
-
-    private Response go(int delta, NavigateOption options) {
-        JSONObject historyNode = this.client.send("Page.getNavigationHistory", null, true);
-        GetNavigationHistory history;
-        history = JSON.toJavaObject(historyNode, GetNavigationHistory.class);
-
-        NavigationEntry entry = history.getEntries().get(history.getCurrentIndex() + delta);
-        if (entry == null)
-            return null;
-        Response response = this.waitForNavigation(options, null);
-        Map<String, Object> params = new HashMap<>();
-        params.put("entryId", entry.getId());
-        this.client.send("Page.navigateToHistoryEntry", params, true);
-        return response;
     }
 
     /**
@@ -1806,19 +1504,6 @@ public class Page extends EventEmitter {
      */
     public Response waitForNavigation(NavigateOption options) {
         return this.frameManager.getMainFrame().waitForNavigation(options, null);
-    }
-
-    /**
-     * 此方法在页面跳转到一个新地址或重新加载时解析，如果你的代码会间接引起页面跳转，这个方法比较有用
-     * 比如你在在代码中使用了Page.click()方法，引起了页面跳转
-     * 注意 通过 History API 改变地址会认为是一次跳转。
-     *
-     * @param options     PageNavigateOptions
-     * @param reloadLatch reload页面，这个参数配合{@link Page#setViewport(Viewport)}中的reload方法使用
-     * @return 响应
-     */
-    private Response waitForNavigation(NavigateOption options, CountDownLatch reloadLatch) {
-        return this.frameManager.getMainFrame().waitForNavigation(options, reloadLatch);
     }
 
     /**
@@ -1852,18 +1537,6 @@ public class Page extends EventEmitter {
      */
     public JSHandle evaluateHandle(String pageFunction) {
         return this.evaluateHandle(pageFunction, new ArrayList<>());
-    }
-
-    /**
-     * 此方法和 page.evaluate 的唯一区别是此方法返回的是页内类型(JSHandle)
-     *
-     * @param pageFunction 要在页面实例上下文中执行的方法
-     * @param args         要在页面实例上下文中执行的方法的参数
-     * @return 代表页面元素的实例
-     */
-    private JSHandle evaluateHandle(String pageFunction, List<Object> args) {
-        ExecutionContext context = this.getMainFrame().executionContext();
-        return (JSHandle) context.evaluateHandle(pageFunction, args);
     }
 
     /**
@@ -2072,18 +1745,6 @@ public class Page extends EventEmitter {
         }
     }
 
-    private BrowserListener<Object> sessionClosePromise() {
-        BrowserListener<Object> disConnectLis = new BrowserListener<Object>() {
-            @Override
-            public void onBrowserEvent(Object event) {
-                throw new InstrumentException("Target closed");
-            }
-        };
-        disConnectLis.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
-        this.client.addListener(disConnectLis.getMethod(), disConnectLis, true);
-        return disConnectLis;
-    }
-
     /**
      * 等到某个请求,默认等待的时间是30s
      *
@@ -2199,19 +1860,6 @@ public class Page extends EventEmitter {
     }
 
     /**
-     * 返回页面的地址
-     *
-     * @return 页面地址
-     */
-    private String url() {
-        return this.getMainFrame().url();
-    }
-
-    protected CDPSession client() {
-        return client;
-    }
-
-    /**
      * 该方法返回所有与页面关联的 WebWorkers
      *
      * @return WebWorkers
@@ -2291,6 +1939,363 @@ public class Page extends EventEmitter {
 
     public Coverage coverage() {
         return this.coverage;
+    }
+
+    protected CDPSession client() {
+        return client;
+    }
+
+    protected void initialize() {
+        frameManager.initialize();
+        Map<String, Object> params = new HashMap<>();
+        params.put("autoAttach", true);
+        params.put("waitForDebuggerOnStart", false);
+        params.put("flatten", true);
+        this.client.send("Target.setAutoAttach", params, false);
+        params.clear();
+        this.client.send("Performance.enable", params, false);
+        this.client.send("Log.enable", params, true);
+    }
+
+    private Map<String, Object> getProperties(DeleteCookie cookie) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
+        Map<String, Object> params = new HashMap<>();
+        BeanInfo beanInfo = Introspector.getBeanInfo(cookie.getClass());
+        PropertyDescriptor[] propertyDescriptors = beanInfo.getPropertyDescriptors();
+        for (PropertyDescriptor descriptor : propertyDescriptors) {
+            params.put(descriptor.getName(), descriptor.getReadMethod().invoke(cookie));
+        }
+        return params;
+    }
+
+    private String addPageBinding() {
+        return "function addPageBinding(bindingName) {\n" +
+                "      const win = (window);\n" +
+                "      const binding = (win[bindingName]);\n" +
+                "      win[bindingName] = (...args) => {\n" +
+                "        const me = window[bindingName];\n" +
+                "        let callbacks = me['callbacks'];\n" +
+                "        if (!callbacks) {\n" +
+                "          callbacks = new Map();\n" +
+                "          me['callbacks'] = callbacks;\n" +
+                "        }\n" +
+                "        const seq = (me['lastSeq'] || 0) + 1;\n" +
+                "        me['lastSeq'] = seq;\n" +
+                "        const promise = new Promise((resolve, reject) => callbacks.set(seq, {resolve, reject}));\n" +
+                "        binding(JSON.stringify({name: bindingName, seq, args}));\n" +
+                "        return promise;\n" +
+                "      };\n" +
+                "    }";
+    }
+
+    private Double convertPrintParameterToInches(String parameter) {
+        if (StringKit.isEmpty(parameter)) {
+            return null;
+        }
+        double pixels;
+        if (Builder.isNumber(parameter)) {
+            pixels = Double.parseDouble(parameter);
+        } else if (parameter.endsWith("px") || parameter.endsWith("in") || parameter.endsWith("cm") || parameter.endsWith("mm")) {
+
+            String unit = parameter.substring(parameter.length() - 2).toLowerCase();
+            String valueText;
+            if (unitToPixels.containsKey(unit)) {
+                valueText = parameter.substring(0, parameter.length() - 2);
+            } else {
+                unit = "px";
+                valueText = parameter;
+            }
+            double value = Double.parseDouble(valueText);
+            Assert.isTrue(!Double.isNaN(value), "Failed to parse parameter value: " + parameter);
+            pixels = value * unitToPixels.get(unit);
+        } else {
+            throw new IllegalArgumentException("page.pdf() Cannot handle parameter type: " + parameter);
+        }
+        return pixels / 96;
+    }
+
+    /**
+     * 此方法在页面跳转到一个新地址或重新加载时解析，如果你的代码会间接引起页面跳转，这个方法比较有用
+     * 比如你在在代码中使用了Page.click()方法，引起了页面跳转
+     * 注意 通过 History API 改变地址会认为是一次跳转。
+     *
+     * @param options     PageNavigateOptions
+     * @param reloadLatch reload页面，这个参数配合{@link Page#setViewport(Viewport)}中的reload方法使用
+     * @return 响应
+     */
+    private Response waitForNavigation(NavigateOption options, CountDownLatch reloadLatch) {
+        return this.frameManager.getMainFrame().waitForNavigation(options, reloadLatch);
+    }
+
+    /**
+     * 此方法和 page.evaluate 的唯一区别是此方法返回的是页内类型(JSHandle)
+     *
+     * @param pageFunction 要在页面实例上下文中执行的方法
+     * @param args         要在页面实例上下文中执行的方法的参数
+     * @return 代表页面元素的实例
+     */
+    private JSHandle evaluateHandle(String pageFunction, List<Object> args) {
+        ExecutionContext context = this.getMainFrame().executionContext();
+        return (JSHandle) context.evaluateHandle(pageFunction, args);
+    }
+
+    private BrowserListener<Object> sessionClosePromise() {
+        BrowserListener<Object> disConnectLis = new BrowserListener<Object>() {
+            @Override
+            public void onBrowserEvent(Object event) {
+                throw new InstrumentException("Target closed");
+            }
+        };
+        disConnectLis.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
+        this.client.addListener(disConnectLis.getMethod(), disConnectLis, true);
+        return disConnectLis;
+    }
+
+
+    /**
+     * 返回页面的地址
+     *
+     * @return 页面地址
+     */
+    private String url() {
+        return this.getMainFrame().url();
+    }
+
+    private String screenshotTask(String format, ScreenshotOption options) throws IOException, ExecutionException, InterruptedException {
+        Map<String, Object> params = new HashMap<>();
+        params.put("targetId", this.target.getTargetId());
+        this.client.send("Target.activateTarget", params, true);
+        ClipOverwrite clip = null;
+        if (options.getClip() != null) {
+            clip = processClip(options.getClip());
+        }
+        if (options.getFullPage()) {
+            JSONObject metrics = this.client.send("Page.getLayoutMetrics", null, true);
+            double width = Math.ceil(metrics.getJSONObject("contentSize").getDouble("width"));
+            double height = Math.ceil(metrics.getJSONObject("contentSize").getDouble("height"));
+            clip = new ClipOverwrite(0, 0, width, height, 1);
+            ScreenOrientation screenOrientation;
+            if (this.viewport.getIsLandscape()) {
+                screenOrientation = new ScreenOrientation(90, "landscapePrimary");
+            } else {
+                screenOrientation = new ScreenOrientation(0, "portraitPrimary");
+            }
+            params.clear();
+            params.put("mobile", this.viewport.getIsMobile());
+            params.put("width", width);
+            params.put("height", height);
+            params.put("deviceScaleFactor", this.viewport.getDeviceScaleFactor());
+            params.put("screenOrientation", screenOrientation);
+            this.client.send("Emulation.setDeviceMetricsOverride", params, true);
+        }
+        boolean shouldSetDefaultBackground = options.getOmitBackground() && "png".equals(format);
+        if (shouldSetDefaultBackground) {
+            setTransparentBackgroundColor();
+        }
+        params.clear();
+        params.put("format", format);
+        params.put("quality", options.getQuality());
+        params.put("clip", clip);
+        JSONObject result = this.client.send("Page.captureScreenshot", params, true);
+        if (shouldSetDefaultBackground) {
+            this.client.send("Emulation.setDefaultBackgroundColorOverride", null, true);
+        }
+        if (options.getFullPage() && this.viewport != null)
+            this.setViewport(this.viewport);
+        String data = result.getString("data");
+//            byte[] buffer = decoder.decodeBuffer(data);
+        byte[] buffer = Base64.getDecoder().decode(data);
+        if (StringKit.isNotEmpty(options.getPath())) {
+            Files.write(Paths.get(options.getPath()), buffer, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        }
+        return data;
+    }
+
+    private void setTransparentBackgroundColor() {
+        Map<String, Object> params = new HashMap<>();
+        Map<String, Integer> colorMap = new HashMap<>();
+        colorMap.put("r", 0);
+        colorMap.put("g", 0);
+        colorMap.put("b", 0);
+        colorMap.put("a", 0);
+        params.put("color", colorMap);
+        this.client.send("Emulation.setDefaultBackgroundColorOverride", params, true);
+    }
+
+    private ClipOverwrite processClip(Clip clip) {
+        long x = Math.round(clip.getX());
+        long y = Math.round(clip.getY());
+        long width = Math.round(clip.getWidth() + clip.getX() - x);
+        long height = Math.round(clip.getHeight() + clip.getY() - y);
+        return new ClipOverwrite(x, y, width, height, 1);
+    }
+
+    private void onFileChooser(FileChooserPayload event) {
+        Builder.commonExecutor().submit(() -> {
+            if (CollKit.isEmpty(this.fileChooserInterceptors))
+                return;
+            Frame frame = this.frameManager.frame(event.getFrameId());
+            ExecutionContext context = frame.executionContext();
+            ElementHandle element = context.adoptBackendNodeId(event.getBackendNodeId());
+            Set<FileChooserCallBack> interceptors = new HashSet<>(this.fileChooserInterceptors);
+            this.fileChooserInterceptors.clear();
+            FileChooser fileChooser = new FileChooser(this.client, element, event);
+            for (FileChooserCallBack interceptor : interceptors)
+                interceptor.setFileChooser(fileChooser);
+        });
+    }
+
+    private void onLogEntryAdded(EntryAddedPayload event) {
+        if (CollKit.isNotEmpty(event.getEntry().getArgs()))
+            event.getEntry().getArgs().forEach(arg -> Builder.releaseObject(this.client, arg, false));
+        if (!"worker".equals(event.getEntry().getSource()))
+            this.emit(Variables.Event.PAGE_CONSOLE.getName(), new ConsoleMessage(event.getEntry().getLevel(), event.getEntry().getText(), Collections.emptyList(), new Location(event.getEntry().getUrl(), event.getEntry().getLineNumber())));
+    }
+
+    private void emitMetrics(MetricPayload event) throws IllegalAccessException, IntrospectionException, InvocationTargetException {
+        PageMetric pageMetric = new PageMetric();
+        Metrics metrics = this.buildMetricsObject(event.getMetrics());
+        pageMetric.setMetrics(metrics);
+        pageMetric.setTitle(event.getTitle());
+        this.emit(Variables.Event.PAGE_METRICS.getName(), pageMetric);
+    }
+
+    private void onTargetCrashed() {
+        this.emit("error", new InstrumentException("Page crashed!"));
+    }
+
+    /**
+     * 当js对话框出现的时候触发，比如alert, prompt, confirm 或者 beforeunload。Puppeteer可以通过Dialog's accept 或者 dismiss来响应弹窗。
+     *
+     * @param event 触发事件
+     */
+    private void onDialog(JavascriptDialogPayload event) {
+        Variables.DialogType dialogType = null;
+        if ("alert".equals(event.getType()))
+            dialogType = Variables.DialogType.Alert;
+        else if ("confirm".equals(event.getType()))
+            dialogType = Variables.DialogType.Confirm;
+        else if ("prompt".equals(event.getType()))
+            dialogType = Variables.DialogType.Prompt;
+        else if ("beforeunload".equals(event.getType()))
+            dialogType = Variables.DialogType.BeforeUnload;
+        Assert.isTrue(dialogType != null, "Unknown javascript dialog type: " + event.getType());
+        Dialog dialog = new Dialog(this.client, dialogType, event.getMessage(), event.getDefaultPrompt());
+        this.emit(Variables.Event.PAGE_DIALOG.getName(), dialog);
+    }
+
+    private void onConsoleAPI(ConsoleCalledPayload event) {
+        if (event.getExecutionContextId() == 0) {
+            // DevTools protocol stores the last 1000 console messages. These
+            // messages are always reported even for removed execution contexts. In
+            // this case, they are marked with executionContextId = 0 and are
+            // reported upon enabling Runtime agent.
+            //
+            // Ignore these messages since:
+            // - there's no execution context we can use to operate with message
+            //   arguments
+            // - these messages are reported before Puppeteer clients can subscribe
+            //   to the 'console'
+            //   page event.
+            //
+            // @see https://github.com/puppeteer/puppeteer/issues/3865
+            return;
+        }
+        ExecutionContext context = this.frameManager.executionContextById(event.getExecutionContextId());
+        List<JSHandle> values = new ArrayList<>();
+        if (CollKit.isNotEmpty(event.getArgs())) {
+            for (int i = 0; i < event.getArgs().size(); i++) {
+                RemoteObject arg = event.getArgs().get(i);
+                values.add(JSHandle.createJSHandle(context, arg));
+            }
+        }
+        this.addConsoleMessage(event.getType(), values, event.getStackTrace());
+    }
+
+    private void onBindingCalled(BindingCalledPayload event) {
+        String payloadStr = event.getPayload();
+        Payload payload;
+        payload = JSON.parseObject(payloadStr, Payload.class);
+
+        String expression;
+        try {
+            Object result = this.pageBindings.get(event.getName()).apply(payload.getArgs());
+            expression = Builder.evaluationString(deliverResult(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), result);
+        } catch (Exception e) {
+            expression = Builder.evaluationString(deliverError(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), e, e.getMessage());
+        }
+        Map<String, Object> params = new HashMap<>();
+        params.put("expression", expression);
+        params.put("contextId", event.getExecutionContextId());
+        this.client.send("Runtime.evaluate", params, false);
+    }
+
+    private String deliverError() {
+        return "function deliverError(name, seq, message, stack) {\n" +
+                "      const error = new Error(message);\n" +
+                "      error.stack = stack;\n" +
+                "      window[name]['callbacks'].get(seq).reject(error);\n" +
+                "      window[name]['callbacks'].delete(seq);\n" +
+                "    }";
+    }
+
+    private String deliverResult() {
+        return "function deliverResult(name, seq, result) {\n" +
+                "      window[name]['callbacks'].get(seq).resolve(result);\n" +
+                "      window[name]['callbacks'].delete(seq);\n" +
+                "    }";
+    }
+
+    private void addConsoleMessage(String type, List<JSHandle> args, StackTrace stackTrace) {
+        if (this.getListenerCount(Variables.Event.PAGE_CONSOLE.getName()) == 0) {
+            args.forEach(arg -> arg.dispose(false));
+            return;
+        }
+        List<String> textTokens = new ArrayList<>();
+        for (JSHandle arg : args) {
+            RemoteObject remoteObject = arg.getRemoteObject();
+            if (StringKit.isNotEmpty(remoteObject.getObjectId()))
+                textTokens.add(arg.toString());
+            else {
+                textTokens.add(JSON.toJSONString(Builder.valueFromRemoteObject(remoteObject)));
+            }
+        }
+        Location location = stackTrace != null && stackTrace.getCallFrames().size() > 0 ? new Location(stackTrace.getCallFrames().get(0).getUrl(), stackTrace.getCallFrames().get(0).getLineNumber(), stackTrace.getCallFrames().get(0).getColumnNumber()) : new Location();
+        ConsoleMessage message = new ConsoleMessage(type, String.join(" ", textTokens), args, location);
+        this.emit(Variables.Event.PAGE_CONSOLE.getName(), message);
+    }
+
+    private void handleException(ExceptionDetails exceptionDetails) {
+        String message = Builder.getExceptionMessage(exceptionDetails);
+        RuntimeException err = new RuntimeException(message);
+        this.emit(Variables.Event.PAGE_PageError.getName(), err);
+    }
+
+    private Metrics buildMetricsObject(List<Metric> metrics) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
+        Metrics result = new Metrics();
+        if (CollKit.isNotEmpty(metrics)) {
+            for (Metric metric : metrics) {
+                if (Variables.SUPPORTED_METRICS.contains(metric.getName())) {
+                    PropertyDescriptor descriptor = new PropertyDescriptor(metric.getName(), Metrics.class);
+                    descriptor.getWriteMethod().invoke(result, metric.getValue());
+                }
+            }
+        }
+        return result;
+    }
+
+    private Response go(int delta, NavigateOption options) {
+        JSONObject historyNode = this.client.send("Page.getNavigationHistory", null, true);
+        GetNavigationHistory history;
+        history = JSON.toJavaObject(historyNode, GetNavigationHistory.class);
+
+        NavigationEntry entry = history.getEntries().get(history.getCurrentIndex() + delta);
+        if (entry == null)
+            return null;
+        Response response = this.waitForNavigation(options, null);
+        Map<String, Object> params = new HashMap<>();
+        params.put("entryId", entry.getId());
+        this.client.send("Page.navigateToHistoryEntry", params, true);
+        return response;
     }
 
     static class FileChooserCallBack {
