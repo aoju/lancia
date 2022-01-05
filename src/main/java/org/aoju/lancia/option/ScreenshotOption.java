@@ -50,6 +50,8 @@ public class ScreenshotOption {
 
     private String encoding;
 
+    private boolean scrollIntoView = true;
+
     public ScreenshotOption() {
         super();
     }
@@ -58,7 +60,7 @@ public class ScreenshotOption {
         this.path = path;
     }
 
-    public ScreenshotOption(String type, String path, boolean fullPage, Clip clip, int quality, boolean omitBackground, String encoding) {
+    public ScreenshotOption(String type, String path, boolean fullPage, Clip clip, int quality, boolean omitBackground, String encoding, boolean scrollIntoView) {
         super();
         this.type = type;
         this.path = path;
@@ -67,6 +69,7 @@ public class ScreenshotOption {
         this.quality = quality;
         this.omitBackground = omitBackground;
         this.encoding = encoding;
+        this.scrollIntoView = scrollIntoView;
     }
 
     public String getType() {
@@ -123,6 +126,14 @@ public class ScreenshotOption {
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    public boolean isScrollIntoView() {
+        return scrollIntoView;
+    }
+
+    public void setScrollIntoView(boolean scrollIntoView) {
+        this.scrollIntoView = scrollIntoView;
     }
 
 }

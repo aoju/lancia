@@ -46,7 +46,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessControlException;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -163,6 +162,13 @@ public class ElementHandle extends JSHandle {
         return JSON.parseObject(JSON.toJSONString(result), BoxModelValue.class);
     }
 
+    /**
+     * 截图所选择的元素
+     *
+     * @param options 截图配置
+     * @return 图片base64的字节
+     * @throws IOException 异常
+     */
     public String screenshot(ScreenshotOption options) throws IOException {
         boolean needsViewportReset = false;
         Clip boundingBox = this.boundingBox();
@@ -182,7 +188,9 @@ public class ElementHandle extends JSHandle {
             this.page.setViewport(newViewport);
             needsViewportReset = true;
         }
-        this.scrollIntoViewIfNeeded();
+        if (options.isScrollIntoView()) {
+            this.scrollIntoViewIfNeeded();
+        }
         boundingBox = this.boundingBox();
         Assert.isTrue(boundingBox != null, "Node is either not visible or not an HTMLElement");
         Assert.isTrue(boundingBox.getWidth() != 0, "Node has 0 width.");
@@ -323,7 +331,7 @@ public class ElementHandle extends JSHandle {
     }
 
 
-    public void click() throws InterruptedException, ExecutionException {
+    public void click() throws InterruptedException {
         click(new ClickOption(), true);
     }
 
@@ -332,9 +340,8 @@ public class ElementHandle extends JSHandle {
      *
      * @param isBlock 是否阻塞
      * @throws InterruptedException 打断异常
-     * @throws ExecutionException   异常
      */
-    public void click(boolean isBlock) throws InterruptedException, ExecutionException {
+    public void click(boolean isBlock) throws InterruptedException {
         click(new ClickOption(), isBlock);
     }
 

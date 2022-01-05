@@ -707,7 +707,7 @@ public class Page extends EventEmitter {
 
     /**
      * 截图
-     * 备注 在OS X上 截图需要至少1/6秒。查看讨论：https://crbug.com/741689。
+     * 备注 在OS X上 截图需要至少1/6秒。查看讨论：https://crbug.com/741689
      *
      * @param options 截图选项
      * @return 图片base64的字节
