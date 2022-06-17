@@ -45,7 +45,7 @@
         <bus.version>6.3.1</bus.version>
         <jna.version>5.9.0</jna.version>
         <logback.version>1.2.3</logback.version>
-        <fastjson.version>1.2.76</fastjson.version>
+        <fastjson.version>1.2.83</fastjson.version>
     </properties>
 
     <dependencies>
