@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Variables;

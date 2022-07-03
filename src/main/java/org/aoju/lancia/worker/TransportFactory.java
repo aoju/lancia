@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.logger.Logger;
 
 /**

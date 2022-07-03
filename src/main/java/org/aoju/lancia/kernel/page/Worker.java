@@ -27,7 +27,7 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.runtime.ConsoleCalledPayload;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;

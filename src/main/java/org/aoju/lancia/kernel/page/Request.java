@@ -231,7 +231,7 @@ public class Request {
     }
 
     /**
-     * 自定义响应
+     * 自定义响应, 默认对响应体做base64解码
      *
      * @param status      响应状态
      * @param headers     响应头
@@ -240,6 +240,20 @@ public class Request {
      * @return Future
      */
     public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body) {
+        return respond(status, headers, contentType, body, true);
+    }
+
+    /**
+     * 自定义响应
+     *
+     * @param status           响应状态
+     * @param headers          响应头
+     * @param contentType      contentType
+     * @param body             响应体
+     * @param needBase64Decode 自定义响应体是否需要Base64解码
+     * @return Future
+     */
+    public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body, boolean needBase64Decode) {
         if (url().startsWith("data:")) {
             return null;
         }
@@ -274,7 +288,12 @@ public class Request {
         params.put("responsePhrase", STATUS_TEXTS.get(status));
         params.put("responseHeaders", headersArray(responseHeaders));
         if (responseBody != null) {
-            params.put("body", Base64.getDecoder().decode(responseBody));
+            if (needBase64Decode) {
+                // 设置自定义响应体时，如果body时base64，使用兼容MIME的工具类处理
+                params.put("body", Base64.getDecoder().decode(responseBody));
+            } else {
+                params.put("body", responseBody);
+            }
         }
         return client.send("Fetch.fulfillRequest", params, true);
     }

@@ -30,7 +30,7 @@ import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.Header;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.Symbol;
-import org.aoju.bus.core.lang.exception.InstrumentException;
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.BufferKit;
 import org.aoju.bus.core.toolkit.RandomKit;
 import org.aoju.bus.logger.Logger;
