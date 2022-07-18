@@ -86,7 +86,7 @@ public class Variables {
     /**
      * 谷歌浏览器默认启动参数
      */
-    public static final List<String> DEFAULT_ARGS = Collections.unmodifiableList(new ArrayList<String>() {
+    public static final List<String> DEFAULT_ARGS = Collections.unmodifiableList(new ArrayList<>() {
         {
             addAll(Arrays.asList(
                     "--disable-background-networking",
@@ -112,7 +112,7 @@ public class Variables {
         }
     });
 
-    public static final Set<String> SUPPORTED_METRICS = new HashSet<String>() {
+    public static final Set<String> SUPPORTED_METRICS = new HashSet<>() {
         {
             add("Timestamp");
             add("Documents");
@@ -157,7 +157,7 @@ public class Variables {
     /**
      * 追踪信息的默认分类
      */
-    public static final Set<String> DEFAULTCATEGORIES = new LinkedHashSet<String>() {
+    public static final Set<String> DEFAULTCATEGORIES = new LinkedHashSet<>() {
         {
             add("-*");
             add("devtools.timeline");

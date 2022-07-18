@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import org.aoju.lancia.kernel.Standard;
+import org.aoju.lancia.kernel.Context;
 import org.aoju.lancia.option.BrowserOption;
 import org.aoju.lancia.option.ChromeOption;
 import org.aoju.lancia.option.LaunchOption;
@@ -43,7 +43,7 @@ import java.util.List;
  */
 public interface Launcher {
 
-    Standard env = System::getenv;
+    Context context = System::getenv;
 
     Browser launch(LaunchOption options) throws IOException;
 

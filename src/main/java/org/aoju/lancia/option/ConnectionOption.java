@@ -25,71 +25,26 @@
  ********************************************************************************/
 package org.aoju.lancia.option;
 
-import org.aoju.lancia.kernel.page.Viewport;
-
 /**
- * 浏览器选项参数
+ * 会话链接选项
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class BrowserOption extends ChromeOption {
+public class ConnectionOption {
 
     /**
-     * 导航期间是否忽略HTTPS错误
-     * 默认是false
+     * 会话等待消息结果超时。单位为毫秒
      */
-    private boolean ignoreHTTPSErrors;
-    /**
-     * 800x600
-     * 为每个页面设置一致的视口。默认为800x600视口。 null禁用默认视口
-     */
-    private Viewport viewport = new Viewport();
-    /**
-     * 将Puppeteer操作减慢指定的毫秒数。很有用，这样您可以查看发生了什么情况
-     */
-    private int slowMo;
+    private long sessionWaitingResultTimeout;
 
-    /**
-     * 浏览器与CDP的连接配置
-     */
-    private ConnectionOption connectionOption = new ConnectionOption();
-
-    public BrowserOption() {
-        super();
+    public long getSessionWaitingResultTimeout() {
+        return sessionWaitingResultTimeout;
     }
 
-    public boolean getIgnoreHTTPSErrors() {
-        return ignoreHTTPSErrors;
-    }
-
-    public void setIgnoreHTTPSErrors(boolean ignoreHTTPSErrors) {
-        this.ignoreHTTPSErrors = ignoreHTTPSErrors;
-    }
-
-    public Viewport getViewport() {
-        return viewport;
-    }
-
-    public void setViewport(Viewport viewport) {
-        this.viewport = viewport;
-    }
-
-    public int getSlowMo() {
-        return slowMo;
-    }
-
-    public void setSlowMo(int slowMo) {
-        this.slowMo = slowMo;
-    }
-
-    public ConnectionOption getConnectionOption() {
-        return connectionOption;
-    }
-
-    public void setConnectionOptions(ConnectionOption connectionOption) {
-        this.connectionOption = connectionOption;
+    public void setSessionWaitingResultTimeout(long sessionWaitingResultTimeout) {
+        this.sessionWaitingResultTimeout = sessionWaitingResultTimeout;
     }
 
 }

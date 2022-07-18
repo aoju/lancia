@@ -25,13 +25,13 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.browser;
 
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.option.ConnectionOption;
 import org.aoju.lancia.option.LaunchOption;
 import org.aoju.lancia.worker.*;
 
@@ -117,7 +117,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * @param options 启动参数
      */
     private void addProcessListener(LaunchOption options) {
-        BrowserListener<Object> exitListener = new BrowserListener<Object>() {
+        BrowserListener<Object> exitListener = new BrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 Runner runner = (Runner) this.getTarget();
@@ -129,7 +129,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         this.listeners.add(Builder.addEventListener(this, exitListener.getMethod(), exitListener));
 
         if (options.getHandleSIGINT()) {
-            BrowserListener<Object> sigintListener = new BrowserListener<Object>() {
+            BrowserListener<Object> sigintListener = new BrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -142,7 +142,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         }
 
         if (options.getHandleSIGTERM()) {
-            BrowserListener<Object> sigtermListener = new BrowserListener<Object>() {
+            BrowserListener<Object> sigtermListener = new BrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -155,7 +155,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         }
 
         if (options.getHandleSIGHUP()) {
-            BrowserListener<Object> sighubListener = new BrowserListener<Object>() {
+            BrowserListener<Object> sighubListener = new BrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -215,19 +215,38 @@ public class Runner extends EventEmitter implements AutoCloseable {
     }
 
     /**
+     * 连接浏览器
+     *
+     * @param usePipe           是否是pipe连接
+     * @param timeout           超时时间
+     * @param slowMo            放慢频率
+     * @param dumpio            浏览器版本
+     * @param connectionOptions 链接选项
+     * @return
+     */
+    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio, ConnectionOption connectionOptions) throws InterruptedException {
+        Connection connection = this.setUpConnection(usePipe, timeout, slowMo, dumpio);
+        connection.setConnectionOption(connectionOptions);
+        return connection;
+    }
+
+    /**
      * 连接上浏览器
      *
      * @param usePipe 是否是pipe连接
      * @param timeout 超时时间
      * @param slowMo  放慢频率
+     * @param dumpio  浏览器版本
      * @return 连接对象
      * @throws InterruptedException 打断异常
      */
-    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo) throws InterruptedException {
+    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio) throws InterruptedException {
         if (usePipe) {
+            // pipe connection
             throw new InstrumentException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
         } else {
-            String waitForWSEndpoint = waitForWSEndpoint(timeout);
+            // websoket connection
+            String waitForWSEndpoint = waitForWSEndpoint(timeout, dumpio);
             this.connection = new Connection(waitForWSEndpoint, TransportFactory.create(waitForWSEndpoint), slowMo);
             Logger.info("Connect to browser by websocket url: " + waitForWSEndpoint);
         }
@@ -238,10 +257,11 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * 等待浏览器ws url
      *
      * @param timeout 等待超时时间
+     * @param dumpio  浏览器版本
      * @return ws url
      */
-    private String waitForWSEndpoint(int timeout) {
-        Runner.StreamReader reader = new Runner.StreamReader(timeout, process.getInputStream());
+    private String waitForWSEndpoint(int timeout, boolean dumpio) {
+        Runner.StreamReader reader = new Runner.StreamReader(timeout, dumpio, process.getInputStream());
         reader.start();
         return reader.getResult();
     }
@@ -323,22 +343,25 @@ public class Runner extends EventEmitter implements AutoCloseable {
         default void remove(Thread thread) {
             Runtime.getRuntime().removeShutdownHook(thread);
         }
-
     }
 
     static class StreamReader {
 
         private final StringBuilder ws = new StringBuilder();
         private final AtomicBoolean success = new AtomicBoolean(false);
-        private final AtomicReference<String> chromeOutput = new AtomicReference<>(Normal.EMPTY);
+        private final AtomicReference<String> chromeOutput = new AtomicReference<>("");
 
-        private final int timeout;
-        private final InputStream inputStream;
+        private int timeout;
+
+        private boolean dumpio;
+
+        private InputStream inputStream;
 
         private Thread readThread;
 
-        public StreamReader(int timeout, InputStream inputStream) {
+        public StreamReader(int timeout, boolean dumpio, InputStream inputStream) {
             this.timeout = timeout;
+            this.dumpio = dumpio;
             this.inputStream = inputStream;
         }
 
@@ -351,6 +374,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
                             reader = new BufferedReader(new InputStreamReader(inputStream));
                             String line;
                             while ((line = reader.readLine()) != null) {
+                                if (dumpio) {
+                                    System.out.println(line);
+                                }
                                 Matcher matcher = WS_ENDPOINT_PATTERN.matcher(line);
                                 if (matcher.find()) {
                                     ws.append(matcher.group(1));
@@ -381,7 +407,10 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     if (readThread != null) {
                         readThread = null;
                     }
-                    throw new InstrumentException("Timed out after " + timeout + " ms while trying to connect to the browser!" + "Chrome output: " + chromeOutput.get());
+                    throw new InstrumentException(
+                            "Timed out after " + timeout + " ms while trying to connect to the browser!"
+                                    + "Chrome output: "
+                                    + chromeOutput.get());
                 }
             } catch (InterruptedException e) {
                 if (readThread != null) {
@@ -395,6 +424,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
             }
             return url;
         }
+
     }
 
     /**

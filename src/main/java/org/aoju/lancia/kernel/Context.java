@@ -23,73 +23,24 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.option;
-
-import org.aoju.lancia.kernel.page.Viewport;
+package org.aoju.lancia.kernel;
 
 /**
- * 浏览器选项参数
+ * 环境变量的接口:可以使用System:getEnv来实现
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class BrowserOption extends ChromeOption {
+@FunctionalInterface
+public interface Context {
 
     /**
-     * 导航期间是否忽略HTTPS错误
-     * 默认是false
+     * 根据name获取环境变量中的值
+     *
+     * @param name name
+     * @return 值
      */
-    private boolean ignoreHTTPSErrors;
-    /**
-     * 800x600
-     * 为每个页面设置一致的视口。默认为800x600视口。 null禁用默认视口
-     */
-    private Viewport viewport = new Viewport();
-    /**
-     * 将Puppeteer操作减慢指定的毫秒数。很有用，这样您可以查看发生了什么情况
-     */
-    private int slowMo;
-
-    /**
-     * 浏览器与CDP的连接配置
-     */
-    private ConnectionOption connectionOption = new ConnectionOption();
-
-    public BrowserOption() {
-        super();
-    }
-
-    public boolean getIgnoreHTTPSErrors() {
-        return ignoreHTTPSErrors;
-    }
-
-    public void setIgnoreHTTPSErrors(boolean ignoreHTTPSErrors) {
-        this.ignoreHTTPSErrors = ignoreHTTPSErrors;
-    }
-
-    public Viewport getViewport() {
-        return viewport;
-    }
-
-    public void setViewport(Viewport viewport) {
-        this.viewport = viewport;
-    }
-
-    public int getSlowMo() {
-        return slowMo;
-    }
-
-    public void setSlowMo(int slowMo) {
-        this.slowMo = slowMo;
-    }
-
-    public ConnectionOption getConnectionOption() {
-        return connectionOption;
-    }
-
-    public void setConnectionOptions(ConnectionOption connectionOption) {
-        this.connectionOption = connectionOption;
-    }
+    String getEnv(String name);
 
 }

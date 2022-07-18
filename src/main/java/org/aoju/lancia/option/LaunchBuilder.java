@@ -26,7 +26,7 @@
 package org.aoju.lancia.option;
 
 import org.aoju.lancia.Variables;
-import org.aoju.lancia.kernel.Standard;
+import org.aoju.lancia.kernel.Context;
 import org.aoju.lancia.kernel.page.Viewport;
 
 import java.util.List;
@@ -55,7 +55,7 @@ public class LaunchBuilder {
      * 是否忽略所欲的默认启动参数，默认是fasle
      *
      * @param ignoreAllDefaultArgs true为忽略所有启动参数
-     * @return LaunchOptionsBuilder
+     * @return LaunchBuilder
      */
     public LaunchBuilder ignoreDefaultArgs(boolean ignoreAllDefaultArgs) {
         options.setIgnoreAllDefaultArgs(ignoreAllDefaultArgs);
@@ -66,7 +66,7 @@ public class LaunchBuilder {
      * 忽略指定的默认启动参数，默认的启动参数见 {@link Variables#DEFAULT_ARGS}
      *
      * @param ignoreDefaultArgs 要忽略的启动参数
-     * @return LaunchOptionsBuilder
+     * @return LaunchBuilder
      */
     public LaunchBuilder ignoreDefaultArgs(List<String> ignoreDefaultArgs) {
         options.setIgnoreDefaultArgs(ignoreDefaultArgs);
@@ -88,7 +88,12 @@ public class LaunchBuilder {
         return this;
     }
 
-    public LaunchBuilder env(Standard env) {
+    public LaunchBuilder dumpio(boolean dumpio) {
+        options.setDumpio(dumpio);
+        return this;
+    }
+
+    public LaunchBuilder env(Context env) {
         options.setEnv(env);
         return this;
     }
@@ -98,7 +103,7 @@ public class LaunchBuilder {
         return this;
     }
 
-    public LaunchBuilder withProduct(String product) {
+    public LaunchBuilder product(String product) {
         options.setProduct(product);
         return this;
     }
@@ -115,6 +120,11 @@ public class LaunchBuilder {
 
     public LaunchBuilder slowMo(int slowMo) {
         options.setSlowMo(slowMo);
+        return this;
+    }
+
+    public LaunchBuilder connectionOptions(ConnectionOption connectionOptions) {
+        options.setConnectionOptions(connectionOptions);
         return this;
     }
 

@@ -25,12 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.io.ByteString;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.Header;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.lang.Symbol;
-import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.BufferKit;
 import org.aoju.bus.core.toolkit.RandomKit;
 import org.aoju.bus.logger.Logger;
@@ -64,6 +64,8 @@ public class SocketTransport implements Transport {
     private final Socket socket;
     private Consumer<String> consumer;
 
+    private Connection connection = null;
+
     public SocketTransport(String browserWSEndpoint) {
         this.socket = new Socket(URI.create(browserWSEndpoint)) {
             @Override
@@ -85,13 +87,32 @@ public class SocketTransport implements Transport {
 
     @Override
     public void send(String message) {
+        if (this.connection == null) {
+            Logger.warn("Transport connection is null, maybe closed?");
+            return;
+        }
         Logger.debug(message);
         this.socket.send(message);
+    }
+
+    @Override
+    public void close() {
+        if (this.socket.writeThread != null) {
+            this.socket.close(1000);
+        }
+        if (this.connection != null) {
+            this.connection.dispose();
+        }
     }
 
     public void addConsumer(Consumer<String> consumer) {
         this.consumer = consumer;
     }
+
+    public void addConnection(Connection connection) {
+        this.connection = connection;
+    }
+
 
     /**
      * RFC 6455 websocket协议的实现

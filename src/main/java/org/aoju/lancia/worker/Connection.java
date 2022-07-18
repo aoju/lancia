@@ -33,6 +33,7 @@ import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Variables;
 import org.aoju.lancia.kernel.page.TargetInfo;
+import org.aoju.lancia.option.ConnectionOption;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,6 +68,8 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
     private boolean closed;
 
+    private ConnectionOption connectionOption;
+
     public Connection(String url, Transport transport, int delay) {
         super();
         this.url = url;
@@ -74,7 +77,16 @@ public class Connection extends EventEmitter implements Consumer<String> {
         this.delay = delay;
         if (this.transport instanceof SocketTransport) {
             ((SocketTransport) this.transport).addConsumer(this);
+            ((SocketTransport) this.transport).addConnection(this);
         }
+
+        // 赋予默认值，调用方使用该构造方法后，需要set connection options
+        this.connectionOption = new ConnectionOption();
+    }
+
+    public Connection(String url, Transport transport, int delay, ConnectionOption connectionOption) {
+        this(url, transport, delay);
+        this.connectionOption = connectionOption == null ? new ConnectionOption() : connectionOption;
     }
 
     /**
@@ -299,6 +311,14 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
     public boolean getClosed() {
         return closed;
+    }
+
+    public ConnectionOption getConnectionOption() {
+        return connectionOption;
+    }
+
+    public void setConnectionOption(ConnectionOption connectionOption) {
+        this.connectionOption = connectionOption;
     }
 
 }

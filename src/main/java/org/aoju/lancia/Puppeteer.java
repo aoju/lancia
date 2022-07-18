@@ -26,7 +26,7 @@
 package org.aoju.lancia;
 
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.kernel.Standard;
+import org.aoju.lancia.kernel.Context;
 import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.launch.ChromeLauncher;
 import org.aoju.lancia.launch.FirefoxLauncher;
@@ -51,7 +51,7 @@ public class Puppeteer {
 
     private Launcher launcher;
 
-    private Standard env = null;
+    private Context context = null;
 
     private String projectRoot = System.getProperty("user.dir");
 
@@ -171,16 +171,16 @@ public class Puppeteer {
      */
     private static void adapterLauncher(Puppeteer puppeteer) {
         String productName;
-        Launcher launcher;
-        Standard env;
+
+        Context context;
         if (StringKit.isEmpty(productName = puppeteer.getProductName())
                 && !puppeteer.getIsPuppeteerCore()) {
-            if ((env = puppeteer.getEnv()) == null) {
-                puppeteer.setEnv(env = System::getenv);
+            if ((context = puppeteer.getContext()) == null) {
+                puppeteer.setContext(context = System::getenv);
             }
             for (int i = 0; i < Variables.PRODUCT_ENV.length; i++) {
                 String envProductName = Variables.PRODUCT_ENV[i];
-                productName = env.getEnv(envProductName);
+                productName = context.getEnv(envProductName);
                 if (StringKit.isNotEmpty(productName)) {
                     puppeteer.setProductName(productName);
                     break;
@@ -191,6 +191,7 @@ public class Puppeteer {
             productName = "chrome";
             puppeteer.setProductName(productName);
         }
+        Launcher launcher;
         switch (productName) {
             case "firefox":
                 launcher = new FirefoxLauncher(puppeteer.getIsPuppeteerCore());
@@ -243,12 +244,12 @@ public class Puppeteer {
         this.launcher = launcher;
     }
 
-    private Standard getEnv() {
-        return env;
+    private Context getContext() {
+        return this.context;
     }
 
-    private void setEnv(Standard env) {
-        this.env = env;
+    private void setContext(Context context) {
+        this.context = context;
     }
 
     public String getProjectRoot() {

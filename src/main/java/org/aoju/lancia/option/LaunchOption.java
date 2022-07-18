@@ -25,8 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.option;
 
-import org.aoju.lancia.Variables;
-import org.aoju.lancia.kernel.Standard;
+import org.aoju.lancia.kernel.Context;
 
 import java.util.List;
 
@@ -67,17 +66,25 @@ public class LaunchOption extends BrowserOption {
      */
     private boolean handleSIGHUP = true;
     /**
+     * 将cheome的标准输出流输入流转换到java程序的标准输入输出,java默认已经将子进程的输入和错误流通过管道重定向了，现在这个参数暂时用不上
+     * 默认是 false
+     */
+    private boolean dumpio;
+
+    /**
      * ָSystem.getEnv()
      * Specify environment variables that will be visible to Chromium.
      * 默认是 `process.env`.
      */
-    private Standard env;
+    private Context context;
+
     /**
      * false代表使用websocket通讯，true代表使用websocket通讯
      * Connects to the browser over a pipe instead of a WebSocket.
      * 默认是  false
      */
     private boolean pipe;
+
     /**
      * chrome or firefox
      */
@@ -136,12 +143,20 @@ public class LaunchOption extends BrowserOption {
         this.handleSIGHUP = handleSIGHUP;
     }
 
-    public Standard getEnv() {
-        return env;
+    public boolean getDumpio() {
+        return dumpio;
     }
 
-    public void setEnv(Standard env) {
-        this.env = env;
+    public void setDumpio(boolean dumpio) {
+        this.dumpio = dumpio;
+    }
+
+    public Context getContext() {
+        return context;
+    }
+
+    public void setEnv(Context context) {
+        this.context = context;
     }
 
     public boolean getPipe() {

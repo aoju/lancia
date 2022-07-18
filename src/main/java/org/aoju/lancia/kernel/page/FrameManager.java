@@ -27,9 +27,9 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
+import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
@@ -63,7 +63,7 @@ public class FrameManager extends EventEmitter {
     private final Timeout timeout;
     private final NetworkManager networkManager;
     private final Map<String, Frame> frames;
-    private final Map<Integer, ExecutionContext> contextIdToContext;
+    private final Map<Integer, ExecutionContext> contextId;
     private final Set<String> isolatedWorlds;
     private Page page;
     private Frame mainFrame;
@@ -91,7 +91,7 @@ public class FrameManager extends EventEmitter {
         this.networkManager = new NetworkManager(client, ignoreHTTPSErrors, this);
         this.timeout = timeout;
         this.frames = new HashMap<>();
-        this.contextIdToContext = new HashMap<>();
+        this.contextId = new HashMap<>();
         this.isolatedWorlds = new HashSet<>();
         // 1 Page.frameAttached
         BrowserListener<FrameAttachedPayload> frameAttachedListener = new BrowserListener<FrameAttachedPayload>() {
@@ -210,26 +210,26 @@ public class FrameManager extends EventEmitter {
     }
 
     private void onExecutionContextsCleared() {
-        for (ExecutionContext context : this.contextIdToContext.values()) {
+        for (ExecutionContext context : this.contextId.values()) {
             if (context.getWorld() != null) {
                 context.getWorld().setContext(null);
             }
         }
-        this.contextIdToContext.clear();
+        this.contextId.clear();
     }
 
     private void onExecutionContextDestroyed(int executionContextId) {
-        ExecutionContext context = this.contextIdToContext.get(executionContextId);
+        ExecutionContext context = this.contextId.get(executionContextId);
         if (context == null)
             return;
-        this.contextIdToContext.remove(executionContextId);
+        this.contextId.remove(executionContextId);
         if (context.getWorld() != null) {
             context.getWorld().setContext(null);
         }
     }
 
     public ExecutionContext executionContextById(int contextId) {
-        ExecutionContext context = this.contextIdToContext.get(contextId);
+        ExecutionContext context = this.contextId.get(contextId);
         Assert.isTrue(context != null, "INTERNAL ERROR: missing context with id = " + contextId);
         return context;
     }
@@ -250,7 +250,7 @@ public class FrameManager extends EventEmitter {
         ExecutionContext context = new ExecutionContext(this.client, contextPayload, world);
         if (world != null)
             world.setContext(context);
-        this.contextIdToContext.put(contextPayload.getId(), context);
+        this.contextId.put(contextPayload.getId(), context);
     }
 
     /**
@@ -581,8 +581,8 @@ public class FrameManager extends EventEmitter {
         return frames;
     }
 
-    public Map<Integer, ExecutionContext> getContextIdToContext() {
-        return contextIdToContext;
+    public Map<Integer, ExecutionContext> getContextId() {
+        return contextId;
     }
 
     public Set<String> getIsolatedWorlds() {

@@ -25,22 +25,108 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel;
 
+import org.aoju.bus.core.lang.Symbol;
+import org.aoju.bus.logger.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+
 /**
- * 环境变量的接口:可以使用System:getEnv来实现
+ * 标准系统上下文信息
+ * 搜索顺序:
+ * <ul>
+ *  <li>系统属性
+ *  <li>系统环境变量
+ * </ul>
+ *
+ *  <ul>
+ *   <li>{@code foo.bar} -原始名字</li>
+ *   <li>{@code foo_bar} - 用下划线表示句点(如果有的话)</li>
+ *   <li>{@code FOO.BAR} - 原始，大写/li>
+ *   <li>{@code FOO_BAR} - 有下划线和大写字母</li>
+ *  </ul>
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-@FunctionalInterface
-public interface Standard {
+public class Standard implements Context {
 
-    /**
-     * 根据name获取环境变量中的值
-     *
-     * @param name name
-     * @return 值
-     */
-    String getEnv(String name);
+    private static final Map<String, String> systemPropertiesSourceMap = new HashMap<>();
+    private static final Map<String, String> systemEnvSourceMap = new HashMap<>();
+
+    static {
+        Properties systemProperties = System.getProperties();
+        systemProperties.entrySet().forEach(systemPropertiesEntry -> {
+            String key = systemPropertiesEntry.getKey().toString();
+            String value = systemPropertiesEntry.getValue() == null ? null : systemPropertiesEntry.getValue().toString();
+            systemPropertiesSourceMap.put(key, value);
+        });
+
+        systemEnvSourceMap.putAll(System.getenv());
+    }
+
+    @Override
+    public String getEnv(String name) {
+        // order 0: find from system property
+        String value = this.getPropertyValue(name, systemPropertiesSourceMap, "LanciaSystemProperties");
+
+        // order 1: find from env
+        if (value == null) {
+            value = this.getPropertyValue(name, systemEnvSourceMap, "LanciaSystemEnv");
+        }
+
+        // order 3: find from LaunchOption
+        return value;
+    }
+
+    private String getPropertyValue(String name, Map<String, String> source, String sourceName) {
+        String actualName = resolvePropertyName(name, source);
+        if (actualName == null) {
+            // retry to uppercase
+            actualName = resolvePropertyName(name.toUpperCase(), source);
+            if (actualName == null) {
+                if (Logger.isDebug()) {
+                    Logger.debug("PropertySource ' " + sourceName + " ' does not contain property '" + name);
+                }
+                return null;
+            }
+        }
+
+        if (Logger.isDebug() && !name.equals(actualName)) {
+            Logger.debug("PropertySource ' " + sourceName + " ' does not contain property '" + name +
+                    "', but found equivalent '" + actualName + "'");
+        }
+
+        return source.get(actualName);
+    }
+
+    private final String resolvePropertyName(String name, Map<String, String> source) {
+        if (source.containsKey(name)) {
+            return name;
+        }
+
+        // check name with just dots replaced
+        String noDotName = name.replace(Symbol.DOT, Symbol.UNDERLINE);
+        if (!name.equals(noDotName) && source.containsKey(noDotName)) {
+            return noDotName;
+        }
+
+        // check name with just hyphens replaced
+        String noHyphenName = name.replace(Symbol.MINUS, Symbol.UNDERLINE);
+        if (!name.equals(noHyphenName) && source.containsKey(noHyphenName)) {
+            return noHyphenName;
+        }
+
+        // Check name with dots and hyphens replaced
+        String noDotAndHyphenName = noDotName.replace(Symbol.MINUS, Symbol.UNDERLINE);
+        if (!name.equals(noDotAndHyphenName) && source.containsKey(noDotAndHyphenName)) {
+            return noDotAndHyphenName;
+        }
+
+        // give up
+        return null;
+    }
 
 }

@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * CDPSession实例被用来谈论原始的Chrome Devtools协议
@@ -100,9 +101,9 @@ public class CDPSession extends EventEmitter {
                     message.setCountDownLatch(latch);
                 }
                 long id = this.connection.rawSend(message, true, this.callbacks);
-                boolean hasResult = message.waitForResult(timeout > 0 ? timeout : Variables.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+                boolean hasResult = message.waitForResult(this.connection.getConnectionOption().getSessionWaitingResultTimeout(), TimeUnit.MILLISECONDS);
                 if (!hasResult) {
-                    throw new InstrumentException("Wait " + method + " for " + (timeout > 0 ? timeout : Variables.DEFAULT_TIMEOUT) + " MILLISECONDS with no response");
+                    throw new TimeoutException("Wait " + method + " for sessionWaitingResultTimeout:" + (this.connection.getConnectionOption().getSessionWaitingResultTimeout()) + " MILLISECONDS with no response");
                 }
                 if (StringKit.isNotEmpty(message.getErrorText())) {
                     throw new InstrumentException(message.getErrorText());
