@@ -120,7 +120,7 @@ public class ChromeLauncher implements Launcher {
         Runner runner = new Runner(chromeExecutable, chromeArguments, temporaryUserDataDir);
         try {
             runner.start(options);
-            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo());
+            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo(), options.getDumpio(), options.getConnectionOption());
             Function<Object, Object> closeCallback = (s) -> {
                 runner.closeQuietly();
                 return null;
@@ -195,7 +195,7 @@ public class ChromeLauncher implements Launcher {
             }
             // 环境变量中配置了chromeExecutable，就使用环境变量中的路径
             for (int i = 0; i < Variables.EXECUTABLE_ENV.length; i++) {
-                chromeExecutable = env.getEnv(Variables.EXECUTABLE_ENV[i]);
+                chromeExecutable = context.getEnv(Variables.EXECUTABLE_ENV[i]);
                 if (StringKit.isNotEmpty(chromeExecutable)) {
                     boolean assertDir = Builder.isExecutable(chromeExecutable);
                     if (!assertDir) {
@@ -206,7 +206,7 @@ public class ChromeLauncher implements Launcher {
             }
 
             // 环境变量中配置了chrome版本，就用环境变量中的版本
-            String revision = env.getEnv(Variables.PUPPETEER_CHROMIUM_REVISION_ENV);
+            String revision = context.getEnv(Variables.PUPPETEER_CHROMIUM_REVISION_ENV);
             if (StringKit.isNotEmpty(revision)) {
                 Revision revisionInfo = fetcher.revisionInfo(revision);
                 if (!revisionInfo.isLocal()) {
@@ -252,12 +252,12 @@ public class ChromeLauncher implements Launcher {
         final Connection connection;
         try {
             if (transport != null) {
-                connection = new Connection(Normal.EMPTY, transport, options.getSlowMo());
+                connection = new Connection(Normal.EMPTY, transport, options.getSlowMo(), options.getConnectionOption());
             } else if (StringKit.isNotEmpty(browserWSEndpoint)) {
-                connection = new Connection(browserWSEndpoint, TransportFactory.create(browserWSEndpoint), options.getSlowMo());
+                connection = new Connection(browserWSEndpoint, TransportFactory.create(browserWSEndpoint), options.getSlowMo(), options.getConnectionOption());
             } else if (StringKit.isNotEmpty(browserURL)) {
                 String connectionURL = getWSEndpoint(browserURL);
-                connection = new Connection(connectionURL, TransportFactory.create(connectionURL), options.getSlowMo());
+                connection = new Connection(connectionURL, TransportFactory.create(connectionURL), options.getSlowMo(), options.getConnectionOption());
             } else {
                 throw new IllegalArgumentException("Exactly one of browserWSEndpoint, browserURL or transport must be passed to puppeteer.connect");
             }
