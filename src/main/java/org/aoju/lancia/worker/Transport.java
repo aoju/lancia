@@ -35,12 +35,15 @@ package org.aoju.lancia.worker;
 public interface Transport {
 
     default void send(String message) {
+
     }
 
     default void call(String message) {
+
     }
 
     default void close() {
+
     }
 
 }

@@ -26,7 +26,7 @@
 package org.aoju.lancia;
 
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.kernel.Context;
+import org.aoju.lancia.kernel.Variables;
 import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.launch.ChromeLauncher;
 import org.aoju.lancia.launch.FirefoxLauncher;
@@ -51,11 +51,11 @@ public class Puppeteer {
 
     private Launcher launcher;
 
-    private Context context = null;
+    private Variables variables = null;
 
     private String projectRoot = System.getProperty("user.dir");
 
-    private String preferredRevision = Variables.VERSION;
+    private String preferredRevision = Builder.VERSION;
 
     private boolean isPuppeteerCore;
 
@@ -65,7 +65,7 @@ public class Puppeteer {
 
     public Puppeteer(String projectRoot, String preferredRevision, boolean isPuppeteerCore, String productName) {
         this.projectRoot = projectRoot;
-        this.preferredRevision = StringKit.isEmpty(preferredRevision) ? Variables.VERSION : preferredRevision;
+        this.preferredRevision = StringKit.isEmpty(preferredRevision) ? Builder.VERSION : preferredRevision;
         this.isPuppeteerCore = isPuppeteerCore;
         this.productName = productName;
     }
@@ -172,15 +172,15 @@ public class Puppeteer {
     private static void adapterLauncher(Puppeteer puppeteer) {
         String productName;
 
-        Context context;
+        Variables variables;
         if (StringKit.isEmpty(productName = puppeteer.getProductName())
                 && !puppeteer.getIsPuppeteerCore()) {
-            if ((context = puppeteer.getContext()) == null) {
-                puppeteer.setContext(context = System::getenv);
+            if ((variables = puppeteer.getContext()) == null) {
+                puppeteer.setContext(variables = System::getenv);
             }
-            for (int i = 0; i < Variables.PRODUCT_ENV.length; i++) {
-                String envProductName = Variables.PRODUCT_ENV[i];
-                productName = context.getEnv(envProductName);
+            for (int i = 0; i < Builder.PRODUCT_ENV.length; i++) {
+                String envProductName = Builder.PRODUCT_ENV[i];
+                productName = variables.getEnv(envProductName);
                 if (StringKit.isNotEmpty(productName)) {
                     puppeteer.setProductName(productName);
                     break;
@@ -244,12 +244,12 @@ public class Puppeteer {
         this.launcher = launcher;
     }
 
-    private Context getContext() {
-        return this.context;
+    private Variables getContext() {
+        return this.variables;
     }
 
-    private void setContext(Context context) {
-        this.context = context;
+    private void setContext(Variables variables) {
+        this.variables = variables;
     }
 
     public String getProjectRoot() {

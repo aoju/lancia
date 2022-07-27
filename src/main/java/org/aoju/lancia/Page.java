@@ -76,7 +76,7 @@ public class Page extends EventEmitter {
 
     private static final ExecutorService reloadExecutor = Executors.newSingleThreadExecutor();
     private static final String ABOUT_BLANK = "about:blank";
-    private static final Map<String, Double> unitToPixels = new HashMap<String, Double>() {
+    private static final Map<String, Double> unitToPixels = new HashMap<>() {
         {
             put("px", 1.00);
             put("in", 96.00);
@@ -135,7 +135,7 @@ public class Page extends EventEmitter {
                 CDPSession session = Connection.fromSession(page.client()).session(event.getSessionId());
                 Worker worker = new Worker(session, event.getTargetInfo().getUrl(), page::addConsoleMessage, page::handleException);
                 page.workers().putIfAbsent(event.getSessionId(), worker);
-                page.emit(Variables.Event.PAGE_WORKERCREATED.getName(), worker);
+                page.emit(Builder.Event.PAGE_WORKERCREATED.getName(), worker);
             }
         };
         attachedListener.setMethod("Target.attachedToTarget");
@@ -151,7 +151,7 @@ public class Page extends EventEmitter {
                 if (worker == null) {
                     return;
                 }
-                page.emit(Variables.Event.PAGE_WORKERDESTROYED.getName(), worker);
+                page.emit(Builder.Event.PAGE_WORKERDESTROYED.getName(), worker);
                 page.workers().remove(event.getSessionId());
             }
         };
@@ -164,10 +164,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Object event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_FRAMEATTACHED.getName(), event);
+                page.emit(Builder.Event.PAGE_FRAMEATTACHED.getName(), event);
             }
         };
-        frameAttachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_ATTACHED.getName());
+        frameAttachedListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_ATTACHED.getName());
         frameAttachedListener.setTarget(this);
         this.frameManager.addListener(frameAttachedListener.getMethod(), frameAttachedListener);
 
@@ -175,10 +175,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Object event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_FRAMEDETACHED.getName(), event);
+                page.emit(Builder.Event.PAGE_FRAMEDETACHED.getName(), event);
             }
         };
-        frameDetachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
+        frameDetachedListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
         frameDetachedListener.setTarget(this);
         this.frameManager.addListener(frameDetachedListener.getMethod(), frameDetachedListener);
 
@@ -186,10 +186,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Object event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_FRAMENAVIGATED.getName(), event);
+                page.emit(Builder.Event.PAGE_FRAMENAVIGATED.getName(), event);
             }
         };
-        frameNavigatedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName());
+        frameNavigatedListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName());
         frameNavigatedListener.setTarget(this);
         this.frameManager.addListener(frameNavigatedListener.getMethod(), frameNavigatedListener);
 
@@ -199,10 +199,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Request event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_REQUEST.getName(), event);
+                page.emit(Builder.Event.PAGE_REQUEST.getName(), event);
             }
         };
-        requestLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
+        requestLis.setMethod(Builder.Event.NETWORK_MANAGER_REQUEST.getName());
         requestLis.setTarget(this);
         networkManager.addListener(requestLis.getMethod(), requestLis);
 
@@ -210,10 +210,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Response event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_RESPONSE.getName(), event);
+                page.emit(Builder.Event.PAGE_RESPONSE.getName(), event);
             }
         };
-        responseLis.setMethod(Variables.Event.NETWORK_MANAGER_RESPONSE.getName());
+        responseLis.setMethod(Builder.Event.NETWORK_MANAGER_RESPONSE.getName());
         responseLis.setTarget(this);
         networkManager.addListener(responseLis.getMethod(), responseLis);
 
@@ -221,10 +221,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Request event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_REQUESTFAILED.getName(), event);
+                page.emit(Builder.Event.PAGE_REQUESTFAILED.getName(), event);
             }
         };
-        requestFailedLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST_FAILED.getName());
+        requestFailedLis.setMethod(Builder.Event.NETWORK_MANAGER_REQUEST_FAILED.getName());
         requestFailedLis.setTarget(this);
         networkManager.addListener(requestFailedLis.getMethod(), requestFailedLis);
 
@@ -232,10 +232,10 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Request event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_REQUESTFINISHED.getName(), event);
+                page.emit(Builder.Event.PAGE_REQUESTFINISHED.getName(), event);
             }
         };
-        requestFinishedLis.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName());
+        requestFinishedLis.setMethod(Builder.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName());
         requestFinishedLis.setTarget(this);
         networkManager.addListener(requestFinishedLis.getMethod(), requestFinishedLis);
 
@@ -245,7 +245,7 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Object event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_DOMContentLoaded.getName(), event);
+                page.emit(Builder.Event.PAGE_DOMContentLoaded.getName(), event);
             }
         };
         domContentEventFiredLis.setMethod("Page.domContentEventFired");
@@ -256,7 +256,7 @@ public class Page extends EventEmitter {
             @Override
             public void onBrowserEvent(Object event) {
                 Page page = (Page) this.getTarget();
-                page.emit(Variables.Event.PAGE_LOAD.getName(), event);
+                page.emit(Builder.Event.PAGE_LOAD.getName(), event);
             }
         };
         loadEventFiredLis.setMethod("Page.loadEventFired");
@@ -390,19 +390,19 @@ public class Page extends EventEmitter {
      * @param handler 要提供的处理器
      */
     public void onClose(EventHandler<Object> handler) {
-        this.on(Variables.Event.PAGE_CLOSE.getName(), handler);
+        this.on(Builder.Event.PAGE_CLOSE.getName(), handler);
     }
 
     public void onConsole(EventHandler<ConsoleMessage> handler) {
-        this.on(Variables.Event.PAGE_CONSOLE.getName(), handler);
+        this.on(Builder.Event.PAGE_CONSOLE.getName(), handler);
     }
 
     public void onDialog(EventHandler<Dialog> handler) {
-        this.on(Variables.Event.PAGE_DIALOG.getName(), handler);
+        this.on(Builder.Event.PAGE_DIALOG.getName(), handler);
     }
 
     public void onError(EventHandler<Error> handler) {
-        this.on(Variables.Event.PAGE_ERROR.getName(), handler);
+        this.on(Builder.Event.PAGE_ERROR.getName(), handler);
     }
 
     /**
@@ -414,7 +414,7 @@ public class Page extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onFrameattached(EventHandler<Frame> handler) {
-        this.on(Variables.Event.PAGE_FRAMEATTACHED.getName(), handler);
+        this.on(Builder.Event.PAGE_FRAMEATTACHED.getName(), handler);
     }
 
     /**
@@ -426,7 +426,7 @@ public class Page extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onFramedetached(EventHandler<Frame> handler) {
-        this.on(Variables.Event.PAGE_FRAMEDETACHED.getName(), handler);
+        this.on(Builder.Event.PAGE_FRAMEDETACHED.getName(), handler);
     }
 
     /**
@@ -437,39 +437,39 @@ public class Page extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onFramenavigated(EventHandler<Frame> handler) {
-        this.on(Variables.Event.PAGE_FRAMENAVIGATED.getName(), handler);
+        this.on(Builder.Event.PAGE_FRAMENAVIGATED.getName(), handler);
     }
 
     public void onLoad(EventHandler<Object> handler) {
-        this.on(Variables.Event.PAGE_LOAD.getName(), handler);
+        this.on(Builder.Event.PAGE_LOAD.getName(), handler);
     }
 
     public void onMetrics(EventHandler<PageMetric> handler) {
-        this.on(Variables.Event.PAGE_METRICS.getName(), handler);
+        this.on(Builder.Event.PAGE_METRICS.getName(), handler);
     }
 
     public void onPageerror(EventHandler<RuntimeException> handler) {
-        this.on(Variables.Event.PAGE_ERROR.getName(), handler);
+        this.on(Builder.Event.PAGE_ERROR.getName(), handler);
     }
 
     public void onPopup(EventHandler<Error> handler) {
-        this.on(Variables.Event.PAGE_POPUP.getName(), handler);
+        this.on(Builder.Event.PAGE_POPUP.getName(), handler);
     }
 
     public void onRequest(EventHandler<Request> handler) {
-        this.on(Variables.Event.PAGE_REQUEST.getName(), handler);
+        this.on(Builder.Event.PAGE_REQUEST.getName(), handler);
     }
 
     public void onRequestfailed(EventHandler<Request> handler) {
-        this.on(Variables.Event.PAGE_REQUESTFAILED.getName(), handler);
+        this.on(Builder.Event.PAGE_REQUESTFAILED.getName(), handler);
     }
 
     public void onRequestfinished(EventHandler<Request> handler) {
-        this.on(Variables.Event.PAGE_REQUESTFINISHED.getName(), handler);
+        this.on(Builder.Event.PAGE_REQUESTFINISHED.getName(), handler);
     }
 
     public void onResponse(EventHandler<Response> handler) {
-        this.on(Variables.Event.PAGE_RESPONSE.getName(), handler);
+        this.on(Builder.Event.PAGE_RESPONSE.getName(), handler);
     }
 
     /**
@@ -480,7 +480,7 @@ public class Page extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onWorkercreated(EventHandler<Worker> handler) {
-        this.on(Variables.Event.PAGE_WORKERCREATED.getName(), handler);
+        this.on(Builder.Event.PAGE_WORKERCREATED.getName(), handler);
     }
 
     /**
@@ -491,7 +491,7 @@ public class Page extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onWorkerdestroyed(EventHandler<Worker> handler) {
-        this.on(Variables.Event.PAGE_WORKERDESTROYED.getName(), handler);
+        this.on(Builder.Event.PAGE_WORKERDESTROYED.getName(), handler);
     }
 
     /**
@@ -1175,7 +1175,7 @@ public class Page extends EventEmitter {
      *
      * @param type 视力障碍类型
      */
-    public void emulateVisionDeficiency(Variables.VisionDeficiency type) {
+    public void emulateVisionDeficiency(Builder.VisionDeficiency type) {
         Map<String, Object> params = new HashMap<>();
         params.put("type", type.getValue());
         this.client.send("Emulation.setEmulatedVisionDeficiency", params, true);
@@ -1188,21 +1188,21 @@ public class Page extends EventEmitter {
      * @param args         如果是 Javascript 函数的话，对应函数上的参数
      */
     public void evaluateOnNewDocument(String pageFunction, Object... args) {
-        this.evaluateOnNewDocument(pageFunction, Builder.isFunction(pageFunction) ? Variables.PageEvaluateType.FUNCTION : Variables.PageEvaluateType.STRING, args);
+        this.evaluateOnNewDocument(pageFunction, Builder.isFunction(pageFunction) ? Builder.PageEvaluateType.FUNCTION : Builder.PageEvaluateType.STRING, args);
     }
 
     /**
      * 在新dom产生之际执行给定的javascript
-     * 当你的js代码为函数时，type={@link Variables.PageEvaluateType#FUNCTION}
-     * 当你的js代码为字符串时，type={@link Variables.PageEvaluateType#STRING}
+     * 当你的js代码为函数时，type={@link Builder.PageEvaluateType#FUNCTION}
+     * 当你的js代码为字符串时，type={@link Builder.PageEvaluateType#STRING}
      *
      * @param pageFunction js代码
      * @param type         一般为PageEvaluateType#FUNCTION
      * @param args         当你js代码是函数时，你的函数的参数
      */
-    public void evaluateOnNewDocument(String pageFunction, Variables.PageEvaluateType type, Object... args) {
+    public void evaluateOnNewDocument(String pageFunction, Builder.PageEvaluateType type, Object... args) {
         Map<String, Object> params = new HashMap<>();
-        if (Objects.equals(Variables.PageEvaluateType.STRING, type)) {
+        if (Objects.equals(Builder.PageEvaluateType.STRING, type)) {
             Assert.isTrue(args.length == 0, "Cannot evaluate a string with arguments");
             params.put("source", pageFunction);
         } else {
@@ -1234,7 +1234,7 @@ public class Page extends EventEmitter {
             throw new IllegalArgumentException(MessageFormat.format("Failed to add page binding with name {0}: window['{1}'] already exists!", name, name));
         }
         this.pageBindings.put(name, puppeteerFunction);
-        String expression = Builder.evaluationString(addPageBinding(), Variables.PageEvaluateType.FUNCTION, name);
+        String expression = Builder.evaluationString(addPageBinding(), Builder.PageEvaluateType.FUNCTION, name);
         Map<String, Object> params = new HashMap<>();
         params.put("name", name);
         this.client.send("Runtime.addBinding", params, true);
@@ -1376,7 +1376,7 @@ public class Page extends EventEmitter {
         double paperHeight = 11;
 
         if (StringKit.isNotEmpty(options.getFormat())) {
-            Variables.Paper format = Variables.Paper.valueOf(options.getFormat().toLowerCase());
+            Builder.Paper format = Builder.Paper.valueOf(options.getFormat().toLowerCase());
             paperWidth = format.getWidth();
             paperHeight = format.getHeight();
         } else {
@@ -1428,7 +1428,7 @@ public class Page extends EventEmitter {
         JSONObject result = this.client.send("Page.printToPDF", params, true);
 
         if (result != null) {
-            String handle = result.getString(Variables.RECV_MESSAGE_STREAM_PROPERTY);
+            String handle = result.getString(Builder.RECV_MESSAGE_STREAM_PROPERTY);
             Assert.isTrue(handle != null, "Page.printToPDF result has no stream handle. Please check your chrome version. result=" + result.toString());
             return (byte[]) Builder.readProtocolStream(this.client, handle, options.getPath(), false);
         }
@@ -1738,10 +1738,10 @@ public class Page extends EventEmitter {
         BrowserListener<Object> listener = null;
         try {
             listener = sessionClosePromise();
-            return (Request) Builder.waitForEvent(this.frameManager.getNetworkManager(), Variables.Event.NETWORK_MANAGER_REQUEST.getName(), predi, timeout, "Wait for request timeout");
+            return (Request) Builder.waitForEvent(this.frameManager.getNetworkManager(), Builder.Event.NETWORK_MANAGER_REQUEST.getName(), predi, timeout, "Wait for request timeout");
         } finally {
             if (listener != null)
-                this.client.removeListener(Variables.Event.CDPSESSION_DISCONNECTED.getName(), listener);
+                this.client.removeListener(Builder.Event.CDPSESSION_DISCONNECTED.getName(), listener);
         }
     }
 
@@ -1806,10 +1806,10 @@ public class Page extends EventEmitter {
         BrowserListener<Object> listener = null;
         try {
             listener = sessionClosePromise();
-            return (Response) Builder.waitForEvent(this.frameManager.getNetworkManager(), Variables.Event.NETWORK_MANAGER_RESPONSE.getName(), predi, timeout, "Wait for response timeout");
+            return (Response) Builder.waitForEvent(this.frameManager.getNetworkManager(), Builder.Event.NETWORK_MANAGER_RESPONSE.getName(), predi, timeout, "Wait for response timeout");
         } finally {
             if (listener != null)
-                this.client.removeListener(Variables.Event.CDPSESSION_DISCONNECTED.getName(), listener);
+                this.client.removeListener(Builder.Event.CDPSESSION_DISCONNECTED.getName(), listener);
         }
     }
 
@@ -2045,7 +2045,7 @@ public class Page extends EventEmitter {
                 throw new InstrumentException("Target closed");
             }
         };
-        disConnectLis.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
+        disConnectLis.setMethod(Builder.Event.CDPSESSION_DISCONNECTED.getName());
         this.client.addListener(disConnectLis.getMethod(), disConnectLis, true);
         return disConnectLis;
     }
@@ -2148,7 +2148,7 @@ public class Page extends EventEmitter {
         if (CollKit.isNotEmpty(event.getEntry().getArgs()))
             event.getEntry().getArgs().forEach(arg -> Builder.releaseObject(this.client, arg, false));
         if (!"worker".equals(event.getEntry().getSource()))
-            this.emit(Variables.Event.PAGE_CONSOLE.getName(), new ConsoleMessage(event.getEntry().getLevel(), event.getEntry().getText(), Collections.emptyList(), new Location(event.getEntry().getUrl(), event.getEntry().getLineNumber())));
+            this.emit(Builder.Event.PAGE_CONSOLE.getName(), new ConsoleMessage(event.getEntry().getLevel(), event.getEntry().getText(), Collections.emptyList(), new Location(event.getEntry().getUrl(), event.getEntry().getLineNumber())));
     }
 
     private void emitMetrics(MetricPayload event) throws IllegalAccessException, IntrospectionException, InvocationTargetException {
@@ -2156,7 +2156,7 @@ public class Page extends EventEmitter {
         Metrics metrics = this.buildMetricsObject(event.getMetrics());
         pageMetric.setMetrics(metrics);
         pageMetric.setTitle(event.getTitle());
-        this.emit(Variables.Event.PAGE_METRICS.getName(), pageMetric);
+        this.emit(Builder.Event.PAGE_METRICS.getName(), pageMetric);
     }
 
     private void onTargetCrashed() {
@@ -2169,18 +2169,18 @@ public class Page extends EventEmitter {
      * @param event 触发事件
      */
     private void onDialog(JavascriptDialogPayload event) {
-        Variables.DialogType dialogType = null;
+        Builder.DialogType dialogType = null;
         if ("alert".equals(event.getType()))
-            dialogType = Variables.DialogType.Alert;
+            dialogType = Builder.DialogType.Alert;
         else if ("confirm".equals(event.getType()))
-            dialogType = Variables.DialogType.Confirm;
+            dialogType = Builder.DialogType.Confirm;
         else if ("prompt".equals(event.getType()))
-            dialogType = Variables.DialogType.Prompt;
+            dialogType = Builder.DialogType.Prompt;
         else if ("beforeunload".equals(event.getType()))
-            dialogType = Variables.DialogType.BeforeUnload;
+            dialogType = Builder.DialogType.BeforeUnload;
         Assert.isTrue(dialogType != null, "Unknown javascript dialog type: " + event.getType());
         Dialog dialog = new Dialog(this.client, dialogType, event.getMessage(), event.getDefaultPrompt());
-        this.emit(Variables.Event.PAGE_DIALOG.getName(), dialog);
+        this.emit(Builder.Event.PAGE_DIALOG.getName(), dialog);
     }
 
     private void onConsoleAPI(ConsoleCalledPayload event) {
@@ -2219,9 +2219,9 @@ public class Page extends EventEmitter {
         String expression;
         try {
             Object result = this.pageBindings.get(event.getName()).apply(payload.getArgs());
-            expression = Builder.evaluationString(deliverResult(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), result);
+            expression = Builder.evaluationString(deliverResult(), Builder.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), result);
         } catch (Exception e) {
-            expression = Builder.evaluationString(deliverError(), Variables.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), e, e.getMessage());
+            expression = Builder.evaluationString(deliverError(), Builder.PageEvaluateType.FUNCTION, payload.getName(), payload.getSeq(), e, e.getMessage());
         }
         Map<String, Object> params = new HashMap<>();
         params.put("expression", expression);
@@ -2246,7 +2246,7 @@ public class Page extends EventEmitter {
     }
 
     private void addConsoleMessage(String type, List<JSHandle> args, StackTrace stackTrace) {
-        if (this.getListenerCount(Variables.Event.PAGE_CONSOLE.getName()) == 0) {
+        if (this.getListenerCount(Builder.Event.PAGE_CONSOLE.getName()) == 0) {
             args.forEach(arg -> arg.dispose(false));
             return;
         }
@@ -2261,20 +2261,20 @@ public class Page extends EventEmitter {
         }
         Location location = stackTrace != null && stackTrace.getCallFrames().size() > 0 ? new Location(stackTrace.getCallFrames().get(0).getUrl(), stackTrace.getCallFrames().get(0).getLineNumber(), stackTrace.getCallFrames().get(0).getColumnNumber()) : new Location();
         ConsoleMessage message = new ConsoleMessage(type, String.join(" ", textTokens), args, location);
-        this.emit(Variables.Event.PAGE_CONSOLE.getName(), message);
+        this.emit(Builder.Event.PAGE_CONSOLE.getName(), message);
     }
 
     private void handleException(ExceptionDetails exceptionDetails) {
         String message = Builder.getExceptionMessage(exceptionDetails);
         RuntimeException err = new RuntimeException(message);
-        this.emit(Variables.Event.PAGE_PageError.getName(), err);
+        this.emit(Builder.Event.PAGE_PageError.getName(), err);
     }
 
     private Metrics buildMetricsObject(List<Metric> metrics) throws IntrospectionException, InvocationTargetException, IllegalAccessException {
         Metrics result = new Metrics();
         if (CollKit.isNotEmpty(metrics)) {
             for (Metric metric : metrics) {
-                if (Variables.SUPPORTED_METRICS.contains(metric.getName())) {
+                if (Builder.SUPPORTED_METRICS.contains(metric.getName())) {
                     PropertyDescriptor descriptor = new PropertyDescriptor(metric.getName(), Metrics.class);
                     descriptor.getWriteMethod().invoke(result, metric.getValue());
                 }

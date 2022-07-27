@@ -29,7 +29,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.Variables;
+import org.aoju.lancia.Builder;
 import org.aoju.lancia.nimble.network.RemoteAddress;
 import org.aoju.lancia.nimble.network.ResponsePayload;
 import org.aoju.lancia.worker.CDPSession;
@@ -131,7 +131,7 @@ public class Response {
      */
     public byte[] buffer() throws InterruptedException {
         if (this.contentPromise == null) {
-            this.contentPromiseLatch.await(Variables.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+            this.contentPromiseLatch.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
 
             if (StringKit.isNotEmpty(this.bodyLoadedErrorMsg)) {
                 throw new RuntimeException(this.bodyLoadedErrorMsg);

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.lancia.Variables;
+import org.aoju.lancia.Builder;
 
 /**
  * 请求超时
@@ -50,13 +50,13 @@ public class Timeout {
             return this.defaultNavigationTimeout;
         if (this.defaultTimeout != 0)
             return this.defaultTimeout;
-        return Variables.DEFAULT_TIMEOUT;
+        return Builder.DEFAULT_TIMEOUT;
     }
 
     public int timeout() {
         if (this.defaultTimeout != 0)
             return this.defaultTimeout;
-        return Variables.DEFAULT_TIMEOUT;
+        return Builder.DEFAULT_TIMEOUT;
     }
 
     public int getDefaultNavigationTimeout() {

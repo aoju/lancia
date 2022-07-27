@@ -28,7 +28,6 @@ package org.aoju.lancia.kernel.page;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 
 import java.math.BigDecimal;
 import java.text.MessageFormat;
@@ -58,7 +57,7 @@ public class WaitTask {
     private JSHandle promise;
     private CountDownLatch waitPromiseLatch;
 
-    public WaitTask(DOMWorld domWorld, String predicateBody, String predicateQueryHandlerBody, Variables.PageEvaluateType type, String title, String polling, int timeout, List<Object> args) {
+    public WaitTask(DOMWorld domWorld, String predicateBody, String predicateQueryHandlerBody, Builder.PageEvaluateType type, String title, String polling, int timeout, List<Object> args) {
         if (Builder.isNumber(polling)) {
             Assert.isTrue(new BigDecimal(polling).compareTo(new BigDecimal(0)) > 0, "Cannot poll with non-positive interval: " + polling);
         } else {
@@ -67,7 +66,7 @@ public class WaitTask {
         this.domWorld = domWorld;
         this.polling = polling;
         this.timeout = timeout;
-        if (Variables.PageEvaluateType.STRING.equals(type)) {
+        if (Builder.PageEvaluateType.STRING.equals(type)) {
             this.predicateBody = "return (" + predicateBody + ");";
         } else {
             if (StringKit.isNotEmpty(predicateQueryHandlerBody)) {

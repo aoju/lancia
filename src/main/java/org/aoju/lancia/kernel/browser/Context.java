@@ -29,7 +29,7 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Browser;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.Variables;
+import org.aoju.lancia.Builder;
 import org.aoju.lancia.kernel.page.Target;
 import org.aoju.lancia.option.ChromeOption;
 import org.aoju.lancia.worker.Connection;
@@ -104,7 +104,7 @@ public class Context extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetchanged(EventHandler<Target> handler) {
-        this.on(Variables.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), handler);
+        this.on(Builder.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), handler);
     }
 
     /**
@@ -115,7 +115,7 @@ public class Context extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetcreated(EventHandler<Target> handler) {
-        this.on(Variables.Event.BROWSERCONTEXT_TARGETCREATED.getName(), handler);
+        this.on(Builder.Event.BROWSERCONTEXT_TARGETCREATED.getName(), handler);
     }
 
     public void clearPermissionOverrides() {

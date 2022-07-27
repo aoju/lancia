@@ -29,7 +29,6 @@ import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -71,7 +70,7 @@ public class CDPSession extends EventEmitter {
         }
         connection = null;
         callbacks.clear();
-        this.emit(Variables.Event.CDPSESSION_DISCONNECTED.getName(), null);
+        this.emit(Builder.Event.CDPSESSION_DISCONNECTED.getName(), null);
     }
 
     /**
@@ -172,18 +171,18 @@ public class CDPSession extends EventEmitter {
     }
 
     public void onMessage(JSONObject node) {
-        Long idLong = node.getLong(Variables.RECV_MESSAGE_ID_PROPERTY);
+        Long idLong = node.getLong(Builder.RECV_MESSAGE_ID_PROPERTY);
         if (idLong != null) {
             Messages callback = this.callbacks.get(idLong);
             if (callback != null) {
                 try {
-                    JSONObject errNode = node.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
+                    JSONObject errNode = node.getJSONObject(Builder.RECV_MESSAGE_ERROR_PROPERTY);
                     if (errNode != null) {
                         if (callback.getCountDownLatch() != null) {
                             callback.setErrorText(Builder.createProtocolError(node));
                         }
                     } else {
-                        JSONObject result = node.getJSONObject(Variables.RECV_MESSAGE_RESULT_PROPERTY);
+                        JSONObject result = node.getJSONObject(Builder.RECV_MESSAGE_RESULT_PROPERTY);
                         callback.setResult(result);
                     }
                 } finally {
@@ -199,8 +198,8 @@ public class CDPSession extends EventEmitter {
                 }
             }
         } else {
-            JSONObject paramsNode = node.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-            String method = node.getString(Variables.RECV_MESSAGE_METHOD_PROPERTY);
+            JSONObject paramsNode = node.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+            String method = node.getString(Builder.RECV_MESSAGE_METHOD_PROPERTY);
             if (method != null) {
                 this.emit(method, paramsNode);
             }

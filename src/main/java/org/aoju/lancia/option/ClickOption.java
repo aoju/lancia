@@ -69,4 +69,5 @@ public class ClickOption {
     public void setClickCount(int clickCount) {
         this.clickCount = clickCount;
     }
+
 }

@@ -111,18 +111,18 @@ public class Browser extends EventEmitter {
             }
         }
         this.targets = new ConcurrentHashMap<>();
-        BrowserListener<Object> disconnectedLis = new BrowserListener<Object>() {
+        BrowserListener<Object> disconnectedLis = new BrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 Browser browser = (Browser) this.getTarget();
-                browser.emit(Variables.Event.BROWSER_DISCONNECTED.getName(), null);
+                browser.emit(Builder.Event.BROWSER_DISCONNECTED.getName(), null);
             }
         };
         disconnectedLis.setTarget(this);
-        disconnectedLis.setMethod(Variables.Event.CONNECTION_DISCONNECTED.getName());
+        disconnectedLis.setMethod(Builder.Event.CONNECTION_DISCONNECTED.getName());
         this.connection.addListener(disconnectedLis.getMethod(), disconnectedLis);
 
-        BrowserListener<TargetCreatedPayload> targetCreatedLis = new BrowserListener<TargetCreatedPayload>() {
+        BrowserListener<TargetCreatedPayload> targetCreatedLis = new BrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetCreatedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -133,7 +133,7 @@ public class Browser extends EventEmitter {
         targetCreatedLis.setMethod("Target.targetCreated");
         this.connection.addListener(targetCreatedLis.getMethod(), targetCreatedLis);
 
-        BrowserListener<TargetDestroyedPayload> targetDestroyedLis = new BrowserListener<TargetDestroyedPayload>() {
+        BrowserListener<TargetDestroyedPayload> targetDestroyedLis = new BrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetDestroyedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -144,7 +144,7 @@ public class Browser extends EventEmitter {
         targetDestroyedLis.setMethod("Target.targetDestroyed");
         this.connection.addListener(targetDestroyedLis.getMethod(), targetDestroyedLis);
 
-        BrowserListener<TargetInfoChangedPayload> targetInfoChangedLis = new BrowserListener<TargetInfoChangedPayload>() {
+        BrowserListener<TargetInfoChangedPayload> targetInfoChangedLis = new BrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetInfoChangedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -180,8 +180,8 @@ public class Browser extends EventEmitter {
         target.initializedCallback(false);
         target.closedCallback();
         if (target.waitInitializedPromise()) {
-            this.emit(Variables.Event.BROWSER_TARGETDESTROYED.getName(), target);
-            target.browserContext().emit(Variables.Event.BROWSER_TARGETDESTROYED.getName(), target);
+            this.emit(Builder.Event.BROWSER_TARGETDESTROYED.getName(), target);
+            target.browserContext().emit(Builder.Event.BROWSER_TARGETDESTROYED.getName(), target);
         }
     }
 
@@ -192,8 +192,8 @@ public class Browser extends EventEmitter {
         boolean wasInitialized = target.getIsInitialized();
         target.targetInfoChanged(event.getTargetInfo());
         if (wasInitialized && !previousURL.equals(target.url())) {
-            this.emit(Variables.Event.BROWSER_TARGETCHANGED.getName(), target);
-            target.browserContext().emit(Variables.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), target);
+            this.emit(Builder.Event.BROWSER_TARGETCHANGED.getName(), target);
+            target.browserContext().emit(Builder.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), target);
         }
     }
 
@@ -248,8 +248,8 @@ public class Browser extends EventEmitter {
         }
         this.targets.put(targetInfo.getTargetId(), target);
         if (target.waitInitializedPromise()) {
-            this.emit(Variables.Event.BROWSER_TARGETCREATED.getName(), target);
-            context.emit(Variables.Event.BROWSERCONTEXT_TARGETCREATED.getName(), target);
+            this.emit(Builder.Event.BROWSER_TARGETCREATED.getName(), target);
+            context.emit(Builder.Event.BROWSERCONTEXT_TARGETCREATED.getName(), target);
         }
     }
 
@@ -367,7 +367,7 @@ public class Browser extends EventEmitter {
         }
         JSONObject recevie = this.connection.send("Target.createTarget", params, true);
         if (recevie != null) {
-            Target target = this.targets.get(recevie.getString(Variables.RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY));
+            Target target = this.targets.get(recevie.getString(Builder.RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY));
             Assert.isTrue(target.waitInitializedPromise(), "Failed to create target for page");
             return target.page();
         } else {
@@ -383,7 +383,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onDisconnected(EventHandler<Object> handler) {
-        this.on(Variables.Event.BROWSER_DISCONNECTED.getName(), handler);
+        this.on(Builder.Event.BROWSER_DISCONNECTED.getName(), handler);
     }
 
     /**
@@ -394,7 +394,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetchanged(EventHandler<Target> handler) {
-        this.on(Variables.Event.BROWSER_TARGETCHANGED.getName(), handler);
+        this.on(Builder.Event.BROWSER_TARGETCHANGED.getName(), handler);
     }
 
     /**
@@ -405,7 +405,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetcreated(EventHandler<Target> handler) {
-        this.on(Variables.Event.BROWSER_TARGETCREATED.getName(), handler);
+        this.on(Builder.Event.BROWSER_TARGETCREATED.getName(), handler);
     }
 
     /**
@@ -416,7 +416,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetdestroyed(EventHandler<Target> handler) {
-        this.on(Variables.Event.BROWSER_TARGETDESTROYED.getName(), handler);
+        this.on(Builder.Event.BROWSER_TARGETDESTROYED.getName(), handler);
     }
 
     public Map<String, Target> getTargets() {

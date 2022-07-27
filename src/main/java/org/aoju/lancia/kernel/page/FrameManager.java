@@ -34,7 +34,7 @@ import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.Variables;
+import org.aoju.lancia.Builder;
 import org.aoju.lancia.nimble.page.*;
 import org.aoju.lancia.nimble.runtime.ExecutionCreatedPayload;
 import org.aoju.lancia.nimble.runtime.ExecutionDescription;
@@ -206,7 +206,7 @@ public class FrameManager extends EventEmitter {
         if (frame == null)
             return;
         frame.onLifecycleEvent(event.getLoaderId(), event.getName());
-        this.emit(Variables.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName(), frame);
     }
 
     private void onExecutionContextsCleared() {
@@ -261,7 +261,7 @@ public class FrameManager extends EventEmitter {
         if (frame == null)
             return;
         frame.onLoadingStopped();
-        this.emit(Variables.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName(), frame);
     }
 
     /**
@@ -283,8 +283,8 @@ public class FrameManager extends EventEmitter {
             return;
         }
         frame.navigatedWithinDocument(url);
-        this.emit(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName(), frame);
-        this.emit(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName(), frame);
     }
 
 
@@ -346,7 +346,7 @@ public class FrameManager extends EventEmitter {
         Frame parentFrame = this.frames.get(parentFrameId);
         Frame frame = new Frame(this, this.client, parentFrame, frameId);
         this.frames.put(frame.getId(), frame);
-        this.emit(Variables.Event.FRAME_MANAGER_FRAME_ATTACHED.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_FRAME_ATTACHED.getName(), frame);
     }
 
     /**
@@ -378,7 +378,7 @@ public class FrameManager extends EventEmitter {
         }
         frame.navigated(framePayload);
 
-        this.emit(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName(), frame);
+        this.emit(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED.getName(), frame);
     }
 
     public List<Frame> frames() {
@@ -399,7 +399,7 @@ public class FrameManager extends EventEmitter {
         }
         childFrame.detach();
         this.frames.remove(childFrame.getId());
-        this.emit(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName(), childFrame);
+        this.emit(Builder.Event.FRAME_MANAGER_FRAME_DETACHED.getName(), childFrame);
     }
 
     public Response navigateFrame(Frame frame, String url, NavigateOption options, boolean isBlock) throws InterruptedException {
@@ -439,7 +439,7 @@ public class FrameManager extends EventEmitter {
         long start = System.currentTimeMillis();
         try {
             this.ensureNewDocumentNavigation = navigate(this.client, url, referrer, frame.getId(), timeout);
-            if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
+            if (Builder.Result.SUCCESS.getResult().equals(navigateResult)) {
                 if (this.ensureNewDocumentNavigation) {
                     documentNavigationPromiseType = "new";
                     if (watcher.newDocumentNavigationPromise() != null) {
@@ -458,13 +458,13 @@ public class FrameManager extends EventEmitter {
                 if (!await) {
                     throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
                 }
-                if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
+                if (Builder.Result.SUCCESS.getResult().equals(navigateResult)) {
                     return watcher.navigationResponse();
                 }
             }
-            if (Variables.Result.ERROR.getResult().equals(navigateResult)) {
+            if (Builder.Result.ERROR.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
-            } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
+            } else if (Builder.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new InstrumentException("Navigating frame was detached");
             } else {
                 Logger.error("Unknown result " + navigateResult);
@@ -514,11 +514,11 @@ public class FrameManager extends EventEmitter {
             if (!await) {
                 throw new RuntimeException("Navigation timeout of " + timeout + " ms exceeded");
             }
-            if (Variables.Result.SUCCESS.getResult().equals(navigateResult)) {
+            if (Builder.Result.SUCCESS.getResult().equals(navigateResult)) {
                 return watcher.navigationResponse();
-            } else if (Variables.Result.ERROR.getResult().equals(navigateResult)) {
+            } else if (Builder.Result.ERROR.getResult().equals(navigateResult)) {
                 throw new RuntimeException("Navigation timeout of " + timeout + " ms exceeded");
-            } else if (Variables.Result.TERMINATION.getResult().equals(navigateResult)) {
+            } else if (Builder.Result.TERMINATION.getResult().equals(navigateResult)) {
                 throw new RuntimeException("Navigating frame was detached");
             } else {
                 throw new RuntimeException("Unknown result " + navigateResult);
@@ -540,7 +540,7 @@ public class FrameManager extends EventEmitter {
         params.put("frameId", frameId);
         try {
             JSONObject response = client.send("Page.navigate", params, true, null, timeout);
-            this.setNavigateResult(Variables.Result.SUCCESS.getResult());
+            this.setNavigateResult(Builder.Result.SUCCESS.getResult());
             if (response == null) {
                 return false;
             }
@@ -551,7 +551,7 @@ public class FrameManager extends EventEmitter {
                 return true;
             }
         } catch (InstrumentException e) {
-            this.setNavigateResult(Variables.Result.ERROR.getResult());
+            this.setNavigateResult(Builder.Result.ERROR.getResult());
             Logger.error(e.getMessage());
         }
         return false;

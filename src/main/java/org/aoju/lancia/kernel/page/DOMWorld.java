@@ -32,7 +32,6 @@ import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.option.*;
 
 import java.io.IOException;
@@ -133,7 +132,7 @@ public class DOMWorld {
         if (this.contextPromise == null) {
             this.waitForContext = new CountDownLatch(1);
             try {
-                boolean await = this.waitForContext.await(Variables.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+                boolean await = this.waitForContext.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
                 if (!await) {
                     throw new InstrumentException("Wait for ExecutionContext time out");
                 }
@@ -219,11 +218,11 @@ public class DOMWorld {
             this.frameManager.setNavigateResult(null);
             boolean await = latch.await(timeout, TimeUnit.MILLISECONDS);
             if (await) {
-                if (Variables.Result.CONTENT_SUCCESS.getResult().equals(this.frameManager.getNavigateResult())) {
+                if (Builder.Result.CONTENT_SUCCESS.getResult().equals(this.frameManager.getNavigateResult())) {
 
-                } else if (Variables.Result.TIMEOUT.getResult().equals(this.frameManager.getNavigateResult())) {
+                } else if (Builder.Result.TIMEOUT.getResult().equals(this.frameManager.getNavigateResult())) {
                     throw new InstrumentException("setContent timeout :" + html);
-                } else if (Variables.Result.TERMINATION.getResult().equals(this.frameManager.getNavigateResult())) {
+                } else if (Builder.Result.TERMINATION.getResult().equals(this.frameManager.getNavigateResult())) {
                     throw new InstrumentException("Navigating frame was detached");
                 } else {
                     throw new InstrumentException("UnNokwn result " + this.frameManager.getNavigateResult());
@@ -455,7 +454,7 @@ public class DOMWorld {
                 "        }";
         List<Object> args = new ArrayList<>();
         args.addAll(Arrays.asList(updatedSelector, isXPath, waitForVisible, waitForHidden));
-        WaitTask waitTask = new WaitTask(this, predicate, queryHandler.queryOne(), Variables.PageEvaluateType.FUNCTION, title, polling, timeout, args);
+        WaitTask waitTask = new WaitTask(this, predicate, queryHandler.queryOne(), Builder.PageEvaluateType.FUNCTION, title, polling, timeout, args);
         JSHandle handle = waitTask.getPromise();
         if (handle == null) {
             return null;
@@ -475,7 +474,7 @@ public class DOMWorld {
         return (String) this.evaluate("() => document.title", new ArrayList<>());
     }
 
-    public JSHandle waitForFunction(String pageFunction, Variables.PageEvaluateType type, WaitForOption options, List<Object> args) throws InterruptedException {
+    public JSHandle waitForFunction(String pageFunction, Builder.PageEvaluateType type, WaitForOption options, List<Object> args) throws InterruptedException {
         String polling = "raf";
         int timeout = this.timeout.timeout();
         if (StringKit.isNotEmpty(options.getPolling())) {

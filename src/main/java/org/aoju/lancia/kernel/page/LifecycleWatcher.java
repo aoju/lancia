@@ -28,7 +28,6 @@ package org.aoju.lancia.kernel.page;
 import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.ListenerWrapper;
 
@@ -101,7 +100,7 @@ public class LifecycleWatcher {
             }
         };
         disconnecteListener.setTarget(this);
-        disconnecteListener.setMethod(Variables.Event.CDPSESSION_DISCONNECTED.getName());
+        disconnecteListener.setMethod(Builder.Event.CDPSESSION_DISCONNECTED.getName());
 
         BrowserListener<Object> lifecycleEventListener = new BrowserListener<Object>() {
             @Override
@@ -111,7 +110,7 @@ public class LifecycleWatcher {
             }
         };
         lifecycleEventListener.setTarget(this);
-        lifecycleEventListener.setMethod(Variables.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
+        lifecycleEventListener.setMethod(Builder.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
 
         BrowserListener<Frame> documentListener = new BrowserListener<Frame>() {
             @Override
@@ -121,7 +120,7 @@ public class LifecycleWatcher {
             }
         };
         documentListener.setTarget(this);
-        documentListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
+        documentListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
 
         BrowserListener<Frame> detachedListener = new BrowserListener<Frame>() {
             @Override
@@ -131,7 +130,7 @@ public class LifecycleWatcher {
             }
         };
         detachedListener.setTarget(this);
-        detachedListener.setMethod(Variables.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
+        detachedListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
 
         BrowserListener<Request> requestListener = new BrowserListener<Request>() {
             @Override
@@ -141,7 +140,7 @@ public class LifecycleWatcher {
             }
         };
         requestListener.setTarget(this);
-        requestListener.setMethod(Variables.Event.NETWORK_MANAGER_REQUEST.getName());
+        requestListener.setMethod(Builder.Event.NETWORK_MANAGER_REQUEST.getName());
         eventListeners.add(Builder.addEventListener(this.frameManager.getClient(), disconnecteListener.getMethod(), disconnecteListener));
         eventListeners.add(Builder.addEventListener(this.frameManager, lifecycleEventListener.getMethod(), lifecycleEventListener));
         eventListeners.add(Builder.addEventListener(frameManager, documentListener.getMethod(), documentListener));
@@ -161,7 +160,7 @@ public class LifecycleWatcher {
     public void lifecycleCallback() {
         this.lifecyclePromise = new Object();
         if (this.frameManager.getContentLatch() != null) {
-            this.frameManager.setNavigateResult(Variables.Result.CONTENT_SUCCESS.getResult());
+            this.frameManager.setNavigateResult(Builder.Result.CONTENT_SUCCESS.getResult());
             this.frameManager.getContentLatch().countDown();
         }
     }
@@ -226,7 +225,7 @@ public class LifecycleWatcher {
     }
 
     public void terminationCallback() {
-        setNavigateResult(Variables.Result.TERMINATION.getResult());
+        setNavigateResult(Builder.Result.TERMINATION.getResult());
     }
 
     public String createTimeoutPromise() {
@@ -244,17 +243,17 @@ public class LifecycleWatcher {
     public void newDocumentNavigationCompleteCallback() {
         this.newDocumentNavigationPromise = new Object();
         if ("new".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult(Variables.Result.SUCCESS.getResult());
+            setNavigateResult(Builder.Result.SUCCESS.getResult());
     }
 
     public void sameDocumentNavigationCompleteCallback() {
         this.sameDocumentNavigationPromise = new Object();
         if ("same".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult(Variables.Result.SUCCESS.getResult());
+            setNavigateResult(Builder.Result.SUCCESS.getResult());
     }
 
     private void setNavigateResult(String result) {
-        if (this.frameManager.getDocumentLatch() != null && !Variables.Result.CONTENT_SUCCESS.getResult().equals(result)) {
+        if (this.frameManager.getDocumentLatch() != null && !Builder.Result.CONTENT_SUCCESS.getResult().equals(result)) {
             this.frameManager.setNavigateResult(result);
             this.frameManager.getDocumentLatch().countDown();
         }

@@ -33,7 +33,7 @@ package org.aoju.lancia.kernel;
  * @since JDK 1.8+
  */
 @FunctionalInterface
-public interface Context {
+public interface Variables {
 
     /**
      * 根据name获取环境变量中的值

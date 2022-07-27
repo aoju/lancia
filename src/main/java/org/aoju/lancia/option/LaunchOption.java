@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.option;
 
-import org.aoju.lancia.kernel.Context;
+import org.aoju.lancia.kernel.Variables;
 
 import java.util.List;
 
@@ -76,7 +76,7 @@ public class LaunchOption extends BrowserOption {
      * Specify environment variables that will be visible to Chromium.
      * 默认是 `process.env`.
      */
-    private Context context;
+    private Variables variables;
 
     /**
      * false代表使用websocket通讯，true代表使用websocket通讯
@@ -151,12 +151,12 @@ public class LaunchOption extends BrowserOption {
         this.dumpio = dumpio;
     }
 
-    public Context getContext() {
-        return context;
+    public Variables getContext() {
+        return variables;
     }
 
-    public void setEnv(Context context) {
-        this.context = context;
+    public void setEnv(Variables variables) {
+        this.variables = variables;
     }
 
     public boolean getPipe() {

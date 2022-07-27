@@ -51,7 +51,7 @@ import java.util.Properties;
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class Standard implements Context {
+public class Standard implements Variables {
 
     private static final Map<String, String> systemPropertiesSourceMap = new HashMap<>();
     private static final Map<String, String> systemEnvSourceMap = new HashMap<>();
@@ -67,7 +67,6 @@ public class Standard implements Context {
         systemEnvSourceMap.putAll(System.getenv());
     }
 
-    @Override
     public String getEnv(String name) {
         // order 0: find from system property
         String value = this.getPropertyValue(name, systemPropertiesSourceMap, "LanciaSystemProperties");

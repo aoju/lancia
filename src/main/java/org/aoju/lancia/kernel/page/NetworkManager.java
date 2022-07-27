@@ -29,7 +29,6 @@ import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.AuthorizePayload;
 import org.aoju.lancia.nimble.Credentials;
 import org.aoju.lancia.nimble.RequestPausedPayload;
@@ -321,7 +320,7 @@ public class NetworkManager extends EventEmitter {
         Frame frame = StringKit.isNotEmpty(event.getFrameId()) ? this.frameManager.frame(event.getFrameId()) : null;
         Request request = new Request(this.client, frame, interceptionId, this.userRequestInterceptionEnabled, event, redirectChain);
         this.requestIdToRequest.put(event.getRequestId(), request);
-        this.emit(Variables.Event.NETWORK_MANAGER_REQUEST.getName(), request);
+        this.emit(Builder.Event.NETWORK_MANAGER_REQUEST.getName(), request);
     }
 
     private void handleRequestRedirect(Request request, ResponsePayload responsePayload) {
@@ -331,8 +330,8 @@ public class NetworkManager extends EventEmitter {
         response.resolveBody("Response body is unavailable for redirect responses");
         this.requestIdToRequest.remove(request.requestId());
         this.attemptedAuthentications.remove(request.interceptionId());
-        this.emit(Variables.Event.NETWORK_MANAGER_RESPONSE.getName(), response);
-        this.emit(Variables.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName(), request);
+        this.emit(Builder.Event.NETWORK_MANAGER_RESPONSE.getName(), response);
+        this.emit(Builder.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName(), request);
     }
 
     public void onLoadingFinished(FinishedPayload event) {
@@ -344,7 +343,7 @@ public class NetworkManager extends EventEmitter {
             request.response().bodyLoadedPromiseFulfill(null);
         this.requestIdToRequest.remove(request.requestId());
         this.attemptedAuthentications.remove(request.interceptionId());
-        this.emit(Variables.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName(), request);
+        this.emit(Builder.Event.NETWORK_MANAGER_REQUEST_FINISHED.getName(), request);
     }
 
     public void onResponseReceived(ReceivedPayload event) {
@@ -353,7 +352,7 @@ public class NetworkManager extends EventEmitter {
             return;
         Response response = new Response(this.client, request, event.getResponse());
         request.setResponse(response);
-        this.emit(Variables.Event.NETWORK_MANAGER_RESPONSE.getName(), response);
+        this.emit(Builder.Event.NETWORK_MANAGER_RESPONSE.getName(), response);
     }
 
     public void onLoadingFailed(FailedPayload event) {
@@ -366,7 +365,7 @@ public class NetworkManager extends EventEmitter {
             response.bodyLoadedPromiseFulfill(null);
         this.requestIdToRequest.remove(request.requestId());
         this.attemptedAuthentications.remove(request.interceptionId());
-        this.emit(Variables.Event.NETWORK_MANAGER_REQUEST_FAILED.getName(), request);
+        this.emit(Builder.Event.NETWORK_MANAGER_REQUEST_FAILED.getName(), request);
     }
 
     public void onRequestServedFromCache(RequestCachePayload event) {

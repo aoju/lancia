@@ -27,7 +27,6 @@ package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.nimble.page.FramePayload;
 import org.aoju.lancia.option.*;
 import org.aoju.lancia.worker.CDPSession;
@@ -215,7 +214,7 @@ public class Frame {
     }
 
     public JSHandle waitForFunction(String pageFunction, WaitForOption options, List<Object> args) throws InterruptedException {
-        return this.mainWorld.waitForFunction(pageFunction, Builder.isFunction(pageFunction) ? Variables.PageEvaluateType.FUNCTION : Variables.PageEvaluateType.STRING, options, args);
+        return this.mainWorld.waitForFunction(pageFunction, Builder.isFunction(pageFunction) ? Builder.PageEvaluateType.FUNCTION : Builder.PageEvaluateType.STRING, options, args);
     }
 
     public String title() {

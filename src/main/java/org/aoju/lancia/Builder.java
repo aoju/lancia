@@ -30,6 +30,7 @@ import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Http;
 import org.aoju.bus.core.lang.Normal;
+import org.aoju.bus.core.thread.NamedThreadFactory;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
@@ -74,6 +75,150 @@ import java.util.regex.Pattern;
  */
 public class Builder {
 
+
+    /**
+     * 读取数据超时
+     */
+    public static final int READ_TIME_OUT = 10000;
+    /**
+     * 连接超时设置
+     */
+    public static final int CONNECT_TIME_OUT = 10000;
+    /**
+     * 指定版本
+     */
+    public static final String VERSION = "818858";
+    /**
+     * 临时文件夹前缀
+     */
+    public static final String PROFILE_PREFIX = "puppeteer_dev_chrome_profile-";
+    /**
+     * 把产品存放到环境变量的所有可用字段
+     */
+    public static final String[] PRODUCT_ENV = {"PUPPETEER_PRODUCT", "java_config_puppeteer_product", "java_package_config_puppeteer_product"};
+    /**
+     * 把浏览器执行路径存放到环境变量的所有可用字段
+     */
+    public static final String[] EXECUTABLE_ENV = {"PUPPETEER_EXECUTABLE_PATH", "java_config_puppeteer_executable_path", "java_package_config_puppeteer_executable_path"};
+    /**
+     * 把浏览器版本存放到环境变量的字段
+     */
+    public static final String PUPPETEER_CHROMIUM_REVISION_ENV = "PUPPETEER_CHROMIUM_REVISION";
+    /**
+     * 读取流中的数据的buffer size
+     */
+    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
+    /**
+     * 启动浏览器时，如果没有指定路径，那么会从以下路径搜索可执行的路径
+     */
+    public static final String[] PROBABLE_CHROME_EXECUTABLE_PATH =
+            new String[]{
+                    "/usr/bin/chromium",
+                    "/usr/bin/chromium-browser",
+                    "/usr/bin/google-chrome-stable",
+                    "/usr/bin/google-chrome",
+                    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+                    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                    "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+                    "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+                    "C:/Program Files/Google/Chrome/Application/chrome.exe"
+            };
+    /**
+     * 谷歌浏览器默认启动参数
+     */
+    public static final List<String> DEFAULT_ARGS = Collections.unmodifiableList(new ArrayList<>() {
+        {
+            addAll(Arrays.asList(
+                    "--disable-background-networking",
+                    "--disable-background-timer-throttling",
+                    "--disable-breakpad",
+                    "--disable-browser-side-navigation",
+                    "--disable-client-side-phishing-detection",
+                    "--disable-default-apps",
+                    "--disable-dev-shm-usage",
+                    "--disable-extensions",
+                    "--disable-features=site-per-process",
+                    "--disable-hang-monitor",
+                    "--disable-popup-blocking",
+                    "--disable-prompt-on-repost",
+                    "--disable-sync",
+                    "--disable-translate",
+                    "--metrics-recording-only",
+                    "--no-first-run",
+                    "--safebrowsing-disable-auto-update",
+                    "--enable-automation",
+                    "--password-store=basic",
+                    "--use-mock-keychain"));
+        }
+    });
+
+    public static final Set<String> SUPPORTED_METRICS = new HashSet<>() {
+        {
+            add("Timestamp");
+            add("Documents");
+            add("Frames");
+            add("JSEventListeners");
+            add("Nodes");
+            add("LayoutCount");
+            add("RecalcStyleCount");
+            add("LayoutDuration");
+            add("RecalcStyleDuration");
+            add("ScriptDuration");
+            add("TaskDuration");
+            add("JSHeapUsedSize");
+            add("JSHeapTotalSize");
+        }
+    };
+
+    /**
+     * 从浏览器的websocket接受到消息中有以下这些字段，在处理消息用到这些字段
+     */
+    public static final String RECV_MESSAGE_METHOD_PROPERTY = "method";
+    public static final String RECV_MESSAGE_PARAMS_PROPERTY = "params";
+    public static final String RECV_MESSAGE_ID_PROPERTY = "id";
+    public static final String RECV_MESSAGE_RESULT_PROPERTY = "result";
+    public static final String RECV_MESSAGE_SESSION_ID_PROPERTY = "sessionId";
+    public static final String RECV_MESSAGE_TARGETINFO_PROPERTY = "targetInfo";
+    public static final String RECV_MESSAGE_TYPE_PROPERTY = "type";
+    public static final String RECV_MESSAGE_ERROR_PROPERTY = "error";
+    public static final String RECV_MESSAGE_ERROR_MESSAGE_PROPERTY = "message";
+    public static final String RECV_MESSAGE_ERROR_DATA_PROPERTY = "data";
+    public static final String RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY = "targetId";
+    public static final String RECV_MESSAGE_STREAM_PROPERTY = "stream";
+    public static final String RECV_MESSAGE_STREAM_EOF_PROPERTY = "eof";
+    public static final String RECV_MESSAGE_STREAM_DATA_PROPERTY = "data";
+    public static final String RECV_MESSAGE_BASE64ENCODED_PROPERTY = "base64Encoded";
+
+    /**
+     * 默认的超时时间：启动浏览器实例超时，websocket接受消息超时等
+     */
+    public static final int DEFAULT_TIMEOUT = 30000;
+
+    /**
+     * 追踪信息的默认分类
+     */
+    public static final Set<String> DEFAULTCATEGORIES = new LinkedHashSet<>() {
+        {
+            add("-*");
+            add("devtools.timeline");
+            add("v8.execute");
+            add("disabled-by-default-devtools.timeline");
+            add("disabled-by-default-devtools.timeline.frame");
+            add("toplevel");
+            add("blink.console");
+            add("blink.user_timing");
+            add("latencyInfo");
+            add("disabled-by-default-devtools.timeline.stack");
+            add("disabled-by-default-v8.cpu_profiler");
+            add("disabled-by-default-v8.cpu_profiler.hires");
+        }
+    };
+
+    /**
+     * 内置线程池的数量
+     */
+    public static final String COMMONT_THREAD_POOL_NUM = "common_thread_number";
+
     /**
      * 每条线程下载的文件块大小 5M
      */
@@ -93,15 +238,15 @@ public class Builder {
     private static ExecutorService COMMON_EXECUTOR = null;
 
     public static String createProtocolError(JSONObject node) {
-        JSONObject methodNode = node.getJSONObject(Variables.RECV_MESSAGE_METHOD_PROPERTY);
-        JSONObject errNode = node.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
-        String errorMsg = errNode.getString(Variables.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
+        JSONObject methodNode = node.getJSONObject(RECV_MESSAGE_METHOD_PROPERTY);
+        JSONObject errNode = node.getJSONObject(RECV_MESSAGE_ERROR_PROPERTY);
+        String errorMsg = errNode.getString(RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
         String method = Normal.EMPTY;
         if (methodNode != null) {
             method = methodNode.toJSONString();
         }
         String message = "Protocol error " + method + ": " + errorMsg;
-        String dataNode = errNode.getString(Variables.RECV_MESSAGE_ERROR_DATA_PROPERTY);
+        String dataNode = errNode.getString(RECV_MESSAGE_ERROR_DATA_PROPERTY);
         if (dataNode != null) {
             message += " " + dataNode;
         }
@@ -234,16 +379,16 @@ public class Builder {
                 FileOutputStream fileOutputStream = new FileOutputStream(file);
                 writer = new BufferedOutputStream(fileOutputStream);
             }
-            byte[] buffer = new byte[Variables.DEFAULT_BUFFER_SIZE];
+            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
             byte[] bytes;
             List<byte[]> bufs = new ArrayList<>();
             int byteLength = 0;
 
             while (!eof) {
                 JSONObject response = client.send("IO.read", params, true);
-                String eofNode = response.getString(Variables.RECV_MESSAGE_STREAM_EOF_PROPERTY);
-                Boolean base64EncodedNode = response.getBoolean(Variables.RECV_MESSAGE_BASE64ENCODED_PROPERTY);
-                String dataText = response.getString(Variables.RECV_MESSAGE_STREAM_DATA_PROPERTY);
+                String eofNode = response.getString(RECV_MESSAGE_STREAM_EOF_PROPERTY);
+                Boolean base64EncodedNode = response.getBoolean(RECV_MESSAGE_BASE64ENCODED_PROPERTY);
+                String dataText = response.getString(RECV_MESSAGE_STREAM_DATA_PROPERTY);
 
                 if (StringKit.isNotEmpty(dataText)) {
                     try {
@@ -259,7 +404,7 @@ public class Builder {
                             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
                             reader = new BufferedInputStream(byteArrayInputStream);
                             int read;
-                            while ((read = reader.read(buffer, 0, Variables.DEFAULT_BUFFER_SIZE)) != -1) {
+                            while ((read = reader.read(buffer, 0, DEFAULT_BUFFER_SIZE)) != -1) {
                                 writer.write(buffer, 0, read);
                                 writer.flush();
                             }
@@ -403,8 +548,8 @@ public class Builder {
         }
     }
 
-    public static final String evaluationString(String fun, Variables.PageEvaluateType type, Object... args) {
-        if (Variables.PageEvaluateType.STRING.equals(type)) {
+    public static final String evaluationString(String fun, PageEvaluateType type, Object... args) {
+        if (PageEvaluateType.STRING.equals(type)) {
             Assert.isTrue(args.length == 0, "Cannot evaluate a string with arguments");
             return fun;
         }
@@ -428,14 +573,14 @@ public class Builder {
         if (COMMON_EXECUTOR == null) {
             synchronized (Builder.class) {
                 if (COMMON_EXECUTOR == null) {
-                    String customNum = System.getProperty(Variables.COMMONT_THREAD_POOL_NUM);
+                    String customNum = System.getProperty(COMMONT_THREAD_POOL_NUM);
                     int threadNum = 0;
                     if (StringKit.isNotEmpty(customNum)) {
                         threadNum = Integer.parseInt(customNum);
                     } else {
                         threadNum = Math.max(1, Runtime.getRuntime().availableProcessors());
                     }
-                    COMMON_EXECUTOR = new ThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new CommonThreadFactory());
+                    COMMON_EXECUTOR = new ThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new NamedThreadFactory("common-pool-"));
                 }
             }
         }
@@ -583,8 +728,8 @@ public class Builder {
         try {
             conn = (HttpURLConnection) uuuRl.openConnection();
             conn.setRequestMethod("HEAD");
-            conn.setConnectTimeout(Variables.READ_TIME_OUT);
-            conn.setReadTimeout(Variables.CONNECT_TIME_OUT);
+            conn.setConnectTimeout(READ_TIME_OUT);
+            conn.setReadTimeout(CONNECT_TIME_OUT);
             conn.connect();
             int responseCode = conn.getResponseCode();
             if (responseCode >= 200 && responseCode <= 204) {
@@ -680,30 +825,6 @@ public class Builder {
         CUSTOM_QUERY_HANDLER.clear();
     }
 
-    static class CommonThreadFactory implements ThreadFactory {
-        private static final AtomicInteger poolNumber = new AtomicInteger(1);
-        private final ThreadGroup group;
-        private final AtomicInteger threadNumber = new AtomicInteger(1);
-        private final String namePrefix;
-
-        CommonThreadFactory() {
-            SecurityManager s = System.getSecurityManager();
-            group = (s != null) ? s.getThreadGroup() :
-                    Thread.currentThread().getThreadGroup();
-            namePrefix = "common-pool-" + poolNumber.getAndIncrement() + "-thread-";
-        }
-
-        public Thread newThread(Runnable r) {
-            Thread t = new Thread(group, r,
-                    namePrefix + threadNumber.getAndIncrement(),
-                    0);
-            t.setDaemon(true);
-            if (t.getPriority() != Thread.NORM_PRIORITY)
-                t.setPriority(Thread.NORM_PRIORITY);
-            return t;
-        }
-    }
-
     static class DownloadCallable implements Callable<String> {
 
         private final long startPosition;
@@ -730,13 +851,13 @@ public class Builder {
                 file.seek(this.startPosition);
                 URL uRL = new URL(this.url);
                 conn = (HttpURLConnection) uRL.openConnection();
-                conn.setConnectTimeout(Variables.CONNECT_TIME_OUT);
-                conn.setReadTimeout(Variables.READ_TIME_OUT);
+                conn.setConnectTimeout(CONNECT_TIME_OUT);
+                conn.setReadTimeout(READ_TIME_OUT);
                 conn.setRequestMethod(Http.GET);
                 String range = "bytes=" + startPosition + "-" + endPosition;
                 conn.addRequestProperty("Range", range);
                 conn.addRequestProperty("accept-encoding", "gzip, deflate, br");
-                ByteBuffer buffer = ByteBuffer.allocate(Variables.DEFAULT_BUFFER_SIZE);
+                ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
                 FileChannel channel = file.getChannel();
                 for (int j = 0; j < RETRY_TIMES; j++) {
                     try {
@@ -769,6 +890,200 @@ public class Builder {
 
             }
         }
+    }
+
+    /**
+     * 要监听的事件的名字枚举类
+     */
+    public enum Event {
+
+        PAGE_CLOSE("close"),
+        PAGE_CONSOLE("console"),
+        PAGE_DIALOG("dialog"),
+        PAGE_DOMContentLoaded("domcontentloaded"),
+        PAGE_ERROR("error"),
+        PAGE_PageError("pageerror"),
+        PAGE_REQUEST("request"),
+        PAGE_RESPONSE("response"),
+        PAGE_REQUESTFAILED("requestfailed"),
+        PAGE_REQUESTFINISHED("requestfinished"),
+        PAGE_FRAMEATTACHED("frameattached"),
+        PAGE_FRAMEDETACHED("framedetached"),
+        PAGE_FRAMENAVIGATED("framenavigated"),
+        PAGE_LOAD("load"),
+        PAGE_METRICS("metrics"),
+        PAGE_POPUP("popup"),
+        PAGE_WORKERCREATED("workercreated"),
+        PAGE_WORKERDESTROYED("workerdestroyed"),
+
+        BROWSER_TARGETCREATED("targetcreated"),
+        BROWSER_TARGETDESTROYED("targetdestroyed"),
+        BROWSER_TARGETCHANGED("targetchanged"),
+        BROWSER_DISCONNECTED("disconnected"),
+
+        BROWSERCONTEXT_TARGETCREATED("targetcreated"),
+        BROWSERCONTEXT_TARGETDESTROYED("targetdestroyed"),
+        BROWSERCONTEXT_TARGETCHANGED("targetchanged"),
+
+        NETWORK_MANAGER_REQUEST("Events.NetworkManager.Request"),
+        NETWORK_MANAGER_RESPONSE("Events.NetworkManager.Response"),
+        NETWORK_MANAGER_REQUEST_FAILED("Events.NetworkManager.RequestFailed"),
+        NETWORK_MANAGER_REQUEST_FINISHED("Events.NetworkManager.RequestFinished"),
+
+        FRAME_MANAGER_FRAME_ATTACHED("Events.FrameManager.FrameAttached"),
+        FRAME_MANAGER_FRAME_NAVIGATED("Events.FrameManager.FrameNavigated"),
+        FRAME_MANAGER_FRAME_DETACHED("Events.FrameManager.FrameDetached"),
+        FRAME_MANAGER_LIFECYCLE_EVENT("Events.FrameManager.LifecycleEvent"),
+        FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT("Events.FrameManager.FrameNavigatedWithinDocument"),
+        FRAME_MANAGER_EXECUTION_CONTEXTCREATED("Events.FrameManager.ExecutionContextCreated"),
+        FRAME_MANAGER_EXECUTION_CONTEXTDESTROYED("Events.FrameManager.ExecutionContextDestroyed"),
+
+        CONNECTION_DISCONNECTED("Events.Connection.Disconnected"),
+        CDPSESSION_DISCONNECTED("Events.CDPSession.Disconnected");
+
+        private String name;
+
+        Event(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    public enum Result {
+
+        CONTENT_SUCCESS("Content-success"),
+        SUCCESS("success"),
+        TIMEOUT("timeout"),
+        TERMINATION("termination"),
+        ERROR("error");
+
+        private final String result;
+
+        Result(String result) {
+            this.result = result;
+        }
+
+        public String getResult() {
+            return result;
+        }
+
+    }
+
+    public enum Paper {
+
+        letter(8.5, 11),
+        legal(8.5, 14),
+        tabloid(11, 17),
+        ledger(17, 11),
+        a0(33.1, 46.8),
+        a1(23.4, 33.1),
+        a2(16.54, 23.4),
+        a3(11.7, 16.54),
+        a4(8.27, 11.7),
+        a5(5.83, 8.27),
+        a6(4.13, 5.83);
+
+        private double width;
+
+        private double height;
+
+        Paper(double width, double height) {
+            this.width = width;
+            this.height = height;
+        }
+
+        public double getWidth() {
+            return width;
+        }
+
+        public void setWidth(double width) {
+            this.width = width;
+        }
+
+        public double getHeight() {
+            return height;
+        }
+
+        public void setHeight(double height) {
+            this.height = height;
+        }
+
+    }
+
+    public enum PageEvaluateType {
+
+        STRING("string"),
+        NUMBER("number"),
+        FUNCTION("function");
+
+        private String type;
+
+        PageEvaluateType(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+    }
+
+    public enum DialogType {
+
+        Alert("alert"),
+        BeforeUnload("beforeunload"),
+        Confirm("confirm"),
+        Prompt("prompt");
+
+        private String type;
+
+        DialogType(String type) {
+            this.type = type;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+    }
+
+    /**
+     * 视力缺陷类,设置不同级别的实力缺陷，截图有不同的效果
+     */
+    public enum VisionDeficiency {
+
+        ACHROMATOPSIA("achromatopsia"),
+        DEUTERANOPIA("deuteranopia"),
+        PROTANOPIA("protanopia"),
+        TRITANOPIA("tritanopia"),
+        BLURREDVISION("blurredVision"),
+        NONE("none");
+
+        private final String value;
+
+        VisionDeficiency(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
     }
 
 }

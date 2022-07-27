@@ -29,7 +29,7 @@ import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Browser;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.Variables;
+import org.aoju.lancia.Builder;
 import org.aoju.lancia.kernel.browser.Context;
 import org.aoju.lancia.worker.CDPSession;
 import org.aoju.lancia.worker.SessionFactory;
@@ -122,7 +122,7 @@ public class Target {
 
     public void closedCallback() {
         if (pagePromise != null) {
-            this.pagePromise.emit(Variables.Event.PAGE_CLOSE.getName(), null);
+            this.pagePromise.emit(Builder.Event.PAGE_CLOSE.getName(), null);
             this.pagePromise.setClosed(true);
         }
         this.isClosedPromiseLatch.countDown();
@@ -170,12 +170,12 @@ public class Target {
                 return true;
             }
             Page openerPage = opener.getPagePromise();
-            if (openerPage.getListenerCount(Variables.Event.PAGE_POPUP.getName()) <= 0) {
+            if (openerPage.getListenerCount(Builder.Event.PAGE_POPUP.getName()) <= 0) {
                 this.initializedPromise = true;
                 return true;
             }
             Page pupopPage = this.page();
-            pupopPage.emit(Variables.Event.PAGE_POPUP.getName(), pupopPage);
+            pupopPage.emit(Builder.Event.PAGE_POPUP.getName(), pupopPage);
             this.initializedPromise = true;
             return true;
         } finally {
@@ -190,7 +190,7 @@ public class Target {
         if (initializedPromise == null) {
             this.initializedCountDown = new CountDownLatch(1);
             try {
-                initializedCountDown.await(Variables.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+                initializedCountDown.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 throw new RuntimeException("Wait for InitializedPromise fail:", e);
             }
@@ -315,7 +315,7 @@ public class Target {
     }
 
     public boolean WaiforisClosedPromise() throws InterruptedException {
-        return this.isClosedPromiseLatch.await(Variables.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+        return this.isClosedPromiseLatch.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
     }
 
 }

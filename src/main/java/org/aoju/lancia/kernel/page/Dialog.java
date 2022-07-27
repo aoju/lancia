@@ -30,7 +30,6 @@ import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.util.HashMap;
@@ -60,7 +59,7 @@ public class Dialog {
         super();
     }
 
-    public Dialog(CDPSession client, Variables.DialogType type, String message, String defaultValue) {
+    public Dialog(CDPSession client, Builder.DialogType type, String message, String defaultValue) {
         super();
         this.client = client;
         this.type = type.getType();

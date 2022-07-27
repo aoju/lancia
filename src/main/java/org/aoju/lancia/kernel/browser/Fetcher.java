@@ -32,7 +32,6 @@ import org.aoju.bus.core.toolkit.ZipKit;
 import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.option.FetcherOption;
 
 import java.io.*;
@@ -61,9 +60,9 @@ import java.util.stream.Stream;
  */
 public class Fetcher {
 
-    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<String, Map<String, String>>() {
+    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
         {
-            put("chrome", new HashMap<String, String>() {
+            put("chrome", new HashMap<>() {
                 {
                     put("host", "https://npm.taobao.org/mirrors");
                     put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
@@ -72,7 +71,7 @@ public class Fetcher {
                     put("win64", "%s/chromium-browser-snapshots/Win_x64/%s/%s.zip");
                 }
             });
-            put("firefox", new HashMap<String, String>() {
+            put("firefox", new HashMap<>() {
                 {
                     put("host", "https://github.com/puppeteer/juggler/releases");
                     put("linux", "%s/download/%s/%s.zip");
@@ -153,7 +152,7 @@ public class Fetcher {
      * @throws IOException          异常
      */
     public static Revision on() throws InterruptedException, ExecutionException, IOException {
-        return on(Variables.VERSION);
+        return on(Builder.VERSION);
     }
 
     /**
@@ -168,7 +167,7 @@ public class Fetcher {
      */
     public static Revision on(String version) throws InterruptedException, ExecutionException, IOException {
         Fetcher fetcher = new Fetcher();
-        String downLoadVersion = StringKit.isEmpty(version) ? Variables.VERSION : version;
+        String downLoadVersion = StringKit.isEmpty(version) ? Builder.VERSION : version;
         Revision revision = fetcher.revisionInfo(downLoadVersion);
         if (!revision.isLocal()) {
             return fetcher.download(downLoadVersion);
@@ -321,8 +320,8 @@ public class Fetcher {
         String downloadUrl = DOWNLOAD_URL.get(product).get(platform);
         URL urlSend = new URL(String.format(downloadUrl.substring(0, downloadUrl.length() - 9), this.downloadHost));
         URLConnection conn = urlSend.openConnection();
-        conn.setConnectTimeout(Variables.CONNECT_TIME_OUT);
-        conn.setReadTimeout(Variables.READ_TIME_OUT);
+        conn.setConnectTimeout(Builder.CONNECT_TIME_OUT);
+        conn.setReadTimeout(Builder.READ_TIME_OUT);
         String pageContent = Builder.toString(conn.getInputStream());
         return parseRevision(pageContent);
     }
@@ -404,7 +403,7 @@ public class Fetcher {
      * @throws IOException 异常
      */
     private Stream<Path> readdirAsync(Path downloadsFolder) throws IOException {
-        Assert.isTrue(Files.isDirectory(downloadsFolder), "DownloadsFolder " + downloadsFolder.toString() + " is not Directory");
+        Assert.isTrue(Files.isDirectory(downloadsFolder), "DownloadsFolder " + downloadsFolder + " is not Directory");
         return Files.list(downloadsFolder);
     }
 
@@ -491,7 +490,7 @@ public class Fetcher {
             IoKit.close(stringWriter);
         }
         if (StringKit.isEmpty(mountPath)) {
-            throw new RuntimeException("Could not find volume path in [" + stringWriter.toString() + "]");
+            throw new RuntimeException("Could not find volume path in [" + stringWriter + "]");
         }
         Optional<Path> optionl = this.readdirAsync(Paths.get(mountPath)).filter(item -> item.toString().endsWith(".app")).findFirst();
         if (optionl.isPresent()) {

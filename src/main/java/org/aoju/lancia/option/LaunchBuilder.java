@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.option;
 
-import org.aoju.lancia.Variables;
-import org.aoju.lancia.kernel.Context;
+import org.aoju.lancia.Builder;
+import org.aoju.lancia.kernel.Variables;
 import org.aoju.lancia.kernel.page.Viewport;
 
 import java.util.List;
@@ -63,7 +63,7 @@ public class LaunchBuilder {
     }
 
     /**
-     * 忽略指定的默认启动参数，默认的启动参数见 {@link Variables#DEFAULT_ARGS}
+     * 忽略指定的默认启动参数，默认的启动参数见 {@link Builder#DEFAULT_ARGS}
      *
      * @param ignoreDefaultArgs 要忽略的启动参数
      * @return LaunchBuilder
@@ -93,7 +93,7 @@ public class LaunchBuilder {
         return this;
     }
 
-    public LaunchBuilder env(Context env) {
+    public LaunchBuilder env(Variables env) {
         options.setEnv(env);
         return this;
     }

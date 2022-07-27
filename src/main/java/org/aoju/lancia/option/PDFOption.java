@@ -174,4 +174,5 @@ public class PDFOption {
     public void setDisplayHeaderFooter(boolean displayHeaderFooter) {
         this.displayHeaderFooter = displayHeaderFooter;
     }
+
 }

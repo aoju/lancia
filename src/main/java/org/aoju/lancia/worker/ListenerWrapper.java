@@ -41,6 +41,7 @@ public class ListenerWrapper<T> {
     private BrowserListener<T> handler;
 
     public ListenerWrapper() {
+
     }
 
     public ListenerWrapper(EventEmitter emitter, String eventName, BrowserListener<T> handler) {

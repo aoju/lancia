@@ -37,7 +37,6 @@ import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Browser;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Launcher;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.kernel.browser.Revision;
 import org.aoju.lancia.kernel.browser.Runner;
@@ -106,7 +105,7 @@ public class ChromeLauncher implements Launcher {
             }
         }
         if (!isCustomUserDir) {
-            temporaryUserDataDir = Files.createTempDirectory(Variables.PROFILE_PREFIX).toRealPath().toString();
+            temporaryUserDataDir = Files.createTempDirectory(Builder.PROFILE_PREFIX).toRealPath().toString();
             chromeArguments.add("--user-data-dir=" + temporaryUserDataDir);
         }
         if (!isCustomRemoteDebugger) {
@@ -166,7 +165,7 @@ public class ChromeLauncher implements Launcher {
         if (options instanceof LaunchOption) {
             launchOptions = (LaunchOption) options;
             if (!launchOptions.getIgnoreAllDefaultArgs()) {
-                chromeArguments.addAll(Variables.DEFAULT_ARGS);
+                chromeArguments.addAll(Builder.DEFAULT_ARGS);
             }
         }
         return chromeArguments;
@@ -194,8 +193,8 @@ public class ChromeLauncher implements Launcher {
                 return chromeExecutable;
             }
             // 环境变量中配置了chromeExecutable，就使用环境变量中的路径
-            for (int i = 0; i < Variables.EXECUTABLE_ENV.length; i++) {
-                chromeExecutable = context.getEnv(Variables.EXECUTABLE_ENV[i]);
+            for (int i = 0; i < Builder.EXECUTABLE_ENV.length; i++) {
+                chromeExecutable = VARIABLES.getEnv(Builder.EXECUTABLE_ENV[i]);
                 if (StringKit.isNotEmpty(chromeExecutable)) {
                     boolean assertDir = Builder.isExecutable(chromeExecutable);
                     if (!assertDir) {
@@ -206,7 +205,7 @@ public class ChromeLauncher implements Launcher {
             }
 
             // 环境变量中配置了chrome版本，就用环境变量中的版本
-            String revision = context.getEnv(Variables.PUPPETEER_CHROMIUM_REVISION_ENV);
+            String revision = VARIABLES.getEnv(Builder.PUPPETEER_CHROMIUM_REVISION_ENV);
             if (StringKit.isNotEmpty(revision)) {
                 Revision revisionInfo = fetcher.revisionInfo(revision);
                 if (!revisionInfo.isLocal()) {
@@ -230,8 +229,8 @@ public class ChromeLauncher implements Launcher {
             }
 
             // 寻找可能存在的启动路径
-            for (int i = 0; i < Variables.PROBABLE_CHROME_EXECUTABLE_PATH.length; i++) {
-                chromeExecutable = Variables.PROBABLE_CHROME_EXECUTABLE_PATH[i];
+            for (int i = 0; i < Builder.PROBABLE_CHROME_EXECUTABLE_PATH.length; i++) {
+                chromeExecutable = Builder.PROBABLE_CHROME_EXECUTABLE_PATH[i];
                 if (StringKit.isNotEmpty(chromeExecutable)) {
                     boolean assertDir = Builder.isExecutable(chromeExecutable);
                     if (assertDir) {

@@ -29,7 +29,6 @@ import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.CDPSession;
 
@@ -85,7 +84,7 @@ public class Tracing {
     public void start(String path, boolean screenshots, Set<String> categories) {
         Assert.isTrue(!this.recording, "Cannot start recording trace while already recording trace.");
         if (categories == null)
-            categories = new HashSet<>(Variables.DEFAULTCATEGORIES);
+            categories = new HashSet<>(Builder.DEFAULTCATEGORIES);
         if (screenshots)
             categories.add("disabled-by-default-devtools.screenshot");
         this.path = path;
@@ -106,7 +105,7 @@ public class Tracing {
                 Tracing tracing;
                 try {
                     tracing = (Tracing) this.getTarget();
-                    Builder.readProtocolStream(tracing.getClient(), event.getString(Variables.RECV_MESSAGE_STREAM_PROPERTY), tracing.getPath(), true);
+                    Builder.readProtocolStream(tracing.getClient(), event.getString(Builder.RECV_MESSAGE_STREAM_PROPERTY), tracing.getPath(), true);
                 } catch (IOException ignored) {
 
                 }

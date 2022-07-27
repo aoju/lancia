@@ -31,7 +31,6 @@ import org.aoju.bus.core.exception.InstrumentException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.Variables;
 import org.aoju.lancia.kernel.page.TargetInfo;
 import org.aoju.lancia.option.ConnectionOption;
 
@@ -191,28 +190,28 @@ public class Connection extends EventEmitter implements Consumer<String> {
         try {
             if (StringKit.isNotEmpty(message)) {
                 JSONObject readTree = JSON.parseObject(message);
-                String methodNode = readTree.getString(Variables.RECV_MESSAGE_METHOD_PROPERTY);
+                String methodNode = readTree.getString(Builder.RECV_MESSAGE_METHOD_PROPERTY);
                 String method = null;
                 if (methodNode != null) {
                     method = methodNode;
                 }
                 if ("Target.attachedToTarget".equals(method)) {// attached to target -> page attached to browser
-                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-                    String sessionId = paramsNode.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                    String typeNode = paramsNode.getJSONObject(Variables.RECV_MESSAGE_TARGETINFO_PROPERTY).getString(Variables.RECV_MESSAGE_TYPE_PROPERTY);
+                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+                    String sessionId = paramsNode.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    String typeNode = paramsNode.getJSONObject(Builder.RECV_MESSAGE_TARGETINFO_PROPERTY).getString(Builder.RECV_MESSAGE_TYPE_PROPERTY);
                     CDPSession cdpSession = new CDPSession(this, typeNode, sessionId);
                     sessions.put(sessionId, cdpSession);
                 } else if ("Target.detachedFromTarget".equals(method)) {// 页面与浏览器脱离关系
-                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
-                    String sessionId = paramsNode.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+                    String sessionId = paramsNode.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
                     CDPSession cdpSession = sessions.get(sessionId);
                     if (cdpSession != null) {
                         cdpSession.onClosed();
                         sessions.remove(sessionId);
                     }
                 }
-                String objectSessionId = readTree.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                Long objectId = readTree.getLong(Variables.RECV_MESSAGE_ID_PROPERTY);
+                String objectSessionId = readTree.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                Long objectId = readTree.getLong(Builder.RECV_MESSAGE_ID_PROPERTY);
                 if (objectSessionId != null) {//cdpsession消息，当然cdpsession来处理
                     CDPSession cdpSession = this.sessions.get(objectSessionId);
                     if (cdpSession != null) {
@@ -223,13 +222,13 @@ public class Connection extends EventEmitter implements Consumer<String> {
                     Messages callback = this.callbacks.get(id);
                     if (callback != null) {
                         try {
-                            JSONObject error = readTree.getJSONObject(Variables.RECV_MESSAGE_ERROR_PROPERTY);
+                            JSONObject error = readTree.getJSONObject(Builder.RECV_MESSAGE_ERROR_PROPERTY);
                             if (error != null) {
                                 if (callback.getCountDownLatch() != null) {
                                     callback.setErrorText(Builder.createProtocolError(readTree));
                                 }
                             } else {
-                                JSONObject result = readTree.getJSONObject(Variables.RECV_MESSAGE_RESULT_PROPERTY);
+                                JSONObject result = readTree.getJSONObject(Builder.RECV_MESSAGE_RESULT_PROPERTY);
                                 callback.setResult(result);
                             }
                         } finally {
@@ -247,7 +246,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                         }
                     }
                 } else {// 是我们监听的事件，把它事件
-                    JSONObject paramsNode = readTree.getJSONObject(Variables.RECV_MESSAGE_PARAMS_PROPERTY);
+                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
                     this.emit(method, paramsNode);
                 }
             }
@@ -267,7 +266,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         params.put("targetId", targetInfo.getTargetId());
         params.put("flatten", true);
         JSONObject result = this.send("Target.attachToTarget", params, true);
-        return this.sessions.get(result.getString(Variables.RECV_MESSAGE_SESSION_ID_PROPERTY));
+        return this.sessions.get(result.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY));
     }
 
     public String url() {
@@ -306,7 +305,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         for (CDPSession session : this.sessions.values())
             session.onClosed();
         this.sessions.clear();
-        this.emit(Variables.Event.CONNECTION_DISCONNECTED.getName(), null);
+        this.emit(Builder.Event.CONNECTION_DISCONNECTED.getName(), null);
     }
 
     public boolean getClosed() {

@@ -93,5 +93,4 @@ public class ScriptTagOption {
         this.type = type;
     }
 
-
 }
