@@ -28,7 +28,7 @@ package org.aoju.lancia.kernel.page;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -134,7 +134,7 @@ public class DOMWorld {
             try {
                 boolean await = this.waitForContext.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
                 if (!await) {
-                    throw new InstrumentException("Wait for ExecutionContext time out");
+                    throw new InternalException("Wait for ExecutionContext time out");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -221,14 +221,14 @@ public class DOMWorld {
                 if (Builder.Result.CONTENT_SUCCESS.getResult().equals(this.frameManager.getNavigateResult())) {
 
                 } else if (Builder.Result.TIMEOUT.getResult().equals(this.frameManager.getNavigateResult())) {
-                    throw new InstrumentException("setContent timeout :" + html);
+                    throw new InternalException("setContent timeout :" + html);
                 } else if (Builder.Result.TERMINATION.getResult().equals(this.frameManager.getNavigateResult())) {
-                    throw new InstrumentException("Navigating frame was detached");
+                    throw new InternalException("Navigating frame was detached");
                 } else {
-                    throw new InstrumentException("UnNokwn result " + this.frameManager.getNavigateResult());
+                    throw new InternalException("UnNokwn result " + this.frameManager.getNavigateResult());
                 }
             } else {
-                throw new InstrumentException("setContent timeout " + html);
+                throw new InternalException("setContent timeout " + html);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.logger.Logger;
 
 /**
@@ -46,7 +46,7 @@ public class TransportFactory {
     public static Transport create(String browserWSEndpoint) {
         try {
             return new SocketTransport(browserWSEndpoint);
-        } catch (InstrumentException e) {
+        } catch (InternalException e) {
             Logger.warn(e.getMessage());
             return new PipeTransport();
         }

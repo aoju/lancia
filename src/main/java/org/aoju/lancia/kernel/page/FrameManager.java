@@ -27,7 +27,7 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.CollKit;
@@ -456,19 +456,19 @@ public class FrameManager extends EventEmitter {
                 long end = System.currentTimeMillis();
                 boolean await = documentLatch.await(timeout - (end - start), TimeUnit.MILLISECONDS);
                 if (!await) {
-                    throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
+                    throw new InternalException("Navigation timeout of " + timeout + " ms exceeded at " + url);
                 }
                 if (Builder.Result.SUCCESS.getResult().equals(navigateResult)) {
                     return watcher.navigationResponse();
                 }
             }
             if (Builder.Result.ERROR.getResult().equals(navigateResult)) {
-                throw new InstrumentException("Navigation timeout of " + timeout + " ms exceeded at " + url);
+                throw new InternalException("Navigation timeout of " + timeout + " ms exceeded at " + url);
             } else if (Builder.Result.TERMINATION.getResult().equals(navigateResult)) {
-                throw new InstrumentException("Navigating frame was detached");
+                throw new InternalException("Navigating frame was detached");
             } else {
                 Logger.error("Unknown result " + navigateResult);
-                throw new InstrumentException("Unkown result " + navigateResult);
+                throw new InternalException("Unkown result " + navigateResult);
             }
         } finally {
             watcher.dispose();
@@ -545,12 +545,12 @@ public class FrameManager extends EventEmitter {
                 return false;
             }
             if (response.get("errorText") != null) {
-                throw new InstrumentException(response.get("errorText").toString() + " at " + url);
+                throw new InternalException(response.get("errorText").toString() + " at " + url);
             }
             if (response.get("loaderId") != null) {
                 return true;
             }
-        } catch (InstrumentException e) {
+        } catch (InternalException e) {
             this.setNavigateResult(Builder.Result.ERROR.getResult());
             Logger.error(e.getMessage());
         }

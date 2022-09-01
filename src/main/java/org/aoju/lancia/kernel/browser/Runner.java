@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.browser;
 
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.health.Platform;
@@ -243,7 +243,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
     public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio) throws InterruptedException {
         if (usePipe) {
             // pipe connection
-            throw new InstrumentException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
+            throw new InternalException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
         } else {
             // websoket connection
             String waitForWSEndpoint = waitForWSEndpoint(timeout, dumpio);
@@ -407,7 +407,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     if (readThread != null) {
                         readThread = null;
                     }
-                    throw new InstrumentException(
+                    throw new InternalException(
                             "Timed out after " + timeout + " ms while trying to connect to the browser!"
                                     + "Chrome output: "
                                     + chromeOutput.get());
@@ -420,7 +420,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
             }
             String url = ws.toString();
             if (StringKit.isEmpty(url)) {
-                throw new InstrumentException("Can't get WSEndpoint");
+                throw new InternalException("Can't get WSEndpoint");
             }
             return url;
         }

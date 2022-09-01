@@ -27,7 +27,7 @@ package org.aoju.lancia.worker;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
@@ -108,7 +108,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 long id = rawSend(message, true, this.callbacks);
                 message.waitForResult(0, TimeUnit.MILLISECONDS);
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InstrumentException(message.getErrorText());
+                    throw new InternalException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -116,7 +116,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 return null;
             }
         } catch (InterruptedException e) {
-            throw new InstrumentException(e);
+            throw new InternalException(e);
         }
     }
 
@@ -134,7 +134,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 long id = this.rawSend(message, true, this.callbacks);
                 message.waitForResult(0, TimeUnit.MILLISECONDS);
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InstrumentException(message.getErrorText());
+                    throw new InternalException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -149,7 +149,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
 
         } catch (InterruptedException e) {
-            throw new InstrumentException(e);
+            throw new InternalException(e);
         }
         return null;
     }

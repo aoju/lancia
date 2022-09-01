@@ -31,7 +31,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.kernel.browser.Context;
@@ -1432,7 +1432,7 @@ public class Page extends EventEmitter {
             Assert.isTrue(handle != null, "Page.printToPDF result has no stream handle. Please check your chrome version. result=" + result.toString());
             return (byte[]) Builder.readProtocolStream(this.client, handle, options.getPath(), false);
         }
-        throw new InstrumentException("Page.printToPDF no response");
+        throw new InternalException("Page.printToPDF no response");
     }
 
     /**
@@ -2042,7 +2042,7 @@ public class Page extends EventEmitter {
         BrowserListener<Object> disConnectLis = new BrowserListener<Object>() {
             @Override
             public void onBrowserEvent(Object event) {
-                throw new InstrumentException("Target closed");
+                throw new InternalException("Target closed");
             }
         };
         disConnectLis.setMethod(Builder.Event.CDPSESSION_DISCONNECTED.getName());
@@ -2160,7 +2160,7 @@ public class Page extends EventEmitter {
     }
 
     private void onTargetCrashed() {
-        this.emit("error", new InstrumentException("Page crashed!"));
+        this.emit("error", new InternalException("Page crashed!"));
     }
 
     /**
@@ -2335,7 +2335,7 @@ public class Page extends EventEmitter {
             if (this.latch != null) {
                 boolean await = this.latch.await(finalTimeout, TimeUnit.MILLISECONDS);
                 if (!await) {
-                    throw new InstrumentException("waiting for file chooser failed: timeout " + finalTimeout + "ms exceeded");
+                    throw new InternalException("waiting for file chooser failed: timeout " + finalTimeout + "ms exceeded");
                 }
             }
         }

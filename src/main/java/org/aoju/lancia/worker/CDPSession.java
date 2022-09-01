@@ -26,7 +26,7 @@
 package org.aoju.lancia.worker;
 
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 
@@ -85,7 +85,7 @@ public class CDPSession extends EventEmitter {
      */
     public JSONObject send(String method, Map<String, Object> params, boolean isBlock, CountDownLatch outLatch, int timeout) {
         if (connection == null) {
-            throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
+            throw new InternalException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
         Messages message = new Messages();
         message.setMethod(method);
@@ -105,7 +105,7 @@ public class CDPSession extends EventEmitter {
                     throw new TimeoutException("Wait " + method + " for sessionWaitingResultTimeout:" + (this.connection.getConnectionOption().getSessionWaitingResultTimeout()) + " MILLISECONDS with no response");
                 }
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InstrumentException(message.getErrorText());
+                    throw new InternalException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -133,7 +133,7 @@ public class CDPSession extends EventEmitter {
      */
     public JSONObject send(String method, Map<String, Object> params, boolean isBlock) {
         if (connection == null) {
-            throw new InstrumentException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
+            throw new InternalException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
         Messages message = new Messages();
         message.setMethod(method);

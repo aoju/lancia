@@ -27,7 +27,7 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.nimble.runtime.ConsoleCalledPayload;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;
@@ -112,7 +112,7 @@ public class Worker extends EventEmitter {
             this.setContextLatch(new CountDownLatch(1));
             boolean await = this.getContextLatch().await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
             if (!await) {
-                throw new InstrumentException("Wait for ExecutionContext timeout");
+                throw new InternalException("Wait for ExecutionContext timeout");
             }
         }
         return context;

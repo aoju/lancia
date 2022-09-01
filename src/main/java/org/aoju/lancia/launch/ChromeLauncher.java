@@ -30,7 +30,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import org.aoju.bus.core.lang.Http;
 import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
@@ -129,7 +129,7 @@ public class ChromeLauncher implements Launcher {
             return browser;
         } catch (IOException | InterruptedException e) {
             runner.kill();
-            throw new InstrumentException("Failed to launch the browser process:" + e.getMessage(), e);
+            throw new InternalException("Failed to launch the browser process:" + e.getMessage(), e);
         }
     }
 
@@ -209,7 +209,7 @@ public class ChromeLauncher implements Launcher {
             if (StringKit.isNotEmpty(revision)) {
                 Revision revisionInfo = fetcher.revisionInfo(revision);
                 if (!revisionInfo.isLocal()) {
-                    throw new InstrumentException(
+                    throw new InternalException(
                             "Tried to use PUPPETEER_CHROMIUM_REVISION env variable to launch browser but did not find executable at: "
                                     + revisionInfo.getExecutablePath());
                 }
@@ -221,7 +221,7 @@ public class ChromeLauncher implements Launcher {
                 localRevisions.sort(Comparator.reverseOrder());
                 Revision revisionInfo = fetcher.revisionInfo(localRevisions.get(0));
                 if (!revisionInfo.isLocal()) {
-                    throw new InstrumentException(
+                    throw new InternalException(
                             "Tried to use PUPPETEER_CHROMIUM_REVISION env variable to launch browser but did not find executable at: "
                                     + revisionInfo.getExecutablePath());
                 }
@@ -242,7 +242,7 @@ public class ChromeLauncher implements Launcher {
 
         Revision revision = fetcher.revisionInfo(this.preferredRevision);
         if (!revision.isLocal())
-            throw new InstrumentException(MessageFormat.format("Could not find browser revision {0}. Pleaze download a browser binary.", this.preferredRevision));
+            throw new InternalException(MessageFormat.format("Could not find browser revision {0}. Pleaze download a browser binary.", this.preferredRevision));
         return revision.getExecutablePath();
     }
 

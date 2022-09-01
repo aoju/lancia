@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.worker.BrowserListener;
@@ -96,7 +96,7 @@ public class LifecycleWatcher {
             @Override
             public void onBrowserEvent(Object event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
-                watcher.terminate(new InstrumentException("Navigation failed because browser has disconnected!"));
+                watcher.terminate(new InternalException("Navigation failed because browser has disconnected!"));
             }
         };
         disconnecteListener.setTarget(this);
@@ -220,7 +220,7 @@ public class LifecycleWatcher {
         return this.lifecyclePromise;
     }
 
-    private void terminate(InstrumentException e) {
+    private void terminate(InternalException e) {
         terminationCallback();
     }
 

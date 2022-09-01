@@ -25,7 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.io.ByteString;
 import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.lang.Header;
@@ -256,7 +256,7 @@ public class SocketTransport implements Transport {
                     try {
                         cur = translateSingle(buffer);
                         frames.add(cur);
-                    } catch (InstrumentException e) {
+                    } catch (InternalException e) {
                         buffer.reset();
                         byteBuffer = ByteBuffer.allocate(this.realPacketSize);
                         byteBuffer.put(buffer);
@@ -274,9 +274,9 @@ public class SocketTransport implements Transport {
          * @param payloadLength  旧有效载荷长度
          * @param realLacketSize 实际数据包大小
          * @return 包含新的有效负载长度和新的包大小的新有效负载数据
-         * @throws InstrumentException 如果控制帧的长度无效，则抛出
+         * @throws InternalException 如果控制帧的长度无效，则抛出
          */
-        private void translatePayload(int[] array, ByteBuffer buffer, int payloadLength, int realLacketSize) throws InstrumentException {
+        private void translatePayload(int[] array, ByteBuffer buffer, int payloadLength, int realLacketSize) throws InternalException {
             if (payloadLength == 126) {
                 realLacketSize += 2; // 额外的长度字节
                 byte[] sizebytes = new byte[3];
@@ -320,7 +320,7 @@ public class SocketTransport implements Transport {
 
             if (maxPacketsize < realPacketSize) {
                 Logger.trace("Incomplete frame: maxPacketsize < realPacketSize");
-                throw new InstrumentException("" + realPacketSize);
+                throw new InternalException("" + realPacketSize);
             }
             ByteBuffer payload = ByteBuffer.allocate(payloadLength);
             if (mask) {
@@ -507,32 +507,32 @@ public class SocketTransport implements Transport {
             setReuseAddr(false);
         }
 
-        public static void translate(ByteBuffer buf) throws InstrumentException {
+        public static void translate(ByteBuffer buf) throws InternalException {
             String line = BufferKit.readLine(buf, Charset.UTF_8);
             if (line == null)
-                throw new InstrumentException("" + buf.capacity() + 128);
+                throw new InternalException("" + buf.capacity() + 128);
 
             String[] firstLineTokens = line.split(Symbol.SPACE, 3);
             if (firstLineTokens.length != 3) {
-                throw new InstrumentException();
+                throw new InternalException();
             }
 
             if (!"101".equals(firstLineTokens[1])) {
-                throw new InstrumentException(String.format("Invalid status code received: %s Status line: %s", firstLineTokens[1], line));
+                throw new InternalException(String.format("Invalid status code received: %s Status line: %s", firstLineTokens[1], line));
             }
             if (!"HTTP/1.1".equalsIgnoreCase(firstLineTokens[0])) {
-                throw new InstrumentException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
+                throw new InternalException(String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
             }
 
             line = BufferKit.readLine(buf, Charset.UTF_8);
             while (line != null && line.length() > 0) {
                 String[] pair = line.split(":", 2);
                 if (pair.length != 2)
-                    throw new InstrumentException("Not an http header");
+                    throw new InternalException("Not an http header");
                 line = BufferKit.readLine(buf, Charset.UTF_8);
             }
             if (line == null)
-                throw new InstrumentException();
+                throw new InternalException();
         }
 
         public boolean send(String text) {
@@ -679,11 +679,11 @@ public class SocketTransport implements Transport {
             close(code, Normal.EMPTY, false);
         }
 
-        public void close(InstrumentException e) {
+        public void close(InternalException e) {
             close(0, e.getMessage(), false);
         }
 
-        public void startHandshake() throws InstrumentException {
+        public void startHandshake() throws InternalException {
             TreeMap<String, String> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             map.put(Header.HOST, this.host);
             map.put(Header.UPGRADE, "websocket");

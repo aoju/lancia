@@ -28,6 +28,7 @@ package org.aoju.lancia.kernel.page;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
@@ -44,7 +45,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessControlException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -446,7 +446,7 @@ public class ElementHandle extends JSHandle {
             Path absolutePath = Paths.get(filePath).toAbsolutePath();
             boolean readable = Files.isReadable(absolutePath);
             if (!readable) {
-                throw new AccessControlException(filePath + "is not readable");
+                throw new InternalException(filePath + "is not readable");
             }
             return absolutePath.toString();
         }).collect(Collectors.toList());

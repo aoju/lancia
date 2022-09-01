@@ -28,7 +28,7 @@ package org.aoju.lancia;
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InstrumentException;
+import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.kernel.browser.Context;
@@ -275,7 +275,7 @@ public class Browser extends EventEmitter {
             }
             now = System.currentTimeMillis() - base;
         }
-        throw new InstrumentException("Waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
+        throw new InternalException("Waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
     }
 
     /**
