@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.network;
 
 /**
- * 请求的时间信息
+ * Timing information for the request.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,67 +35,68 @@ package org.aoju.lancia.nimble.network;
 public class ResourceTiming {
 
     /**
-     * 请求时间毫秒计算
+     * Timing's requestTime is a baseline in seconds, while the other numbers are ticks in
+     * milliseconds relatively to this requestTime.
      */
     private int requestTime;
     /**
-     * 开始解析代理
+     * Started resolving proxy.
      */
     private int proxyStart;
     /**
-     * 结束解析代理
+     * Finished resolving proxy.
      */
     private int proxyEnd;
     /**
-     * 已启动DNS地址解析
+     * Started DNS address resolve.
      */
     private int dnsStart;
     /**
-     * 完成DNS地址解析
+     * Finished DNS address resolve.
      */
     private int dnsEnd;
     /**
-     * 开始连接到远程主机
+     * Started connecting to the remote host.
      */
     private int connectStart;
     /**
-     * 连接到远程主机
+     * Connected to the remote host.
      */
     private int connectEnd;
     /**
-     * 开始SSL握手
+     * Started SSL handshake.
      */
     private int sslStart;
     /**
-     * 结束SSL握手
+     * Finished SSL handshake.
      */
     private int sslEnd;
     /**
-     * 开始启动ServiceWorker
+     * Started running ServiceWorker.
      */
     private int workerStart;
     /**
-     * 完成ServiceWorker启动
+     * Finished Starting ServiceWorker.
      */
     private int workerReady;
     /**
-     * 开始发送请求
+     * Started sending request.
      */
     private int sendStart;
     /**
-     * 结束发送请求
+     * Finished sending request.
      */
     private int sendEnd;
     /**
-     * 服务器开始推送请求的时间
+     * Time the server started pushing request.
      */
     private int pushStart;
     /**
-     * 计算服务器完成推送请求的时间
+     * Time the server finished pushing request.
      */
     private int pushEnd;
     /**
-     * 完成响应头的接收
+     * Finished receiving response headers.
      */
     private int receiveHeadersEnd;
 
@@ -226,5 +227,4 @@ public class ResourceTiming {
     public void setReceiveHeadersEnd(int receiveHeadersEnd) {
         this.receiveHeadersEnd = receiveHeadersEnd;
     }
-
 }

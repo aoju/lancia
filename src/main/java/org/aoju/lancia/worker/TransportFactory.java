@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,6 +28,8 @@ package org.aoju.lancia.worker;
 import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.logger.Logger;
 
+import java.net.URI;
+
 /**
  * 传输工厂
  *
@@ -45,12 +47,33 @@ public class TransportFactory {
      */
     public static Transport create(String browserWSEndpoint) {
         try {
-            return new SocketTransport(browserWSEndpoint);
-        } catch (InternalException e) {
+            return socket(browserWSEndpoint);
+        } catch (InternalException | InterruptedException e) {
             Logger.warn(e.getMessage());
-            return new PipeTransport();
+            return pipe();
         }
+    }
 
+    /**
+     * create websocket client
+     *
+     * @param browserWSEndpoint 连接websocket的地址
+     * @return TransportBuilder websocket客户端
+     * @throws InterruptedException 被打断异常
+     */
+    public static Transport socket(String browserWSEndpoint) throws InterruptedException {
+        TransportBuilder client = new TransportBuilder(URI.create(browserWSEndpoint));
+        // 保持websokcet连接
+        client.setConnectionLostTimeout(0);
+        client.connectBlocking();
+        return client;
+    }
+
+    /**
+     * 创建套接字传输协议
+     */
+    public static Transport pipe() {
+        return new PipeTransport();
     }
 
 }

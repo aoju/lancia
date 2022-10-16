@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,10 +26,11 @@
 package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.option.ClickOption;
+import org.aoju.lancia.option.ClickOptions;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,14 +82,14 @@ public class Mouse {
         Map<String, Object> params = new HashMap<>();
         params.put("type", "mouseMoved");
         params.put("button", this.button);
-        BigDecimal divide = new BigDecimal(i).divide(new BigDecimal(steps), 17, BigDecimal.ROUND_HALF_UP);
+        BigDecimal divide = new BigDecimal(i).divide(new BigDecimal(steps), 17, RoundingMode.HALF_UP);
         params.put("x", divide.multiply(BigDecimal.valueOf(this.x - fromX)).add(new BigDecimal(fromX)).doubleValue());
         params.put("y", divide.multiply(BigDecimal.valueOf(this.y - fromY)).add(new BigDecimal(fromY)).doubleValue());
         params.put("modifiers", this.keyboard.getModifiers());
         this.client.send("Input.dispatchMouseEvent", params, true);
     }
 
-    public void click(int x, int y, ClickOption options) throws InterruptedException {
+    public void click(int x, int y, ClickOptions options) throws InterruptedException {
         if (options.getDelay() != 0) {
             this.move(x, y, 0);
             this.down(options);
@@ -103,10 +104,10 @@ public class Mouse {
     }
 
     public void up() {
-        this.up(new ClickOption());
+        this.up(new ClickOptions());
     }
 
-    public void up(ClickOption options) {
+    public void up(ClickOptions options) {
         String button = "left";
         int clickCount = 1;
         this.button = "none";
@@ -127,10 +128,10 @@ public class Mouse {
     }
 
     public void down() {
-        this.down(new ClickOption());
+        this.down(new ClickOptions());
     }
 
-    public void down(ClickOption options) {
+    public void down(ClickOptions options) {
         String button = "left";
         int clickCount = 1;
         if (StringKit.isNotEmpty(options.getButton())) {

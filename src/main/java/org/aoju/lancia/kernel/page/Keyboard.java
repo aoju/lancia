@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,10 +25,9 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.nimble.KeyDefinition;
-import org.aoju.lancia.nimble.KeyDescription;
+import org.aoju.lancia.nimble.input.KeyDefinition;
+import org.aoju.lancia.nimble.input.KeyDescription;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.util.HashMap;
@@ -397,7 +396,7 @@ public class Keyboard {
     private KeyDescription keyDescriptionForString(String keyString) {
 
         int shift = this.modifiers & 8;
-        KeyDescription description = new KeyDescription(Normal.EMPTY, 0, Normal.EMPTY, Normal.EMPTY, 0);
+        KeyDescription description = new KeyDescription("", 0, "", "", 0);
         KeyDefinition definition = keyDefinitions.get(keyString);
         if (definition == null)
             throw new IllegalArgumentException("Unknown key: " + keyString);
@@ -425,9 +424,14 @@ public class Keyboard {
         if (shift != 0 && StringKit.isNotEmpty(definition.getShiftText()))
             description.setText(definition.getShiftText());
 
+        // if any modifiers besides shift are pressed, no text should be sent
         if ((this.modifiers & ~8) != 0)
-            description.setText(Normal.EMPTY);
+            description.setText("");
 
+//        if ("MetaLeft".equals(description.getCode()))
+//            description.setCode("OSLeft");
+//        if ("MetaRight".equals(description.getCode()))
+//            description.setCode("OSRight");
         return description;
     }
 

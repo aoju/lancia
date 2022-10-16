@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,9 +26,9 @@
 package org.aoju.lancia;
 
 import org.aoju.lancia.kernel.Variables;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.LaunchOption;
+import org.aoju.lancia.option.BrowserOptions;
+import org.aoju.lancia.option.ChromeArgOptions;
+import org.aoju.lancia.option.LaunchOptions;
 import org.aoju.lancia.worker.Transport;
 
 import java.io.IOException;
@@ -45,13 +45,13 @@ public interface Launcher {
 
     Variables VARIABLES = System::getenv;
 
-    Browser launch(LaunchOption options) throws IOException;
+    Browser launch(LaunchOptions options) throws IOException;
 
-    List<String> defaultArgs(ChromeOption options);
+    List<String> defaultArgs(ChromeArgOptions options);
 
     String resolveExecutablePath(String chromeExecutable) throws IOException;
 
-    Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport);
+    Browser connect(BrowserOptions options, String browserWSEndpoint, String browserURL, Transport transport);
 
     String executablePath() throws IOException;
 

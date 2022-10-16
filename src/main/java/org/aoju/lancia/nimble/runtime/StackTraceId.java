@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,8 +26,8 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 如果设置了`debuggerId`，则堆栈跟踪来自另一个调试器，并且可以在那里进行解析
- * 允许跟踪跨调试器调用。有关用法，请参见`Runtime.StackTrace`和`Debugger.paused`
+ * If `debuggerId` is set stack trace comes from another debugger and can be resolved there. This
+ * allows to track cross-debugger calls. See `Runtime.StackTrace` and `Debugger.paused` for usages.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -37,7 +37,7 @@ public class StackTraceId {
 
     private String id;
     /**
-     * 当前调试器的唯一标识符
+     * Unique identifier of current debugger.
      */
     private String debuggerId;
 

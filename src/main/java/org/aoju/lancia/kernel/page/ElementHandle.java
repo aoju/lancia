@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,20 +25,18 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.nimble.BoxModel;
-import org.aoju.lancia.nimble.BoxModelValue;
-import org.aoju.lancia.nimble.ClickablePoint;
+import org.aoju.lancia.nimble.dom.GetBoxModelReturnValue;
+import org.aoju.lancia.nimble.input.ClickablePoint;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
-import org.aoju.lancia.option.ClickOption;
-import org.aoju.lancia.option.ScreenshotOption;
+import org.aoju.lancia.option.ClickOptions;
+import org.aoju.lancia.option.ScreenshotOptions;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.io.IOException;
@@ -83,11 +81,11 @@ public class ElementHandle extends JSHandle {
     public Frame contentFrame() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JSONObject nodeInfo = this.client.send("DOM.describeNode", params, true);
-        String frameId = nodeInfo.getJSONObject("node").getString("frameId");
-        if (frameId == null || StringKit.isEmpty(frameId))
+        JsonNode nodeInfo = this.client.send("DOM.describeNode", params, true);
+        JsonNode frameId = nodeInfo.get("node").get("frameId");
+        if (frameId == null || StringKit.isEmpty(frameId.asText()))
             return null;
-        return this.frameManager.frame(frameId);
+        return this.frameManager.frame(frameId.asText());
     }
 
     public void scrollIntoViewIfNeeded() {
@@ -112,39 +110,45 @@ public class ElementHandle extends JSHandle {
                 "    element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });\n" +
                 "  return false;\n" +
                 "}";
-        Object error = this.evaluate(pageFunction, Arrays.asList(this.page.getJavascriptEnabled()));
-        if (error != null && error.getClass().equals(Boolean.class) && (boolean) error) {
-            throw new RuntimeException(JSON.toJSONString(error));
+        Object error = this.evaluate(pageFunction, List.of(this.page.getJavascriptEnabled()));
+        try {
+            if (error != null && error.getClass().equals(Boolean.class) && (boolean) error)
+                throw new RuntimeException(org.aoju.lancia.Builder.OBJECTMAPPER.writeValueAsString(error));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
         }
+
     }
 
     private ClickablePoint clickablePoint() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JSONObject result = this.client.send("DOM.getContentQuads", params, true);
-        JSONObject layoutMetrics = this.client.send("Page.getLayoutMetrics", null, true);
-        if (result == null || result.getJSONArray("quads").size() == 0) {
+        JsonNode result = this.client.send("DOM.getContentQuads", params, true);
+        JsonNode layoutMetrics = this.client.send("Page.getLayoutMetrics", null, true);
+        if (result == null || result.get("quads").size() == 0)
             throw new RuntimeException("Node is either not visible or not an HTMLElement");
-        }
-        JSONObject layoutViewport = layoutMetrics.getJSONObject("layoutViewport");
-        Integer clientWidth = layoutViewport.getInteger("clientWidth");
-        Integer clientHeight = layoutViewport.getInteger("clientHeight");
-        List<JSONObject> quadsNode = result.getObject("quads", new TypeReference<List<JSONObject>>() {
-        });
-        Iterator<JSONObject> elements = quadsNode.iterator();
+        // Filter out quads that have too small area to click into.
+        JsonNode layoutViewport = layoutMetrics.get("layoutViewport");
+        JsonNode clientWidth = layoutViewport.get("clientWidth");
+        JsonNode clientHeight = layoutViewport.get("clientHeight");
+        JsonNode quadsNode = result.get("quads");
+        Iterator<JsonNode> elements = quadsNode.elements();
         List<List<ClickablePoint>> quads = new ArrayList<>();
         while (elements.hasNext()) {
-            JSONObject quadNode = elements.next();
-            List<Integer> list = quadNode.toJavaObject(new TypeReference<List<Integer>>() {
-            });
-            List<Integer> quad = new ArrayList<>(list);
+            JsonNode quadNode = elements.next();
+            List<Integer> quad = new ArrayList<>();
+            Iterator<JsonNode> iterator = quadNode.elements();
+            while (iterator.hasNext()) {
+                quad.add(iterator.next().asInt());
+            }
             List<ClickablePoint> clickOptions = this.fromProtocolQuad(quad);
-            intersectQuadWithViewport(clickOptions, clientWidth, clientHeight);
+            intersectQuadWithViewport(clickOptions, clientWidth.asInt(), clientHeight.asInt());
             quads.add(clickOptions);
         }
         List<List<ClickablePoint>> collect = quads.stream().filter(quad -> computeQuadArea(quad) > 1).collect(Collectors.toList());
         if (collect.size() == 0)
             throw new RuntimeException("Node is either not visible or not an HTMLElement");
+        // Return the middle point of the first quad.
         List<ClickablePoint> quad = collect.get(0);
         int x = 0;
         int y = 0;
@@ -155,49 +159,49 @@ public class ElementHandle extends JSHandle {
         return new ClickablePoint(x / 4, y / 4);
     }
 
-    private BoxModelValue getBoxModel() {
+    private GetBoxModelReturnValue getBoxModel() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
-        JSONObject result = this.client.send("DOM.getBoxModel", params, true);
-        return JSON.parseObject(JSON.toJSONString(result), BoxModelValue.class);
+        JsonNode result = this.client.send("DOM.getBoxModel", params, true);
+        try {
+            return org.aoju.lancia.Builder.OBJECTMAPPER.treeToValue(result, GetBoxModelReturnValue.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
      * 截图所选择的元素
      *
-     * @param options 截图配置
-     * @return 图片base64的字节
-     * @throws IOException 异常
+     * @param options                截图配置
+     * @param scrollIntoViewIfNeeded 元素如果不可见时是否需要滚动浏览器
+     * @return
+     * @throws IOException
      */
-    public String screenshot(ScreenshotOption options) throws IOException {
+    public String screenshot(ScreenshotOptions options, boolean scrollIntoViewIfNeeded) throws IOException {
         boolean needsViewportReset = false;
         Clip boundingBox = this.boundingBox();
         Assert.isTrue(boundingBox != null, "Node is either not visible or not an HTMLElement");
         Viewport viewport = this.page.viewport();
         if (viewport != null && (boundingBox.getWidth() > viewport.getWidth() || boundingBox.getHeight() > viewport.getHeight())) {
-            Viewport newViewport = new Viewport(
-                    viewport.getWidth(),
-                    viewport.getHeight(),
-                    viewport.getDeviceScaleFactor(),
-                    viewport.getIsMobile(),
-                    viewport.getHasTouch(),
-                    viewport.getIsLandscape());
+            // Use the original viewport attributes to prevent from reload
+            Viewport newViewport = new Viewport(viewport.getWidth(), viewport.getHeight(), viewport.getDeviceScaleFactor(), viewport.getIsMobile(), viewport.getHasTouch(), viewport.getIsLandscape());
             newViewport.setWidth(Math.max(viewport.getWidth(), (int) Math.ceil(boundingBox.getWidth())));
             newViewport.setHeight(Math.max(viewport.getHeight(), (int) Math.ceil(boundingBox.getHeight())));
 
             this.page.setViewport(newViewport);
             needsViewportReset = true;
         }
-        if (options.isScrollIntoView()) {
+        if (scrollIntoViewIfNeeded) {
             this.scrollIntoViewIfNeeded();
         }
         boundingBox = this.boundingBox();
         Assert.isTrue(boundingBox != null, "Node is either not visible or not an HTMLElement");
         Assert.isTrue(boundingBox.getWidth() != 0, "Node has 0 width.");
         Assert.isTrue(boundingBox.getHeight() != 0, "Node has 0 height.");
-        JSONObject response = this.client.send("Page.getLayoutMetrics", null, true);
-        double pageX = response.getJSONObject("layoutViewport").getDouble("pageX");
-        double pageY = response.getJSONObject("layoutViewport").getDouble("pageY");
+        JsonNode response = this.client.send("Page.getLayoutMetrics", null, true);
+        double pageX = response.get("layoutViewport").get("pageX").asDouble();
+        double pageY = response.get("layoutViewport").get("pageY").asDouble();
         Clip clip = boundingBox;
         clip.setX(clip.getX() + pageX);
         clip.setY(clip.getY() + pageY);
@@ -209,11 +213,15 @@ public class ElementHandle extends JSHandle {
         return imageData;
     }
 
+    public String screenshot(ScreenshotOptions options) throws IOException {
+        return this.screenshot(options, true);
+    }
+
     public org.aoju.lancia.kernel.page.BoxModel boxModel() {
-        BoxModelValue result = this.getBoxModel();
+        GetBoxModelReturnValue result = this.getBoxModel();
         if (result == null)
             return null;
-        BoxModel model = result.getModel();
+        org.aoju.lancia.nimble.input.BoxModel model = result.getModel();
         List<ClickablePoint> content = this.fromProtocolQuad(model.getContent());
         List<ClickablePoint> padding = this.fromProtocolQuad(model.getPadding());
         List<ClickablePoint> border = this.fromProtocolQuad(model.getBorder());
@@ -224,6 +232,8 @@ public class ElementHandle extends JSHandle {
     }
 
     public int computeQuadArea(List<ClickablePoint> quad) {
+        // Compute sum of all directed areas of adjacent triangles
+        // https://en.wikipedia.org/wiki/Polygon#Simple_polygons
         int area = 0;
         for (int i = 0; i < quad.size(); ++i) {
             ClickablePoint p1 = quad.get(i);
@@ -251,8 +261,8 @@ public class ElementHandle extends JSHandle {
 
     public ElementHandle $(String selector) {
         String defaultHandler = "(element, selector) => element.querySelector(selector)";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
-        JSHandle handle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryOne(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        JSHandle handle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryOne(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         ElementHandle element = handle.asElement();
         if (element != null)
             return element;
@@ -270,7 +280,7 @@ public class ElementHandle extends JSHandle {
                 "                array.push(item);\n" +
                 "            return array;\n" +
                 "        }";
-        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(pageFunction, Arrays.asList(expression));
+        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(pageFunction, Collections.singletonList(expression));
         Map<String, JSHandle> properties = arrayHandle.getProperties();
         arrayHandle.dispose();
         List<ElementHandle> result = new ArrayList<>();
@@ -293,9 +303,9 @@ public class ElementHandle extends JSHandle {
 
     public Object $$eval(String selector, String pageFunction, List<Object> args) {
         String defaultHandler = "(element, selector) => Array.from(element.querySelectorAll(selector))";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
 
-        ElementHandle arrayHandle = (ElementHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        ElementHandle arrayHandle = (ElementHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         ElementHandle result = (ElementHandle) arrayHandle.evaluate(pageFunction, args);
         arrayHandle.dispose();
         return result;
@@ -303,8 +313,8 @@ public class ElementHandle extends JSHandle {
 
     public List<ElementHandle> $$(String selector) {
         String defaultHandler = "(element, selector) => element.querySelectorAll(selector)";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
-        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         Map<String, JSHandle> properties = arrayHandle.getProperties();
         arrayHandle.dispose();
         List<ElementHandle> result = new ArrayList<>();
@@ -332,7 +342,7 @@ public class ElementHandle extends JSHandle {
 
 
     public void click() throws InterruptedException {
-        click(new ClickOption(), true);
+        click(new ClickOptions(), true);
     }
 
     /**
@@ -342,10 +352,10 @@ public class ElementHandle extends JSHandle {
      * @throws InterruptedException 打断异常
      */
     public void click(boolean isBlock) throws InterruptedException {
-        click(new ClickOption(), isBlock);
+        click(new ClickOptions(), isBlock);
     }
 
-    public void click(ClickOption options, boolean isBlock) throws InterruptedException {
+    public void click(ClickOptions options, boolean isBlock) throws InterruptedException {
         this.scrollIntoViewIfNeeded();
         ClickablePoint point = this.clickablePoint();
         if (!isBlock) {
@@ -427,7 +437,7 @@ public class ElementHandle extends JSHandle {
     }
 
     public Clip boundingBox() {
-        BoxModelValue result = this.getBoxModel();
+        GetBoxModelReturnValue result = this.getBoxModel();
         if (result == null)
             return null;
         List<Integer> quad = result.getModel().getBorder();
@@ -453,8 +463,11 @@ public class ElementHandle extends JSHandle {
         String objectId = this.remoteObject.getObjectId();
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", objectId);
-        JSONObject node = this.client.send("DOM.describeNode", params, true);
-        int backendNodeId = node.getJSONObject("node").getInteger("backendNodeId");
+        JsonNode node = this.client.send("DOM.describeNode", params, true);
+        int backendNodeId = node.get("node").get("backendNodeId").asInt();
+        // The zero-length array is a special case, it seems that DOM.setFileInputFiles does
+        // not actually update the files in that case, so the solution is to eval the element
+        // value to a new FileList directly.
         if (files.size() == 0) {
             String pageFunction = "(element) => {\n" +
                     "                    element.files = new DataTransfer().files;\n" +

@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.network;
 
 /**
- * HTTP状态码401或407的授权
+ * Authorization challenge for HTTP status code 401 or 407.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,20 +35,20 @@ package org.aoju.lancia.nimble.network;
 public class AuthChallenge {
 
     /**
-     * 身份验证授权的来源
+     * Source of the authentication challenge.
      * "Server"|"Proxy"
      */
     private String source;
     /**
-     * 来源
+     * Origin of the challenger.
      */
     private String origin;
     /**
-     * 使用的身份验证方案
+     * The authentication scheme used, such as basic or digest
      */
     private String scheme;
     /**
-     * 挑战的范围。可能是空的。
+     * The realm of the challenge. May be empty.
      */
     private String realm;
 
@@ -83,4 +83,5 @@ public class AuthChallenge {
     public void setRealm(String realm) {
         this.realm = realm;
     }
+
 }

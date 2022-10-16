@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,9 +25,7 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.lang.Charset;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.nimble.network.RemoteAddress;
@@ -35,6 +33,7 @@ import org.aoju.lancia.nimble.network.ResponsePayload;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,7 +71,7 @@ public class Response {
 
     private Map<String, String> headers;
 
-    private Security security;
+    private SecurityDetails securityDetails;
 
     private String bodyLoadedErrorMsg;
 
@@ -98,7 +97,7 @@ public class Response {
                 this.headers.put(entry.getKey().toLowerCase(), entry.getValue());
             }
         }
-        this.security = responsePayload.getSecurityDetails() != null ? new Security(responsePayload.getSecurityDetails()) : null;
+        this.securityDetails = responsePayload.getSecurityDetails() != null ? new SecurityDetails(responsePayload.getSecurityDetails()) : null;
     }
 
     /**
@@ -138,12 +137,12 @@ public class Response {
             }
             Map<String, Object> params = new HashMap<>();
             params.put("requestId", this.request.requestId());
-            JSONObject response = this.client.send("Network.getResponseBody", params, true);
+            JsonNode response = this.client.send("Network.getResponseBody", params, true);
             if (response != null) {
-                if (response.getBoolean("base64Encoded")) {
-                    contentPromise = Base64.getDecoder().decode(response.getString("body"));
+                if (response.get("base64Encoded").asBoolean()) {
+                    contentPromise = Base64.getDecoder().decode(response.get("body").asText());
                 } else {
-                    contentPromise = response.getString("body").getBytes(Charset.UTF_8);
+                    contentPromise = response.get("body").asText().getBytes(StandardCharsets.UTF_8);
                 }
             }
         }
@@ -153,11 +152,12 @@ public class Response {
 
     public String text() throws InterruptedException {
         byte[] content = this.buffer();
-        return new String(content, Charset.UTF_8);
+        return new String(content, StandardCharsets.UTF_8);
     }
 
     public <T> T json(Class<T> clazz) throws IOException, InterruptedException {
-        return JSON.parseObject(this.text(), clazz);
+        String content = this.text();
+        return Builder.OBJECTMAPPER.readValue(content, clazz);
     }
 
     public Request request() {
@@ -184,8 +184,8 @@ public class Response {
         return this.headers;
     }
 
-    public Security securityDetails() {
-        return this.security;
+    public SecurityDetails securityDetails() {
+        return this.securityDetails;
     }
 
     public boolean fromServiceWorker() {

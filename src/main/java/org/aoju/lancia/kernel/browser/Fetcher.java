@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -32,10 +32,11 @@ import org.aoju.bus.core.toolkit.ZipKit;
 import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.option.FetcherOption;
+import org.aoju.lancia.option.FetcherOptions;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -43,13 +44,17 @@ import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 
 /**
  * 用于下载chrome浏览器
@@ -60,50 +65,27 @@ import java.util.stream.Stream;
  */
 public class Fetcher {
 
-    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
-        {
-            put("chrome", new HashMap<>() {
-                {
-                    put("host", "https://npm.taobao.org/mirrors");
-                    put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
-                    put("mac", "%s/chromium-browser-snapshots/Mac/%s/%s.zip");
-                    put("win32", "%s/chromium-browser-snapshots/Win/%s/%s.zip");
-                    put("win64", "%s/chromium-browser-snapshots/Win_x64/%s/%s.zip");
-                }
-            });
-            put("firefox", new HashMap<>() {
-                {
-                    put("host", "https://github.com/puppeteer/juggler/releases");
-                    put("linux", "%s/download/%s/%s.zip");
-                    put("mac", "%s/download/%s/%s.zip");
-                    put("win32", "%s/download/%s/%s.zip");
-                    put("win64", "%s/download/%s/%s.zip");
-                }
-            });
-        }
-    };
-
     /**
      * 下载的域名
      */
-    private final String downloadHost;
+    private final String url;
     /**
-     * 目前支持两种产品：chrome or firefix
+     * chrome or firefix
      */
     private final String product;
+    /**
+     * 下载的文件夹
+     */
+    private final String folder;
     /**
      * 平台 win linux mac
      */
     private String platform;
-    /**
-     * 下载的文件夹
-     */
-    private String downloadsFolder;
 
     public Fetcher() {
         this.product = "chrome";
-        this.downloadsFolder = Builder.join(System.getProperty("user.dir"), ".local-browser");
-        this.downloadHost = DOWNLOAD_URL.get(this.product).get("host");
+        this.folder = Builder.join(System.getProperty("user.dir"), ".local-browser");
+        this.url = Builder.DOWNLOAD_URL.get(this.product).get("host");
         if (platform == null) {
             if (Platform.isMac()) {
                 this.platform = "mac";
@@ -114,20 +96,20 @@ public class Fetcher {
             }
             Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
         }
-        Assert.notNull(DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
+        Assert.notNull(Builder.DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
     }
 
     /**
-     * 创建 BrowserFetcher 对象
+     * 创建 Fetcher 对象
      *
      * @param projectRoot 根目录，储存浏览器得根目录
      * @param options     下载浏览器得一些配置
      */
-    public Fetcher(String projectRoot, FetcherOption options) {
+    public Fetcher(String projectRoot, FetcherOptions options) {
         this.product = (StringKit.isNotEmpty(options.getProduct()) ? options.getProduct() : "chrome").toLowerCase();
         Assert.isTrue("chrome".equals(product) || "firefox".equals(product), "Unknown product: " + options.getProduct());
-        this.downloadsFolder = StringKit.isNotEmpty(options.getPath()) ? options.getPath() : Builder.join(projectRoot, ".local-browser");
-        this.downloadHost = StringKit.isNotEmpty(options.getHost()) ? options.getHost() : DOWNLOAD_URL.get(this.product).get("host");
+        this.folder = StringKit.isNotEmpty(options.getPath()) ? options.getPath() : Builder.join(projectRoot, ".local-browser");
+        this.url = StringKit.isNotEmpty(options.getHost()) ? options.getHost() : Builder.DOWNLOAD_URL.get(this.product).get("host");
         this.platform = StringKit.isNotEmpty(options.getPlatform()) ? options.getPlatform() : null;
         if (platform == null) {
             if (Platform.isMac()) {
@@ -139,20 +121,18 @@ public class Fetcher {
             }
             Assert.notNull(this.platform, "Unsupported platform: " + Platform.getNativeLibraryResourcePrefix());
         }
-        Assert.notNull(DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
+        Assert.notNull(Builder.DOWNLOAD_URL.get(this.product).get(this.platform), "Unsupported platform: " + this.platform);
     }
 
     /**
-     * 下载浏览器，如果项目目录下不存在对应版本时
-     * 如果不指定版本，则使用默认配置版本
+     * 下载默认配置版本(818858)的浏览器，下载到项目目录下
      *
-     * @return the Revision
      * @throws InterruptedException 异常
      * @throws ExecutionException   异常
      * @throws IOException          异常
      */
     public static Revision on() throws InterruptedException, ExecutionException, IOException {
-        return on(Builder.VERSION);
+        return on(null);
     }
 
     /**
@@ -160,14 +140,13 @@ public class Fetcher {
      * 如果不指定版本，则使用默认配置版本
      *
      * @param version 浏览器版本
-     * @return the Revision
      * @throws InterruptedException 异常
      * @throws ExecutionException   异常
      * @throws IOException          异常
      */
     public static Revision on(String version) throws InterruptedException, ExecutionException, IOException {
         Fetcher fetcher = new Fetcher();
-        String downLoadVersion = StringKit.isEmpty(version) ? Builder.VERSION : version;
+        String downLoadVersion = StringKit.isEmpty(version) ? org.aoju.lancia.Builder.VERSION : version;
         Revision revision = fetcher.revisionInfo(downLoadVersion);
         if (!revision.isLocal()) {
             return fetcher.download(downLoadVersion);
@@ -183,8 +162,8 @@ public class Fetcher {
      * @return boolean
      * @throws IOException 异常
      */
-    public boolean on(String revision, Proxy proxy) throws IOException {
-        String url = downloadURL(this.product, this.platform, this.downloadHost, revision);
+    public boolean canDownload(String revision, Proxy proxy) throws IOException {
+        String url = downloadURL(this.product, this.platform, this.url, revision);
         return httpRequest(proxy, url, "HEAD");
     }
 
@@ -228,20 +207,20 @@ public class Fetcher {
      *
      * @param revision         浏览器版本
      * @param progressCallback 下载回调
-     * @return RevisionInfo
+     * @return Revision
      * @throws IOException          异常
      * @throws InterruptedException 异常
      * @throws ExecutionException   异常
      */
     public Revision download(String revision, BiConsumer<Integer, Integer> progressCallback) throws IOException, InterruptedException, ExecutionException {
-        String url = downloadURL(this.product, this.platform, this.downloadHost, revision);
+        String url = downloadURL(this.product, this.platform, this.url, revision);
         int lastIndexOf = url.lastIndexOf("/");
-        String archivePath = Builder.join(this.downloadsFolder, url.substring(lastIndexOf));
+        String archivePath = Builder.join(this.folder, url.substring(lastIndexOf));
         String folderPath = this.getFolderPath(revision);
         if (existsAsync(folderPath))
             return this.revisionInfo(revision);
-        if (!(existsAsync(this.downloadsFolder)))
-            mkdirAsync(this.downloadsFolder);
+        if (!(existsAsync(this.folder)))
+            mkdirAsync(this.folder);
         try {
             if (progressCallback == null) {
                 progressCallback = defaultDownloadCallback();
@@ -286,7 +265,7 @@ public class Fetcher {
         return (integer1, integer2) -> {
             BigDecimal decimal1 = new BigDecimal(integer1);
             BigDecimal decimal2 = new BigDecimal(integer2);
-            int percent = decimal1.divide(decimal2, 2, BigDecimal.ROUND_HALF_UP).multiply(new BigDecimal(100)).intValue();
+            int percent = decimal1.divide(decimal2, 2, RoundingMode.HALF_UP).multiply(new BigDecimal(100)).intValue();
             Logger.info("Download progress: total[{}M],downloaded[{}M],{}", decimal2, decimal1, percent + "%");
         };
     }
@@ -317,12 +296,12 @@ public class Fetcher {
     }
 
     private String fetchRevision() throws IOException {
-        String downloadUrl = DOWNLOAD_URL.get(product).get(platform);
-        URL urlSend = new URL(String.format(downloadUrl.substring(0, downloadUrl.length() - 9), this.downloadHost));
+        String downloadUrl = Builder.DOWNLOAD_URL.get(product).get(platform);
+        URL urlSend = new URL(String.format(downloadUrl.substring(0, downloadUrl.length() - 9), this.url));
         URLConnection conn = urlSend.openConnection();
-        conn.setConnectTimeout(Builder.CONNECT_TIME_OUT);
-        conn.setReadTimeout(Builder.READ_TIME_OUT);
-        String pageContent = Builder.toString(conn.getInputStream());
+        conn.setConnectTimeout(org.aoju.lancia.Builder.CONNECT_TIME_OUT);
+        conn.setReadTimeout(org.aoju.lancia.Builder.READ_TIME_OUT);
+        String pageContent = org.aoju.lancia.Builder.toString(conn.getInputStream());
         return parseRevision(pageContent);
     }
 
@@ -343,7 +322,7 @@ public class Fetcher {
         if (split.length == 2) {
             result = split[1];
         } else {
-            throw new RuntimeException("Cant't find latest revision from pageConten:" + pageContent);
+            throw new RuntimeException("cant't find latest revision from pageConten:" + pageContent);
         }
         return result;
     }
@@ -355,9 +334,9 @@ public class Fetcher {
      * @throws IOException 异常
      */
     public List<String> localRevisions() throws IOException {
-        if (!existsAsync(this.downloadsFolder))
+        if (!existsAsync(this.folder))
             return new ArrayList<>();
-        Path path = Paths.get(this.downloadsFolder);
+        Path path = Paths.get(this.folder);
         Stream<Path> fileNames = this.readdirAsync(path);
         return fileNames.map(fileName -> parseFolderPath(this.product, fileName)).filter(entry -> entry != null && this.platform.equals(entry.getPlatform())).map(Revision::getRevision).collect(Collectors.toList());
     }
@@ -379,14 +358,14 @@ public class Fetcher {
      *
      * @param product    win linux mac
      * @param folderPath 文件夹路径
-     * @return Revision Revision
+     * @return {@link Revision}
      */
     private Revision parseFolderPath(String product, Path folderPath) {
         Path fileName = folderPath.getFileName();
         String[] split = fileName.toString().split("-");
         if (split.length != 2)
             return null;
-        if (DOWNLOAD_URL.get(product).get(split[0]) == null)
+        if (Builder.DOWNLOAD_URL.get(product).get(split[0]) == null)
             return null;
         Revision entry = new Revision();
         entry.setPlatform(split[0]);
@@ -403,7 +382,7 @@ public class Fetcher {
      * @throws IOException 异常
      */
     private Stream<Path> readdirAsync(Path downloadsFolder) throws IOException {
-        Assert.isTrue(Files.isDirectory(downloadsFolder), "DownloadsFolder " + downloadsFolder + " is not Directory");
+        Assert.isTrue(Files.isDirectory(downloadsFolder), "downloadsFolder " + downloadsFolder + " is not Directory");
         return Files.list(downloadsFolder);
     }
 
@@ -429,12 +408,11 @@ public class Fetcher {
     }
 
     /**
-     * intall archive file: *.zip,*.dmg
+     * intall archive file: *.zip,*.tar.bz2,*.dmg
      *
      * @param archivePath zip路径
      * @param folderPath  存放的路径
-     * @throws IOException          异常
-     * @throws InterruptedException 异常
+     * @throws IOException 异常
      */
     private void install(String archivePath, String folderPath) throws IOException, InterruptedException {
         Logger.info("Installing " + archivePath + " to " + folderPath);
@@ -530,8 +508,7 @@ public class Fetcher {
      *
      * @param archivePath zip路径
      * @param folderPath  存放路径
-     * @throws IOException          异常
-     * @throws InterruptedException 异常
+     * @throws IOException 异常
      */
     private void installDMG(String archivePath, String folderPath) throws IOException, InterruptedException {
         String mountPath = null;
@@ -592,7 +569,7 @@ public class Fetcher {
      */
     private void downloadFile(String url, String archivePath, BiConsumer<Integer, Integer> progressCallback) throws IOException, ExecutionException, InterruptedException {
         Logger.info("Downloading binary from " + url);
-        Builder.download(url, archivePath, progressCallback);
+        org.aoju.lancia.Builder.download(url, archivePath, progressCallback);
         Logger.info("Download successfully from " + url);
     }
 
@@ -616,14 +593,14 @@ public class Fetcher {
      * @return string
      */
     public String getFolderPath(String revision) {
-        return Paths.get(this.downloadsFolder, this.platform + "-" + revision).toString();
+        return Paths.get(this.folder, this.platform + "-" + revision).toString();
     }
 
     /**
      * 获取浏览器版本相关信息
      *
      * @param revision 版本
-     * @return RevisionInfo
+     * @return Revision
      */
     public Revision revisionInfo(String revision) {
         String folderPath = this.getFolderPath(revision);
@@ -650,9 +627,9 @@ public class Fetcher {
         } else {
             throw new IllegalArgumentException("Unsupported product: " + this.product);
         }
-        String url = downloadURL(this.product, this.platform, this.downloadHost, revision);
+        String url = downloadURL(this.product, this.platform, this.url, revision);
         boolean local = this.existsAsync(folderPath);
-        Logger.info("Version:{}，executablePath:{}，folderPath:{}，local:{}，url:{}，product:{}", revision, executablePath, folderPath, local, url, this.product);
+        Logger.info("revision:{}，executablePath:{}，folderPath:{}，local:{}，url:{}，product:{}", revision, executablePath, folderPath, local, url, this.product);
         return new Revision(revision, executablePath, folderPath, local, url, this.product);
     }
 
@@ -681,6 +658,7 @@ public class Fetcher {
             if ("mac".equals(platform))
                 return "chrome-mac";
             if ("win32".equals(platform) || "win64".equals(platform)) {
+                // Windows archive name changed at r591479.
                 return Integer.parseInt(revision) > 591479 ? "chrome-win" : "chrome-win32";
             }
         } else if ("firefox".equals(product)) {
@@ -704,7 +682,7 @@ public class Fetcher {
      * @return 下载浏览器的url
      */
     public String downloadURL(String product, String platform, String host, String revision) {
-        return String.format(DOWNLOAD_URL.get(product).get(platform), host, revision, archiveName(product, platform, revision));
+        return String.format(Builder.DOWNLOAD_URL.get(product).get(platform), host, revision, archiveName(product, platform, revision));
     }
 
 }

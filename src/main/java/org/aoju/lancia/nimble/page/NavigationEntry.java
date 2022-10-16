@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.page;
 
 /**
- * 导航记录
+ * Navigation history entry.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -34,23 +34,23 @@ package org.aoju.lancia.nimble.page;
  */
 public class NavigationEntry {
     /**
-     * 导航历史记录条目的唯一ID
+     * Unique id of the navigation history entry.
      */
     private int id;
     /**
-     * 导航历史记录条目的URL
+     * URL of the navigation history entry.
      */
     private String url;
     /**
-     * 用户在网址栏中输入的网址
+     * URL that the user typed in the url bar.
      */
     private String userTypedURL;
     /**
-     * 导航历史记录条目的标题
+     * Title of the navigation history entry.
      */
     private String title;
     /**
-     * 过渡类型
+     * Transition type.
      * "link"|"typed"|"address_bar"|"auto_bookmark"|"auto_subframe"|"manual_subframe"|"generated"|"auto_toplevel"|"form_submit"|"reload"|"keyword"|"keyword_generated"|"other";
      */
     private String transitionType;

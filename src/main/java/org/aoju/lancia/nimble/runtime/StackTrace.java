@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,8 +28,6 @@ package org.aoju.lancia.nimble.runtime;
 import java.util.List;
 
 /**
- * 堆栈信息
- *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
@@ -37,19 +35,21 @@ import java.util.List;
 public class StackTrace {
 
     /**
-     * 此堆栈跟踪的字符串标签。对于异步跟踪，这可能是启动异步调用的函数的名称。
+     * String label of this stack trace. For async traces this may be a name of the function that
+     * initiated the async call.
      */
     private String description;
     /**
-     * 函数名称
+     * JavaScript function name.
      */
     private List<CallFrame> callFrames;
     /**
-     * 如果存在，则在此堆栈之前的异步JavaScript堆栈跟踪。
+     * Asynchronous JavaScript stack trace that preceded this stack, if available.
      */
     private StackTrace parent;
+
     /**
-     * 如果存在，则在此堆栈之前的异步JavaScript堆栈跟踪。
+     * Asynchronous JavaScript stack trace that preceded this stack, if available.
      */
     private StackTraceId parentId;
 

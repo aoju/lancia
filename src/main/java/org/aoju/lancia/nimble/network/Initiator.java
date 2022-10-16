@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,7 +28,7 @@ package org.aoju.lancia.nimble.network;
 import org.aoju.lancia.nimble.runtime.StackTrace;
 
 /**
- * 有关请求启动器的信息
+ * Information about the request initiator.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -37,19 +37,20 @@ import org.aoju.lancia.nimble.runtime.StackTrace;
 public class Initiator {
 
     /**
-     * 此启动器的类型 "parser"|"script"|"preload"|"SignedExchange"|"other"
+     * Type of this initiator."parser"|"script"|"preload"|"SignedExchange"|"other"
      */
     private String type;
     /**
-     * 启动器JavaScript堆栈跟踪，仅针对脚本设置
+     * Initiator JavaScript stack trace, set for Script only.
      */
     private StackTrace stack;
     /**
-     * 启动器URL，为解析器类型或脚本类型（脚本正在导入模块时）或SignedExchange类型设置。
+     * Initiator URL, set for Parser type or for Script type (when script is importing module) or for SignedExchange type.
      */
     private String url;
     /**
-     * 启动器行号，为解析器类型或脚本类型设置（当脚本导入模块时）（从0开始）
+     * Initiator line number, set for Parser type or for Script type (when script is importing
+     * module) (0-based).
      */
     private int lineNumber;
 

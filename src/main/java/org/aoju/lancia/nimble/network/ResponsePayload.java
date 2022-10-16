@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,7 +28,7 @@ package org.aoju.lancia.nimble.network;
 import java.util.Map;
 
 /**
- * HTTP响应数据
+ * HTTP response data.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -37,85 +37,86 @@ import java.util.Map;
 public class ResponsePayload {
 
     /**
-     * 响应的URL
+     * Response URL. This URL can be different from CachedResource.url in case of redirect.
      */
     private String url;
     /**
-     * 响应状态代码
+     * HTTP response status code.
      */
     private int status;
     /**
-     * 响应状态文本
+     * HTTP response status text.
      */
     private String statusText;
     /**
-     * 响应头
+     * HTTP response headers.
      */
     private Map<String, String> headers;
     /**
-     * 响应头文本
+     * HTTP response headers text.
      */
     private String headersText;
     /**
-     * 资源mimeType由浏览器确定
+     * Resource mimeType as determined by the browser.
      */
     private String mimeType;
     /**
-     * 实际通过网络传输的改进HTTP请求报头
+     * Refined HTTP request headers that were actually transmitted over the network.
      */
     private Map<String, Object> requestHeaders;
     /**
-     * 请求头文本
+     * HTTP request headers text.
      */
     private String requestHeadersText;
     /**
-     * 指定此请求是否实际重用了物理连接
+     * Specifies whether physical connection was actually reused for this request.
      */
     private boolean connectionReused;
     /**
-     * 实际用于此请求的物理连接id
+     * Physical connection id that was actually used for this request.
      */
     private int connectionId;
     /**
-     * 远程IP地址
+     * Remote IP address.
      */
     private String remoteIPAddress;
     /**
-     * 远程端口
+     * Remote port.
      */
     private int remotePort;
     /**
-     * 指定从磁盘缓存提供请求
+     * Specifies that the request was served from the disk cache.
      */
     private boolean fromDiskCache;
     /**
-     * 指定从ServiceWorker服务请求
+     * Specifies that the request was served from the ServiceWorker.
      */
     private boolean fromServiceWorker;
     /**
-     * 指定从预取缓存中提供请求
+     * Specifies that the request was served from the prefetch cache.
      */
     private boolean fromPrefetchCache;
     /**
-     * 到目前为止，该请求收到的总字节数
+     * Total number of bytes received for this request so far.
      */
     private int encodedDataLength;
     /**
-     * 给定请求的时间信息
+     * Timing information for the given request.
      */
     private ResourceTiming timing;
     /**
-     * 用于获取此请求的协议
+     * Protocol used to fetch this request.
      */
     private String protocol;
     /**
-     * 请求资源的安全状态
+     * Security state of the request resource.
      * "unknown"|"neutral"|"insecure"|"secure"|"info"|"insecure-broken"
      */
     private String securityState;
     /**
-     * 请求的安全细节
+     * Security details for the request.
      */
+
     private SecurityDetailsPayload securityDetails;
 
     public String getUrl() {

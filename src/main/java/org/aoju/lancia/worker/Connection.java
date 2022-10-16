@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,14 +25,16 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InternalException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.events.Events;
 import org.aoju.lancia.kernel.page.TargetInfo;
-import org.aoju.lancia.option.ConnectionOption;
+import org.aoju.lancia.option.ConnectionOptions;
+import org.aoju.lancia.worker.exception.ProtocolException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -61,31 +63,33 @@ public class Connection extends EventEmitter implements Consumer<String> {
      * 单位是毫秒
      */
     private final int delay;
-    private final Map<Long, Messages> callbacks = new ConcurrentHashMap<>();// 并发
+    /**
+     * 并发
+     */
+    private final Map<Long, Messages> callbacks = new ConcurrentHashMap<>();
 
     private final Map<String, CDPSession> sessions = new ConcurrentHashMap<>();
 
     private boolean closed;
 
-    private ConnectionOption connectionOption;
+    private ConnectionOptions connectionOptions;
 
     public Connection(String url, Transport transport, int delay) {
         super();
         this.url = url;
         this.transport = transport;
         this.delay = delay;
-        if (this.transport instanceof SocketTransport) {
-            ((SocketTransport) this.transport).addConsumer(this);
-            ((SocketTransport) this.transport).addConnection(this);
+        if (this.transport instanceof TransportBuilder) {
+            ((TransportBuilder) this.transport).addConsumer(this);
+            ((TransportBuilder) this.transport).addConnection(this);
         }
-
         // 赋予默认值，调用方使用该构造方法后，需要set connection options
-        this.connectionOption = new ConnectionOption();
+        this.connectionOptions = new ConnectionOptions();
     }
 
-    public Connection(String url, Transport transport, int delay, ConnectionOption connectionOption) {
+    public Connection(String url, Transport transport, int delay, ConnectionOptions connectionOptions) {
         this(url, transport, delay);
-        this.connectionOption = connectionOption == null ? new ConnectionOption() : connectionOption;
+        this.connectionOptions = connectionOptions == null ? new ConnectionOptions() : connectionOptions;
     }
 
     /**
@@ -98,7 +102,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
         return client.getConnection();
     }
 
-    public JSONObject send(String method, Map<String, Object> params, boolean isWait) {
+    public JsonNode send(String method, Map<String, Object> params, boolean isWait) {
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
@@ -108,7 +112,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 long id = rawSend(message, true, this.callbacks);
                 message.waitForResult(0, TimeUnit.MILLISECONDS);
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InternalException(message.getErrorText());
+                    throw new ProtocolException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -116,11 +120,11 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 return null;
             }
         } catch (InterruptedException e) {
-            throw new InternalException(e);
+            throw new ProtocolException(e);
         }
     }
 
-    public JSONObject send(String method, Map<String, Object> params, boolean isWait, CountDownLatch outLatch) {
+    public JsonNode send(String method, Map<String, Object> params, boolean isWait, CountDownLatch outLatch) {
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
@@ -134,7 +138,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
                 long id = this.rawSend(message, true, this.callbacks);
                 message.waitForResult(0, TimeUnit.MILLISECONDS);
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InternalException(message.getErrorText());
+                    throw new ProtocolException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -149,7 +153,7 @@ public class Connection extends EventEmitter implements Consumer<String> {
 
 
         } catch (InterruptedException e) {
-            throw new InternalException(e);
+            throw new ProtocolException(e);
         }
         return null;
     }
@@ -163,13 +167,18 @@ public class Connection extends EventEmitter implements Consumer<String> {
     public long rawSend(Messages message, boolean putCallback, Map<Long, Messages> callbacks) {
         long id = lastId.incrementAndGet();
         message.setId(id);
-        if (putCallback) {
-            callbacks.put(id, message);
+        try {
+            if (putCallback) {
+                callbacks.put(id, message);
+            }
+            String sendMsg = Builder.OBJECTMAPPER.writeValueAsString(message);
+            transport.send(sendMsg);
+            Logger.trace("SEND -> " + sendMsg);
+            return id;
+        } catch (JsonProcessingException e) {
+            Logger.error("parse message fail:", e);
         }
-        String sendMsg = JSON.toJSONString(message);
-        transport.send(sendMsg);
-        Logger.trace("SEND -> " + sendMsg);
-        return id;
+        return -1;
     }
 
     /**
@@ -189,46 +198,51 @@ public class Connection extends EventEmitter implements Consumer<String> {
         Logger.trace("<- RECV " + message);
         try {
             if (StringKit.isNotEmpty(message)) {
-                JSONObject readTree = JSON.parseObject(message);
-                String methodNode = readTree.getString(Builder.RECV_MESSAGE_METHOD_PROPERTY);
+                JsonNode readTree = org.aoju.lancia.Builder.OBJECTMAPPER.readTree(message);
+                JsonNode methodNode = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_METHOD_PROPERTY);
                 String method = null;
                 if (methodNode != null) {
-                    method = methodNode;
+                    method = methodNode.asText();
                 }
-                if ("Target.attachedToTarget".equals(method)) {// attached to target -> page attached to browser
-                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
-                    String sessionId = paramsNode.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                    String typeNode = paramsNode.getJSONObject(Builder.RECV_MESSAGE_TARGETINFO_PROPERTY).getString(Builder.RECV_MESSAGE_TYPE_PROPERTY);
-                    CDPSession cdpSession = new CDPSession(this, typeNode, sessionId);
-                    sessions.put(sessionId, cdpSession);
-                } else if ("Target.detachedFromTarget".equals(method)) {// 页面与浏览器脱离关系
-                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
-                    String sessionId = paramsNode.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                    CDPSession cdpSession = sessions.get(sessionId);
+                if ("Target.attachedToTarget".equals(method)) {
+                    // attached to target -> page attached to browser
+                    JsonNode paramsNode = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+                    JsonNode sessionId = paramsNode.get(org.aoju.lancia.Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    JsonNode typeNode = paramsNode.get(org.aoju.lancia.Builder.RECV_MESSAGE_TARGETINFO_PROPERTY).get(org.aoju.lancia.Builder.RECV_MESSAGE_TYPE_PROPERTY);
+                    CDPSession cdpSession = new CDPSession(this, typeNode.asText(), sessionId.asText());
+                    sessions.put(sessionId.asText(), cdpSession);
+                } else if ("Target.detachedFromTarget".equals(method)) {//页面与浏览器脱离关系
+                    JsonNode paramsNode = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+                    JsonNode sessionId = paramsNode.get(org.aoju.lancia.Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                    String sessionIdString = sessionId.asText();
+                    CDPSession cdpSession = sessions.get(sessionIdString);
                     if (cdpSession != null) {
                         cdpSession.onClosed();
-                        sessions.remove(sessionId);
+                        sessions.remove(sessionIdString);
                     }
                 }
-                String objectSessionId = readTree.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
-                Long objectId = readTree.getLong(Builder.RECV_MESSAGE_ID_PROPERTY);
-                if (objectSessionId != null) {//cdpsession消息，当然cdpsession来处理
-                    CDPSession cdpSession = this.sessions.get(objectSessionId);
+                JsonNode objectSessionId = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_SESSION_ID_PROPERTY);
+                JsonNode objectId = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_ID_PROPERTY);
+                if (objectSessionId != null) {
+                    // cdpsession消息，当然cdpsession来处理
+                    String objectSessionIdString = objectSessionId.asText();
+                    CDPSession cdpSession = this.sessions.get(objectSessionIdString);
                     if (cdpSession != null) {
                         cdpSession.onMessage(readTree);
                     }
-                } else if (objectId != null) {// long类型的id,说明属于这次发送消息后接受的回应
-                    long id = objectId;
+                } else if (objectId != null) {
+                    // long类型的id,说明属于这次发送消息后接受的回应
+                    long id = objectId.asLong();
                     Messages callback = this.callbacks.get(id);
                     if (callback != null) {
                         try {
-                            JSONObject error = readTree.getJSONObject(Builder.RECV_MESSAGE_ERROR_PROPERTY);
+                            JsonNode error = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_ERROR_PROPERTY);
                             if (error != null) {
                                 if (callback.getCountDownLatch() != null) {
                                     callback.setErrorText(Builder.createProtocolError(readTree));
                                 }
                             } else {
-                                JSONObject result = readTree.getJSONObject(Builder.RECV_MESSAGE_RESULT_PROPERTY);
+                                JsonNode result = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_RESULT_PROPERTY);
                                 callback.setResult(result);
                             }
                         } finally {
@@ -246,12 +260,13 @@ public class Connection extends EventEmitter implements Consumer<String> {
                         }
                     }
                 } else {// 是我们监听的事件，把它事件
-                    JSONObject paramsNode = readTree.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
+                    JsonNode paramsNode = readTree.get(org.aoju.lancia.Builder.RECV_MESSAGE_PARAMS_PROPERTY);
                     this.emit(method, paramsNode);
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            ProtocolException protocolException = new ProtocolException(e);
+            throw protocolException;
         }
     }
 
@@ -265,9 +280,10 @@ public class Connection extends EventEmitter implements Consumer<String> {
         Map<String, Object> params = new HashMap<>();
         params.put("targetId", targetInfo.getTargetId());
         params.put("flatten", true);
-        JSONObject result = this.send("Target.attachToTarget", params, true);
-        return this.sessions.get(result.getString(Builder.RECV_MESSAGE_SESSION_ID_PROPERTY));
+        JsonNode result = this.send("Target.attachToTarget", params, true);
+        return this.sessions.get(result.get(org.aoju.lancia.Builder.RECV_MESSAGE_SESSION_ID_PROPERTY).asText());
     }
+
 
     public String url() {
         return this.url;
@@ -305,19 +321,19 @@ public class Connection extends EventEmitter implements Consumer<String> {
         for (CDPSession session : this.sessions.values())
             session.onClosed();
         this.sessions.clear();
-        this.emit(Builder.Event.CONNECTION_DISCONNECTED.getName(), null);
+        this.emit(Events.CONNECTION_DISCONNECTED.getName(), null);
     }
 
     public boolean getClosed() {
         return closed;
     }
 
-    public ConnectionOption getConnectionOption() {
-        return connectionOption;
+    public ConnectionOptions getConnectionOptions() {
+        return connectionOptions;
     }
 
-    public void setConnectionOption(ConnectionOption connectionOption) {
-        this.connectionOption = connectionOption;
+    public void setConnectionOptions(ConnectionOptions connectionOptions) {
+        this.connectionOptions = connectionOptions == null ? new ConnectionOptions() : connectionOptions;
     }
 
 }

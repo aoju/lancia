@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,8 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 有关在脚本编译或执行过程中引发的异常（或错误）的详细信息
+ * Detailed information about exception (or error) that was thrown during script compilation or
+ * execution.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,39 +36,39 @@ package org.aoju.lancia.nimble.runtime;
 public class ExceptionDetails {
 
     /**
-     * 异常ID
+     * Exception id.
      */
     private int exceptionId;
     /**
-     * 异常文本，在可用时应与异常对象一起使用
+     * Exception text, which should be used together with exception object when available.
      */
     private String text;
     /**
-     * 异常位置的行号
+     * Line number of the exception location (0-based).
      */
     private int lineNumber;
     /**
-     * 异常位置的列号
+     * Column number of the exception location (0-based).
      */
     private int columnNumber;
     /**
-     * 异常位置的脚本ID
+     * Script ID of the exception location.
      */
     private String scriptId;
     /**
-     * 未报告脚本时使用的异常位置的URL
+     * URL of the exception location, to be used when the script was not reported.
      */
     private String url;
     /**
-     * JavaScript堆栈跟踪
+     * JavaScript stack trace if available.
      */
     private StackTrace stackTrace;
     /**
-     * 异常对象
+     * Exception object if available.
      */
     private RemoteObject exception;
     /**
-     * 发生异常的上下文的标识符
+     * Identifier of the context where exception happened.
      */
     private int executionContextId;
 

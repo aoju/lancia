@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,13 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
-import org.aoju.bus.core.lang.Normal;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.nimble.SerializedAXNode;
+import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.accessbility.SerializedAXNode;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.beans.IntrospectionException;
@@ -51,27 +50,25 @@ public class Accessibility {
         this.client = client;
     }
 
-    public SerializedAXNode snapshot(boolean interestingOnly, ElementHandle root) throws IllegalAccessException, IntrospectionException, InvocationTargetException {
-        JSONObject nodes = this.client.send("Accessibility.getFullAXTree", null, false);
+    public SerializedAXNode snapshot(boolean interestingOnly, ElementHandle root) throws JsonProcessingException, IllegalAccessException, IntrospectionException, InvocationTargetException {
+        JsonNode nodes = this.client.send("Accessibility.getFullAXTree", null, false);
         String backendNodeId = null;
         if (root != null) {
             Map<String, Object> params = new HashMap<>();
             params.put("objectId", root.getRemoteObject().getObjectId());
-            JSONObject node = this.client.send("DOM.describeNode", params, true);
-            backendNodeId = node.getString("backendNodeId");
+            JsonNode node = this.client.send("DOM.describeNode", params, true);
+            backendNodeId = node.get("backendNodeId").asText();
         }
-        List<JSONObject> list = nodes.toJavaObject(new TypeReference<List<JSONObject>>() {
-        });
-        Iterator<JSONObject> elements = list.iterator();
-        List<org.aoju.lancia.nimble.AXNode> payloads = new ArrayList<>();
+        Iterator<JsonNode> elements = nodes.elements();
+        List<org.aoju.lancia.nimble.accessbility.AXNode> payloads = new ArrayList<>();
         while (elements.hasNext()) {
-            payloads.add(JSON.toJavaObject(elements.next(), org.aoju.lancia.nimble.AXNode.class));
+            payloads.add(Builder.OBJECTMAPPER.treeToValue(elements.next(), org.aoju.lancia.nimble.accessbility.AXNode.class));
         }
         AXNode defaultRoot = AXNode.createTree(payloads);
         AXNode needle = defaultRoot;
         if (StringKit.isNotEmpty(backendNodeId)) {
             String finalBackendNodeId = backendNodeId;
-            needle = defaultRoot.find(node -> finalBackendNodeId.equals(node.getPayload().getBackendDOMNodeId() + Normal.EMPTY));
+            needle = defaultRoot.find(node -> finalBackendNodeId.equals(node.getPayload().getBackendDOMNodeId() + ""));
             if (needle == null)
                 return null;
         }

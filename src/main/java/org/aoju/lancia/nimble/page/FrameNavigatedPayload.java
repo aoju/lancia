@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,8 @@
 package org.aoju.lancia.nimble.page;
 
 /**
- * 框架导航完成后触发。现在，框架已与新的加载器关联
+ * Fired once navigation of the frame has completed. Frame is now associated with the new loader.
+ * /**
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,7 +36,7 @@ package org.aoju.lancia.nimble.page;
 public class FrameNavigatedPayload {
 
     /**
-     * 框架对象
+     * Frame object.
      */
     private FramePayload frame;
 

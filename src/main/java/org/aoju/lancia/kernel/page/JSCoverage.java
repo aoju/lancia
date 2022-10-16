@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,16 +25,18 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.nimble.*;
-import org.aoju.lancia.worker.BrowserListener;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.nimble.css.Range;
+import org.aoju.lancia.nimble.debugger.ScriptParsedPayload;
+import org.aoju.lancia.nimble.profiler.*;
 import org.aoju.lancia.worker.CDPSession;
-import org.aoju.lancia.worker.ListenerWrapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,10 +52,11 @@ import java.util.Map;
  */
 public class JSCoverage {
 
+
     private final CDPSession client;
     private final Map<String, String> scriptSources;
     private final Map<String, String> scriptURLs;
-    private final List<ListenerWrapper> eventListeners;
+    private final List<BrowserListenerWrapper> eventListeners;
     private boolean enabled;
     private boolean resetOnNavigation;
 
@@ -76,7 +79,7 @@ public class JSCoverage {
         this.enabled = true;
         this.scriptURLs.clear();
         this.scriptSources.clear();
-        BrowserListener<ScriptParsedPayload> scriptParsedLis = new BrowserListener<ScriptParsedPayload>() {
+        DefaultBrowserListener<ScriptParsedPayload> scriptParsedLis = new DefaultBrowserListener<ScriptParsedPayload>() {
             @Override
             public void onBrowserEvent(ScriptParsedPayload event) {
                 JSCoverage jsCoverage = (JSCoverage) this.getTarget();
@@ -87,7 +90,7 @@ public class JSCoverage {
         scriptParsedLis.setMethod("Debugger.scriptParsed");
         this.eventListeners.add(Builder.addEventListener(this.client, scriptParsedLis.getMethod(), scriptParsedLis));
 
-        BrowserListener<Object> clearedLis = new BrowserListener<Object>() {
+        DefaultBrowserListener<Object> clearedLis = new DefaultBrowserListener<Object>() {
             @Override
             public void onBrowserEvent(Object event) {
                 JSCoverage jsCoverage = (JSCoverage) this.getTarget();
@@ -108,6 +111,7 @@ public class JSCoverage {
         params.clear();
         params.put("skip", true);
         this.client.send("Debugger.setSkipAllPauses", params, true);
+
     }
 
     private void onExecutionContextsCleared() {
@@ -118,25 +122,26 @@ public class JSCoverage {
     }
 
     private void onScriptParsed(ScriptParsedPayload event) {
+        // Ignore puppeteer-injected scripts
         if (ExecutionContext.EVALUATION_SCRIPT_URL.equals(event.getUrl()))
             return;
-
+        // Ignore other anonymous scripts unless the reportAnonymousScripts option is true.
         if (StringKit.isEmpty(event.getUrl()) && !this.reportAnonymousScripts)
             return;
         Builder.commonExecutor().submit(() -> {
             Map<String, Object> params = new HashMap<>();
             params.put("scriptId", event.getScriptId());
-            JSONObject response = client.send("Debugger.getScriptSource", params, true);
+            JsonNode response = client.send("Debugger.getScriptSource", params, true);
             scriptURLs.put(event.getScriptId(), event.getUrl());
-            scriptSources.put(event.getScriptId(), response.getString("scriptSource"));
+            scriptSources.put(event.getScriptId(), response.get("scriptSource").asText());
         });
     }
 
-    public List<CoverageEntry> stop() {
+    public List<CoverageEntry> stop() throws JsonProcessingException {
         Assert.isTrue(this.enabled, "JSCoverage is not enabled");
         this.enabled = false;
 
-        JSONObject result = this.client.send("Profiler.takePreciseCoverage", null, true);
+        JsonNode result = this.client.send("Profiler.takePreciseCoverage", null, true);
         this.client.send("Profiler.stopPreciseCoverage", null, false);
         this.client.send("Profiler.disable", null, false);
         this.client.send("Debugger.disable", null, false);
@@ -145,7 +150,7 @@ public class JSCoverage {
         Builder.removeEventListeners(this.eventListeners);
 
         List<CoverageEntry> coverage = new ArrayList<>();
-        TakePreciseCoverage profileResponse = JSON.toJavaObject(result, TakePreciseCoverage.class);
+        TakePreciseCoverageReturnValue profileResponse = org.aoju.lancia.Builder.OBJECTMAPPER.treeToValue(result, TakePreciseCoverageReturnValue.class);
         if (CollKit.isEmpty(profileResponse.getResult())) {
             return coverage;
         }
@@ -164,6 +169,7 @@ public class JSCoverage {
         }
         return coverage;
     }
+
 
     private CoverageEntry createCoverageEntry(String url, List<Range> ranges, String text) {
         CoverageEntry coverageEntity = new CoverageEntry();

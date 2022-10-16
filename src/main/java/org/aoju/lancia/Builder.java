@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,25 +25,30 @@
  ********************************************************************************/
 package org.aoju.lancia;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
+
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.lang.Http;
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.thread.NamedThreadFactory;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.events.EventEmitter;
 import org.aoju.lancia.kernel.page.QueryHandler;
 import org.aoju.lancia.kernel.page.QuerySelector;
+import org.aoju.lancia.nimble.PageEvaluateType;
 import org.aoju.lancia.nimble.runtime.CallFrame;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
-import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.CDPSession;
-import org.aoju.lancia.worker.EventEmitter;
-import org.aoju.lancia.worker.ListenerWrapper;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -60,7 +65,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -75,15 +79,35 @@ import java.util.regex.Pattern;
  */
 public class Builder {
 
+    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
+        private static final long serialVersionUID = -6918778699407093058L;
 
-    /**
-     * 读取数据超时
-     */
-    public static final int READ_TIME_OUT = 10000;
-    /**
-     * 连接超时设置
-     */
-    public static final int CONNECT_TIME_OUT = 10000;
+        {
+            put("chrome", new HashMap<>() {
+                private static final long serialVersionUID = 3441562966233820720L;
+
+                {
+                    put("host", "https://npm.taobao.org/mirrors");
+                    put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
+                    put("mac", "%s/chromium-browser-snapshots/Mac/%s/%s.zip");
+                    put("win32", "%s/chromium-browser-snapshots/Win/%s/%s.zip");
+                    put("win64", "%s/chromium-browser-snapshots/Win_x64/%s/%s.zip");
+                }
+            });
+            put("firefox", new HashMap<>() {
+                private static final long serialVersionUID = 2053771138227029401L;
+
+                {
+                    put("host", "https://github.com/puppeteer/juggler/releases");
+                    put("linux", "%s/download/%s/%s.zip");
+                    put("mac", "%s/download/%s/%s.zip");
+                    put("win32", "%s/download/%s/%s.zip");
+                    put("win64", "%s/download/%s/%s.zip");
+                }
+            });
+        }
+    };
+
     /**
      * 指定版本
      */
@@ -95,19 +119,27 @@ public class Builder {
     /**
      * 把产品存放到环境变量的所有可用字段
      */
-    public static final String[] PRODUCT_ENV = {"PUPPETEER_PRODUCT", "java_config_puppeteer_product", "java_package_config_puppeteer_product"};
+    public static final String[] PRODUCT_ENV = {
+            "PUPPETEER_PRODUCT", "java_config_puppeteer_product", "java_package_config_puppeteer_product"
+    };
+
     /**
      * 把浏览器执行路径存放到环境变量的所有可用字段
      */
-    public static final String[] EXECUTABLE_ENV = {"PUPPETEER_EXECUTABLE_PATH", "java_config_puppeteer_executable_path", "java_package_config_puppeteer_executable_path"};
+    public static final String[] EXECUTABLE_ENV = {
+            "PUPPETEER_EXECUTABLE_PATH", "java_config_puppeteer_executable_path", "java_package_config_puppeteer_executable_path"
+    };
+
     /**
      * 把浏览器版本存放到环境变量的字段
      */
     public static final String PUPPETEER_CHROMIUM_REVISION_ENV = "PUPPETEER_CHROMIUM_REVISION";
+
     /**
      * 读取流中的数据的buffer size
      */
     public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
+
     /**
      * 启动浏览器时，如果没有指定路径，那么会从以下路径搜索可执行的路径
      */
@@ -127,6 +159,8 @@ public class Builder {
      * 谷歌浏览器默认启动参数
      */
     public static final List<String> DEFAULT_ARGS = Collections.unmodifiableList(new ArrayList<>() {
+        private static final long serialVersionUID = 1L;
+
         {
             addAll(Arrays.asList(
                     "--disable-background-networking",
@@ -152,7 +186,11 @@ public class Builder {
         }
     });
 
+
     public static final Set<String> SUPPORTED_METRICS = new HashSet<>() {
+
+        private static final long serialVersionUID = -5224857570151968464L;
+
         {
             add("Timestamp");
             add("Documents");
@@ -169,6 +207,13 @@ public class Builder {
             add("JSHeapTotalSize");
         }
     };
+    /**
+     * fastjson的一个实例
+     */
+    public static final ObjectMapper OBJECTMAPPER = new ObjectMapper()
+            .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
     /**
      * 从浏览器的websocket接受到消息中有以下这些字段，在处理消息用到这些字段
@@ -189,6 +234,7 @@ public class Builder {
     public static final String RECV_MESSAGE_STREAM_DATA_PROPERTY = "data";
     public static final String RECV_MESSAGE_BASE64ENCODED_PROPERTY = "base64Encoded";
 
+
     /**
      * 默认的超时时间：启动浏览器实例超时，websocket接受消息超时等
      */
@@ -198,6 +244,8 @@ public class Builder {
      * 追踪信息的默认分类
      */
     public static final Set<String> DEFAULTCATEGORIES = new LinkedHashSet<>() {
+        private static final long serialVersionUID = -5224857570151968464L;
+
         {
             add("-*");
             add("devtools.timeline");
@@ -218,7 +266,19 @@ public class Builder {
      * 内置线程池的数量
      */
     public static final String COMMONT_THREAD_POOL_NUM = "common_thread_number";
-
+    /**
+     * 读取数据超时
+     */
+    public static final int READ_TIME_OUT = 10000;
+    /**
+     * 连接超时设置
+     */
+    public static final int CONNECT_TIME_OUT = 10000;
+    private static final Map<String, QueryHandler> customQueryHandlers = new HashMap<>();
+    /**
+     * 线程池数量
+     */
+    private static final int THREAD_COUNT = 5;
     /**
      * 每条线程下载的文件块大小 5M
      */
@@ -227,376 +287,12 @@ public class Builder {
      * 重试次数
      */
     private static final int RETRY_TIMES = 5;
-    /**
-     * 失败结果
-     */
     private static final String FAIL_RESULT = "-1";
-    private static final Map<String, QueryHandler> CUSTOM_QUERY_HANDLER = new HashMap<>();
+
     /**
      * 单线程，一个浏览器只能有一个trcing 任务
      */
     private static ExecutorService COMMON_EXECUTOR = null;
-
-    public static String createProtocolError(JSONObject node) {
-        JSONObject methodNode = node.getJSONObject(RECV_MESSAGE_METHOD_PROPERTY);
-        JSONObject errNode = node.getJSONObject(RECV_MESSAGE_ERROR_PROPERTY);
-        String errorMsg = errNode.getString(RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
-        String method = Normal.EMPTY;
-        if (methodNode != null) {
-            method = methodNode.toJSONString();
-        }
-        String message = "Protocol error " + method + ": " + errorMsg;
-        String dataNode = errNode.getString(RECV_MESSAGE_ERROR_DATA_PROPERTY);
-        if (dataNode != null) {
-            message += " " + dataNode;
-        }
-        return message;
-    }
-
-    public static final void chmod(String path, String perms) throws IOException {
-        if (StringKit.isEmpty(path)) {
-            throw new IllegalArgumentException("Path must not be empty");
-        }
-
-        char[] chars = perms.toCharArray();
-        if (chars.length != 3) {
-            throw new IllegalArgumentException("perms length must be 3");
-        }
-
-        Path path1 = Paths.get(path);
-        Set<PosixFilePermission> permissions = new HashSet<>();
-
-        if ('1' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_EXECUTE);
-        } else if ('2' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_WRITE);
-        } else if ('3' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_WRITE);
-            permissions.add(PosixFilePermission.OWNER_EXECUTE);
-        } else if ('4' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_READ);
-        } else if ('5' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_READ);
-            permissions.add(PosixFilePermission.OWNER_EXECUTE);
-        } else if ('6' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_READ);
-            permissions.add(PosixFilePermission.OWNER_WRITE);
-        } else if ('7' == chars[0]) {
-            permissions.add(PosixFilePermission.OWNER_READ);
-            permissions.add(PosixFilePermission.OWNER_WRITE);
-            permissions.add(PosixFilePermission.OWNER_EXECUTE);
-        }
-
-        if ('1' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_EXECUTE);
-        } else if ('2' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_WRITE);
-        } else if ('3' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_WRITE);
-            permissions.add(PosixFilePermission.GROUP_EXECUTE);
-        } else if ('4' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_READ);
-        } else if ('5' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_READ);
-            permissions.add(PosixFilePermission.GROUP_EXECUTE);
-        } else if ('6' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_READ);
-            permissions.add(PosixFilePermission.GROUP_WRITE);
-        } else if ('7' == chars[1]) {
-            permissions.add(PosixFilePermission.GROUP_READ);
-            permissions.add(PosixFilePermission.GROUP_WRITE);
-            permissions.add(PosixFilePermission.GROUP_EXECUTE);
-        }
-
-        if ('1' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-        } else if ('2' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_WRITE);
-        } else if ('3' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_WRITE);
-            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-        } else if ('4' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_READ);
-        } else if ('5' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_READ);
-            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-        } else if ('6' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_READ);
-            permissions.add(PosixFilePermission.OWNER_WRITE);
-        } else if ('7' == chars[2]) {
-            permissions.add(PosixFilePermission.OTHERS_READ);
-            permissions.add(PosixFilePermission.OTHERS_WRITE);
-            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
-        }
-
-        Files.setPosixFilePermissions(path1, permissions);
-    }
-
-    public static final String join(String root, String... args) {
-        return Paths.get(root, args).toString();
-    }
-
-    /**
-     * 从协议读取流:用于跟踪文件的示例
-     *
-     * @param client  客户端
-     * @param handler 发送给websocket的参数
-     * @param path    文件存放的路径
-     * @param isSync  是否是在新的线程中执行
-     * @return 可能是特征，可能是字节数组
-     * @throws IOException 操作文件的异常
-     */
-    public static final Object readProtocolStream(CDPSession client, String handler, String path, boolean isSync) throws IOException {
-        if (isSync) {
-            return commonExecutor().submit(() -> {
-                try {
-                    printPDF(client, handler, path);
-                } catch (IOException e) {
-                    Logger.error("Method readProtocolStream error", e);
-                }
-            });
-        } else {
-            return printPDF(client, handler, path);
-        }
-    }
-
-    private static byte[] printPDF(CDPSession client, String handler, String path) throws IOException {
-        boolean eof = false;
-        File file = null;
-        BufferedOutputStream writer = null;
-        BufferedInputStream reader = null;
-
-        if (StringKit.isNotEmpty(path)) {
-            file = new File(path);
-            createNewFile(file);
-        }
-
-        Map<String, Object> params = new HashMap<>();
-        params.put("handle", handler);
-        try {
-
-            if (file != null) {
-                FileOutputStream fileOutputStream = new FileOutputStream(file);
-                writer = new BufferedOutputStream(fileOutputStream);
-            }
-            byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-            byte[] bytes;
-            List<byte[]> bufs = new ArrayList<>();
-            int byteLength = 0;
-
-            while (!eof) {
-                JSONObject response = client.send("IO.read", params, true);
-                String eofNode = response.getString(RECV_MESSAGE_STREAM_EOF_PROPERTY);
-                Boolean base64EncodedNode = response.getBoolean(RECV_MESSAGE_BASE64ENCODED_PROPERTY);
-                String dataText = response.getString(RECV_MESSAGE_STREAM_DATA_PROPERTY);
-
-                if (StringKit.isNotEmpty(dataText)) {
-                    try {
-                        if (base64EncodedNode != null && base64EncodedNode) {
-                            bytes = Base64.getDecoder().decode(dataText);
-                        } else {
-                            bytes = dataText.getBytes();
-                        }
-                        bufs.add(bytes);
-                        byteLength += bytes.length;
-                        // 转成二进制流 io
-                        if (file != null) {
-                            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
-                            reader = new BufferedInputStream(byteArrayInputStream);
-                            int read;
-                            while ((read = reader.read(buffer, 0, DEFAULT_BUFFER_SIZE)) != -1) {
-                                writer.write(buffer, 0, read);
-                                writer.flush();
-                            }
-                        }
-                    } finally {
-                        IoKit.close(reader);
-                    }
-                }
-                eof = eofNode == null || Boolean.parseBoolean(eofNode);
-            }
-            client.send("IO.close", params, true);
-            return getBytes(bufs, byteLength);
-        } finally {
-            IoKit.close(writer);
-            IoKit.close(reader);
-        }
-    }
-
-    /**
-     * 多个字节数组转成一个字节数组
-     *
-     * @param bufs       数组集合
-     * @param byteLength 数组总长度
-     * @return 总数组
-     */
-    private static byte[] getBytes(List<byte[]> bufs, int byteLength) {
-        // 返回字节数组
-        byte[] resultBuf = new byte[byteLength];
-        int destPos = 0;
-        for (byte[] buf : bufs) {
-            System.arraycopy(buf, 0, resultBuf, destPos, buf.length);
-            destPos += buf.length;
-        }
-        return resultBuf;
-    }
-
-    public static String getExceptionMessage(ExceptionDetails exceptionDetails) {
-        if (exceptionDetails.getException() != null)
-            return StringKit.isNotEmpty(exceptionDetails.getException().getDescription()) ? exceptionDetails.getException().getDescription() : (String) exceptionDetails.getException().getValue();
-        String message = exceptionDetails.getText();
-        StringBuilder sb = new StringBuilder(message);
-        if (exceptionDetails.getStackTrace() != null) {
-            for (CallFrame callframe : exceptionDetails.getStackTrace().getCallFrames()) {
-                String location = callframe.getUrl() + ":" + callframe.getColumnNumber() + ":" + callframe.getColumnNumber();
-                String functionName = StringKit.isNotEmpty(callframe.getFunctionName()) ? callframe.getFunctionName() : "<anonymous>";
-                sb.append("\n    at ").append(functionName).append("(").append(location).append(")");
-            }
-        }
-        return sb.toString();
-    }
-
-    public static final Set<BrowserListener> getConcurrentSet() {
-        return new CopyOnWriteArraySet<>();
-    }
-
-    public static final <T> ListenerWrapper<T> addEventListener(EventEmitter emitter, String eventName, BrowserListener<T> handler) {
-        emitter.addListener(eventName, handler);
-        return new ListenerWrapper<>(emitter, eventName, handler);
-    }
-
-    public static final void removeEventListeners(List<ListenerWrapper> eventListeners) {
-        if (CollKit.isEmpty(eventListeners)) {
-            return;
-        }
-        for (int i = 0; i < eventListeners.size(); i++) {
-            ListenerWrapper wrapper = eventListeners.get(i);
-            wrapper.getEmitter().removeListener(wrapper.getEventName(), wrapper.getHandler());
-        }
-    }
-
-    public static final boolean isString(Object value) {
-        if (value == null)
-            return false;
-        return value.getClass().equals(String.class);
-    }
-
-    public static final boolean isNumber(String s) {
-        Pattern pattern = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
-        Matcher matcher = pattern.matcher(s);
-        return matcher.matches();
-    }
-
-    public static Object valueFromRemoteObject(RemoteObject remoteObject) {
-        Assert.isTrue(StringKit.isEmpty(remoteObject.getObjectId()), "Cannot extract value when objectId is given");
-        if (StringKit.isNotEmpty(remoteObject.getUnserializableValue())) {
-            if ("bigint".equals(remoteObject.getType()))
-                return new BigInteger(remoteObject.getUnserializableValue().replace("n", Normal.EMPTY));
-            switch (remoteObject.getUnserializableValue()) {
-                case "-0":
-                    return -0;
-                case "NaN":
-                    return "NaN";
-                case "Infinity":
-                    return "Infinity";
-                case "-Infinity":
-                    return "-Infinity";
-                default:
-                    throw new IllegalArgumentException("Unsupported unserializable value: " + remoteObject.getUnserializableValue());
-            }
-        }
-        return remoteObject.getValue();
-    }
-
-    public static void releaseObject(CDPSession client, RemoteObject remoteObject, boolean isBlock) {
-        if (StringKit.isEmpty(remoteObject.getObjectId()))
-            return;
-        Map<String, Object> params = new HashMap<>();
-        params.put("objectId", remoteObject.getObjectId());
-        try {
-            client.send("Runtime.releaseObject", params, isBlock);
-        } catch (Exception e) {
-            //重新导航到某个网页 或者页面已经关闭
-            //在这种情况下不需要将这个错误在线程执行中抛出，打日志记录一下就可以了
-        }
-    }
-
-    public static Object waitForEvent(EventEmitter eventEmitter, String eventName, Predicate predicate, int timeout, String abortPromise) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-        final Object[] result = {null};
-        BrowserListener listener = new BrowserListener() {
-            @Override
-            public void onBrowserEvent(Object event) {
-                if (!predicate.test(event))
-                    return;
-                result[0] = event;
-                latch.countDown();
-            }
-        };
-        listener.setMethod(eventName);
-        ListenerWrapper wrapper = addEventListener(eventEmitter, eventName, listener);
-        try {
-            boolean await = latch.await(timeout, TimeUnit.MILLISECONDS);
-            if (!await) {
-                throw new RuntimeException(abortPromise);
-            }
-            return result[0];
-        } finally {
-            List<ListenerWrapper> removes = new ArrayList<>();
-            removes.add(wrapper);
-            removeEventListeners(removes);
-        }
-    }
-
-    public static final String evaluationString(String fun, PageEvaluateType type, Object... args) {
-        if (PageEvaluateType.STRING.equals(type)) {
-            Assert.isTrue(args.length == 0, "Cannot evaluate a string with arguments");
-            return fun;
-        }
-        List<String> argsList = new ArrayList<>();
-        for (Object arg : args) {
-            if (arg == null) {
-                argsList.add("Undefined");
-            } else {
-                argsList.add(JSON.toJSONString(arg));
-            }
-        }
-        return MessageFormat.format("({0})({1})", fun, String.join(",", argsList));
-    }
-
-    /**
-     * 通用执行者
-     *
-     * @return 执行服务
-     */
-    public static final ExecutorService commonExecutor() {
-        if (COMMON_EXECUTOR == null) {
-            synchronized (Builder.class) {
-                if (COMMON_EXECUTOR == null) {
-                    String customNum = System.getProperty(COMMONT_THREAD_POOL_NUM);
-                    int threadNum = 0;
-                    if (StringKit.isNotEmpty(customNum)) {
-                        threadNum = Integer.parseInt(customNum);
-                    } else {
-                        threadNum = Math.max(1, Runtime.getRuntime().availableProcessors());
-                    }
-                    COMMON_EXECUTOR = new ThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new NamedThreadFactory("common-pool-"));
-                }
-            }
-        }
-        return COMMON_EXECUTOR;
-    }
-
-    /**
-     * 判断js字符串是否是一个函数
-     *
-     * @param pageFunction js字符串
-     * @return true代表是js函数
-     */
-    public static final boolean isFunction(String pageFunction) {
-        pageFunction = pageFunction.trim();
-        return pageFunction.startsWith("function") || pageFunction.startsWith("async") || pageFunction.contains("=>");
-    }
 
     public static final String toString(InputStream in) throws IOException {
         StringWriter wirter = null;
@@ -617,6 +313,36 @@ public class Builder {
         }
     }
 
+    /**
+     * 断言路径是否是可执行的exe文件
+     *
+     * @param executablePath 要断言的文件
+     * @return 可执行，返回true
+     */
+    public static boolean assertExecutable(String executablePath) {
+        Path path = Paths.get(executablePath);
+        return Files.isRegularFile(path) && Files.isReadable(path) && Files.isExecutable(path);
+    }
+
+    public static void registerCustomQueryHandler(String name, QueryHandler handler) {
+        if (customQueryHandlers.containsKey(name))
+            throw new RuntimeException("A custom query handler named " + name + " already exists");
+        Pattern pattern = Pattern.compile("^[a-zA-Z]+$");
+        Matcher isValidName = pattern.matcher(name);
+        if (!isValidName.matches())
+            throw new IllegalArgumentException("Custom query handler names may only contain [a-zA-Z]");
+
+        customQueryHandlers.put(name, handler);
+    }
+
+    public static final void unregisterCustomQueryHandler(String name) {
+        customQueryHandlers.remove(name);
+    }
+
+    public static Map<String, QueryHandler> customQueryHandlers() {
+        return customQueryHandlers;
+    }
+
     public static QuerySelector getQueryHandlerAndSelector(String selector, String defaultQueryHandler) {
         Pattern pattern = Pattern.compile("^[a-zA-Z]+\\/");
         Matcher hasCustomQueryHandler = pattern.matcher(selector);
@@ -630,7 +356,8 @@ public class Builder {
 
                 @Override
                 public String queryAll() {
-                    return "(element,selector) => element.querySelectorAll(selector)";
+                    return "(element,selector) =>\n" +
+                            "      element.querySelectorAll(selector)";
                 }
             });
         int index = selector.indexOf("/");
@@ -640,25 +367,6 @@ public class Builder {
         if (queryHandler == null)
             throw new RuntimeException("Query set to use " + name + ", but no query handler of that name was found");
         return new QuerySelector(updatedSelector, queryHandler);
-    }
-
-    public static void registerCustomQueryHandler(String name, QueryHandler handler) {
-        if (CUSTOM_QUERY_HANDLER.containsKey(name))
-            throw new RuntimeException("A custom query handler named " + name + " already exists");
-        Pattern pattern = Pattern.compile("^[a-zA-Z]+$");
-        Matcher isValidName = pattern.matcher(name);
-        if (!isValidName.matches())
-            throw new IllegalArgumentException("Custom query handler names may only contain [a-zA-Z]");
-
-        CUSTOM_QUERY_HANDLER.put(name, handler);
-    }
-
-    public static final void unregisterCustomQueryHandler(String name) {
-        CUSTOM_QUERY_HANDLER.remove(name);
-    }
-
-    public static Map<String, QueryHandler> customQueryHandlers() {
-        return CUSTOM_QUERY_HANDLER;
     }
 
     /**
@@ -677,7 +385,7 @@ public class Builder {
         long taskCount = contentLength % CHUNK_SIZE == 0 ? contentLength / CHUNK_SIZE : contentLength / CHUNK_SIZE + 1;
         createFile(filePath, contentLength);
 
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(5, 5, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ThreadPoolExecutor executor = getExecutor();
         CompletionService<String> completionService = new ExecutorCompletionService<>(executor);
         List<Future<String>> futureList = new ArrayList<>();
         int downloadCount = 0;
@@ -687,10 +395,10 @@ public class Builder {
         } else {
             for (int i = 0; i < taskCount; i++) {
                 if (i == taskCount - 1) {
-                    Future<String> future = completionService.submit(new DownloadCallable(i * CHUNK_SIZE, contentLength, filePath, url));
+                    Future<String> future = completionService.submit(new DownloadCallable((long) i * CHUNK_SIZE, contentLength, filePath, url));
                     futureList.add(future);
                 } else {
-                    Future<String> future = completionService.submit(new DownloadCallable(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE, filePath, url));
+                    Future<String> future = completionService.submit(new DownloadCallable((long) i * CHUNK_SIZE, (long) (i + 1) * CHUNK_SIZE, filePath, url));
                     futureList.add(future);
                 }
             }
@@ -713,6 +421,7 @@ public class Builder {
                 }
             }
         }
+
     }
 
     /**
@@ -745,6 +454,15 @@ public class Builder {
     }
 
     /**
+     * 创建一个用于下载chrome的线程池
+     *
+     * @return 线程池
+     */
+    public static ThreadPoolExecutor getExecutor() {
+        return new ThreadPoolExecutor(THREAD_COUNT, THREAD_COUNT, 30000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+    }
+
+    /**
      * 创建固定大小的文件
      *
      * @param path   文件路径
@@ -759,41 +477,6 @@ public class Builder {
         RandomAccessFile randomAccessFile = new RandomAccessFile(path, "rw");
         randomAccessFile.setLength(length);
         randomAccessFile.close();
-    }
-
-    /**
-     * 判断路径是否是可执行文件
-     *
-     * @param execPath 要判断文件路径
-     * @return 可执行，返回true
-     */
-    public static boolean isExecutable(String execPath) {
-        Path path = Paths.get(execPath);
-        return Files.isRegularFile(path) && Files.isReadable(path) && Files.isExecutable(path);
-    }
-
-    /**
-     * 移除文件
-     *
-     * @param path 要移除的路径
-     */
-    public static void remove(String path) {
-        File file = new File(path);
-        delete(file);
-    }
-
-    private static void delete(File file) {
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            if (files != null && files.length > 0) {
-                for (File f : files) {
-                    delete(f);
-                }
-            }
-            file.deleteOnExit();
-        } else {
-            file.deleteOnExit();
-        }
     }
 
     /**
@@ -821,8 +504,421 @@ public class Builder {
         }
     }
 
+    public static String createProtocolError(JsonNode node) {
+        JsonNode methodNode = node.get(org.aoju.lancia.Builder.RECV_MESSAGE_METHOD_PROPERTY);
+        JsonNode errNode = node.get(org.aoju.lancia.Builder.RECV_MESSAGE_ERROR_PROPERTY);
+        JsonNode errorMsg = errNode.get(org.aoju.lancia.Builder.RECV_MESSAGE_ERROR_MESSAGE_PROPERTY);
+        String method = "";
+        if (methodNode != null) {
+            method = methodNode.asText();
+        }
+        String message = "Protocol error " + method + ": " + errorMsg;
+        JsonNode dataNode = errNode.get(org.aoju.lancia.Builder.RECV_MESSAGE_ERROR_DATA_PROPERTY);
+        if (dataNode != null) {
+            message += " " + dataNode;
+        }
+        return message;
+    }
+
+    /**
+     * 是否是win64
+     *
+     * @return true is win64
+     */
+    public static final boolean isWin64() {
+        String arch = System.getProperty("os.arch");
+        return arch.contains("64");
+    }
+
+    public static final void chmod(String path, String perms) throws IOException {
+
+        if (StringKit.isEmpty(path))
+            throw new IllegalArgumentException("Path must not be empty");
+
+        char[] chars = perms.toCharArray();
+        if (chars.length != 3) throw new IllegalArgumentException("perms length must be 3");
+
+        Path path1 = Paths.get(path);
+        Set<PosixFilePermission> permissions = new HashSet<>();
+        //own
+        if ('1' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_EXECUTE);
+        } else if ('2' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+        } else if ('3' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+            permissions.add(PosixFilePermission.OWNER_EXECUTE);
+        } else if ('4' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_READ);
+        } else if ('5' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_READ);
+            permissions.add(PosixFilePermission.OWNER_EXECUTE);
+        } else if ('6' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_READ);
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+        } else if ('7' == chars[0]) {
+            permissions.add(PosixFilePermission.OWNER_READ);
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+            permissions.add(PosixFilePermission.OWNER_EXECUTE);
+        }
+        //group
+        if ('1' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_EXECUTE);
+        } else if ('2' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_WRITE);
+        } else if ('3' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_WRITE);
+            permissions.add(PosixFilePermission.GROUP_EXECUTE);
+        } else if ('4' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_READ);
+        } else if ('5' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_READ);
+            permissions.add(PosixFilePermission.GROUP_EXECUTE);
+        } else if ('6' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_READ);
+            permissions.add(PosixFilePermission.GROUP_WRITE);
+        } else if ('7' == chars[1]) {
+            permissions.add(PosixFilePermission.GROUP_READ);
+            permissions.add(PosixFilePermission.GROUP_WRITE);
+            permissions.add(PosixFilePermission.GROUP_EXECUTE);
+        }
+        //other
+        if ('1' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+        } else if ('2' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_WRITE);
+        } else if ('3' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_WRITE);
+            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+        } else if ('4' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_READ);
+        } else if ('5' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_READ);
+            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+        } else if ('6' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_READ);
+            permissions.add(PosixFilePermission.OWNER_WRITE);
+        } else if ('7' == chars[2]) {
+            permissions.add(PosixFilePermission.OTHERS_READ);
+            permissions.add(PosixFilePermission.OTHERS_WRITE);
+            permissions.add(PosixFilePermission.OTHERS_EXECUTE);
+        }
+
+        Files.setPosixFilePermissions(path1, permissions);
+    }
+
+    public static final String join(String root, String... args) {
+        return java.nio.file.Paths.get(root, args).toString();
+    }
+
+    /**
+     * read stream from protocol : example for tracing  file
+     *
+     * @param client  CDPSession
+     * @param handler 发送给websocket的参数
+     * @param path    文件存放的路径
+     * @param isSync  是否是在新的线程中执行
+     * @return 可能是feture，可能是字节数组
+     * @throws IOException 操作文件的异常
+     */
+    public static final Object readProtocolStream(CDPSession client, String handler, String path, boolean isSync) throws IOException {
+        if (isSync) {
+            return Builder.commonExecutor().submit(() -> {
+                try {
+                    printPDF(client, handler, path);
+                } catch (IOException e) {
+                    Logger.error("Method readProtocolStream error", e);
+                }
+            });
+        } else {
+            return printPDF(client, handler, path);
+        }
+    }
+
+    private static byte[] printPDF(CDPSession client, String handler, String path) throws IOException {
+        boolean eof = false;
+        File file = null;
+        BufferedOutputStream writer = null;
+        BufferedInputStream reader = null;
+
+        if (StringKit.isNotEmpty(path)) {
+            file = new File(path);
+            org.aoju.lancia.Builder.createNewFile(file);
+        }
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("handle", handler);
+        try {
+
+            if (file != null) {
+                FileOutputStream fileOutputStream = new FileOutputStream(file);
+                writer = new BufferedOutputStream(fileOutputStream);
+            }
+            byte[] buffer = new byte[org.aoju.lancia.Builder.DEFAULT_BUFFER_SIZE];
+            byte[] bytes;
+            List<byte[]> bufs = new ArrayList<>();
+            int byteLength = 0;
+
+            while (!eof) {
+                JsonNode response = client.send("IO.read", params, true);
+                JsonNode eofNode = response.get(org.aoju.lancia.Builder.RECV_MESSAGE_STREAM_EOF_PROPERTY);
+                JsonNode base64EncodedNode = response.get(org.aoju.lancia.Builder.RECV_MESSAGE_BASE64ENCODED_PROPERTY);
+                JsonNode dataNode = response.get(org.aoju.lancia.Builder.RECV_MESSAGE_STREAM_DATA_PROPERTY);
+                String dataText;
+
+                if (dataNode != null && StringKit.isNotEmpty(dataText = dataNode.asText())) {
+                    try {
+                        if (base64EncodedNode != null && base64EncodedNode.asBoolean()) {
+                            bytes = Base64.getDecoder().decode(dataText);
+                        } else {
+                            bytes = dataNode.asText().getBytes();
+                        }
+                        bufs.add(bytes);
+                        byteLength += bytes.length;
+                        //转成二进制流 io
+                        if (file != null) {
+                            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
+                            reader = new BufferedInputStream(byteArrayInputStream);
+                            int read;
+                            while ((read = reader.read(buffer, 0, org.aoju.lancia.Builder.DEFAULT_BUFFER_SIZE)) != -1) {
+                                writer.write(buffer, 0, read);
+                                writer.flush();
+                            }
+                        }
+                    } finally {
+                        IoKit.close(reader);
+                    }
+                }
+                eof = eofNode == null || eofNode.asBoolean();
+            }
+            client.send("IO.close", params, true);
+
+            return getBytes(bufs, byteLength);
+
+        } finally {
+            IoKit.close(writer);
+            IoKit.close(reader);
+        }
+    }
+
+    /**
+     * 多个字节数组转成一个字节数组
+     *
+     * @param bufs       数组集合
+     * @param byteLength 数组总长度
+     * @return 总数组
+     */
+    private static byte[] getBytes(List<byte[]> bufs, int byteLength) {
+        //返回字节数组
+        byte[] resultBuf = new byte[byteLength];
+        int destPos = 0;
+        for (byte[] buf : bufs) {
+            System.arraycopy(buf, 0, resultBuf, destPos, buf.length);
+            destPos += buf.length;
+        }
+        return resultBuf;
+    }
+
+    public static String getExceptionMessage(ExceptionDetails exceptionDetails) {
+        if (exceptionDetails.getException() != null)
+            return StringKit.isNotEmpty(exceptionDetails.getException().getDescription()) ? exceptionDetails.getException().getDescription() : (String) exceptionDetails.getException().getValue();
+        String message = exceptionDetails.getText();
+        StringBuilder sb = new StringBuilder(message);
+        if (exceptionDetails.getStackTrace() != null) {
+            for (CallFrame callframe : exceptionDetails.getStackTrace().getCallFrames()) {
+                String location = callframe.getUrl() + ":" + callframe.getColumnNumber() + ":" + callframe.getColumnNumber();
+                String functionName = StringKit.isNotEmpty(callframe.getFunctionName()) ? callframe.getFunctionName() : "<anonymous>";
+                sb.append("\n    at ").append(functionName).append("(").append(location).append(")");
+            }
+        }
+        return sb.toString();
+    }
+
+    public static final Set<DefaultBrowserListener> getConcurrentSet() {
+        return new CopyOnWriteArraySet<>();
+    }
+
+    public static final <T> BrowserListenerWrapper<T> addEventListener(EventEmitter emitter, String eventName, DefaultBrowserListener<T> handler) {
+        emitter.addListener(eventName, handler);
+        return new BrowserListenerWrapper<>(emitter, eventName, handler);
+    }
+
+    public static final void removeEventListeners(List<BrowserListenerWrapper> eventListeners) {
+        if (CollKit.isEmpty(eventListeners)) {
+            return;
+        }
+        for (int i = 0; i < eventListeners.size(); i++) {
+            BrowserListenerWrapper wrapper = eventListeners.get(i);
+            wrapper.getEmitter().removeListener(wrapper.getEventName(), wrapper.getHandler());
+        }
+    }
+
+    public static final boolean isString(Object value) {
+        if (value == null)
+            return false;
+        return value.getClass().equals(String.class);
+    }
+
+    public static final boolean isNumber(String s) {
+        Pattern pattern = Pattern.compile("-?[0-9]+(\\.[0-9]+)?");
+        Matcher matcher = pattern.matcher(s);
+        return matcher.matches();
+    }
+
+    public static Object valueFromRemoteObject(RemoteObject remoteObject) {
+        Assert.isTrue(StringKit.isEmpty(remoteObject.getObjectId()), "Cannot extract value when objectId is given");
+        if (StringKit.isNotEmpty(remoteObject.getUnserializableValue())) {
+            if ("bigint".equals(remoteObject.getType()))
+                return new BigInteger(remoteObject.getUnserializableValue().replace("n", ""));
+            switch (remoteObject.getUnserializableValue()) {
+                case "-0":
+                    return -0;
+                case "NaN":
+                    return "NaN";
+                case "Infinity":
+                    return "Infinity";
+                case "-Infinity":
+                    return "-Infinity";
+                default:
+                    throw new IllegalArgumentException("Unsupported unserializable value: " + remoteObject.getUnserializableValue());
+            }
+        }
+        return remoteObject.getValue();
+    }
+
+    public static void releaseObject(CDPSession client, RemoteObject remoteObject, boolean isBlock) {
+        if (StringKit.isEmpty(remoteObject.getObjectId()))
+            return;
+        Map<String, Object> params = new HashMap<>();
+        params.put("objectId", remoteObject.getObjectId());
+        try {
+            client.send("Runtime.releaseObject", params, isBlock);
+        } catch (Exception e) {
+            // Exceptions might happen in case of a page been navigated or closed.
+            //重新导航到某个网页 或者页面已经关闭
+            // Swallow these since they are harmless and we don't leak anything in this case.
+            //在这种情况下不需要将这个错误在线程执行中抛出，打日志记录一下就可以了
+        }
+    }
+
+    public static Object waitForEvent(EventEmitter eventEmitter, String eventName, Predicate predicate, int timeout, String abortPromise) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        final Object[] result = {null};
+        DefaultBrowserListener listener = new DefaultBrowserListener() {
+            @Override
+            public void onBrowserEvent(Object event) {
+                if (!predicate.test(event))
+                    return;
+                result[0] = event;
+                latch.countDown();
+            }
+        };
+        listener.setMethod(eventName);
+        BrowserListenerWrapper wrapper = addEventListener(eventEmitter, eventName, listener);
+        try {
+            boolean await = latch.await(timeout, TimeUnit.MILLISECONDS);
+            if (!await) {
+                throw new RuntimeException(abortPromise);
+            }
+            return result[0];
+        } finally {
+            List<BrowserListenerWrapper> removes = new ArrayList<>();
+            removes.add(wrapper);
+            removeEventListeners(removes);
+        }
+
+    }
+
+    public static final String evaluationString(String fun, PageEvaluateType type, Object... args) {
+        if (PageEvaluateType.STRING.equals(type)) {
+            Assert.isTrue(args.length == 0, "Cannot evaluate a string with arguments");
+            return fun;
+        }
+        List<String> argsList = new ArrayList<>();
+        for (Object arg : args) {
+            if (arg == null) {
+                argsList.add("undefined");
+            } else {
+                try {
+                    argsList.add(org.aoju.lancia.Builder.OBJECTMAPPER.writeValueAsString(arg));
+                } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return MessageFormat.format("({0})({1})", fun, String.join(",", argsList));
+    }
+
+    public static final ExecutorService commonExecutor() {
+        if (COMMON_EXECUTOR == null) {
+            synchronized (Builder.class) {
+                if (COMMON_EXECUTOR == null) {
+                    String customNum = System.getProperty(org.aoju.lancia.Builder.COMMONT_THREAD_POOL_NUM);
+                    int threadNum = 0;
+                    if (StringKit.isNotEmpty(customNum)) {
+                        threadNum = Integer.parseInt(customNum);
+                    } else {
+                        threadNum = Math.max(1, Runtime.getRuntime().availableProcessors());
+                    }
+                    COMMON_EXECUTOR = new ThreadPoolExecutor(threadNum, threadNum, 30, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new NamedThreadFactory("common-pool-"));
+                }
+            }
+        }
+        return COMMON_EXECUTOR;
+    }
+
+    public static final CompletionService completionService() {
+        return new ExecutorCompletionService(Builder.commonExecutor());
+    }
+
+    /**
+     * 判断js字符串是否是一个函数
+     *
+     * @param pageFunction js字符串
+     * @return true代表是js函数
+     */
+    public static final boolean isFunction(String pageFunction) {
+        pageFunction = pageFunction.trim();
+        return pageFunction.startsWith("function") || pageFunction.startsWith("async") || pageFunction.contains("=>");
+    }
+
     public void clearQueryHandlers() {
-        CUSTOM_QUERY_HANDLER.clear();
+        customQueryHandlers.clear();
+    }
+
+    /**
+     * Enum which represents type of handshake is required for a close
+     */
+    public enum CloseHandshakeType {
+        NONE, ONEWAY, TWOWAY
+    }
+
+    /**
+     * Enum which represents the states a handshake may be in
+     */
+    public enum HandshakeState {
+        /**
+         * Handshake matched this Draft successfully
+         */
+        MATCHED,
+        /**
+         * Handshake is does not match this Draft
+         */
+        NOT_MATCHED
+    }
+
+    /**
+     * Enum which contains the different valid opcodes
+     */
+    public enum Opcode {
+        CONTINUOUS, TEXT, BINARY, PING, PONG, CLOSING
+    }
+
+    /**
+     * Enum which represents the state a websocket may be in
+     */
+    public enum ReadyState {
+        NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
     }
 
     static class DownloadCallable implements Callable<String> {
@@ -853,11 +949,11 @@ public class Builder {
                 conn = (HttpURLConnection) uRL.openConnection();
                 conn.setConnectTimeout(CONNECT_TIME_OUT);
                 conn.setReadTimeout(READ_TIME_OUT);
-                conn.setRequestMethod(Http.GET);
+                conn.setRequestMethod("GET");
                 String range = "bytes=" + startPosition + "-" + endPosition;
                 conn.addRequestProperty("Range", range);
                 conn.addRequestProperty("accept-encoding", "gzip, deflate, br");
-                ByteBuffer buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
+                ByteBuffer buffer = ByteBuffer.allocate(Builder.DEFAULT_BUFFER_SIZE);
                 FileChannel channel = file.getChannel();
                 for (int j = 0; j < RETRY_TIMES; j++) {
                     try {
@@ -887,203 +983,8 @@ public class Builder {
                 if (conn != null) {
                     conn.disconnect();
                 }
-
             }
         }
-    }
-
-    /**
-     * 要监听的事件的名字枚举类
-     */
-    public enum Event {
-
-        PAGE_CLOSE("close"),
-        PAGE_CONSOLE("console"),
-        PAGE_DIALOG("dialog"),
-        PAGE_DOMContentLoaded("domcontentloaded"),
-        PAGE_ERROR("error"),
-        PAGE_PageError("pageerror"),
-        PAGE_REQUEST("request"),
-        PAGE_RESPONSE("response"),
-        PAGE_REQUESTFAILED("requestfailed"),
-        PAGE_REQUESTFINISHED("requestfinished"),
-        PAGE_FRAMEATTACHED("frameattached"),
-        PAGE_FRAMEDETACHED("framedetached"),
-        PAGE_FRAMENAVIGATED("framenavigated"),
-        PAGE_LOAD("load"),
-        PAGE_METRICS("metrics"),
-        PAGE_POPUP("popup"),
-        PAGE_WORKERCREATED("workercreated"),
-        PAGE_WORKERDESTROYED("workerdestroyed"),
-
-        BROWSER_TARGETCREATED("targetcreated"),
-        BROWSER_TARGETDESTROYED("targetdestroyed"),
-        BROWSER_TARGETCHANGED("targetchanged"),
-        BROWSER_DISCONNECTED("disconnected"),
-
-        BROWSERCONTEXT_TARGETCREATED("targetcreated"),
-        BROWSERCONTEXT_TARGETDESTROYED("targetdestroyed"),
-        BROWSERCONTEXT_TARGETCHANGED("targetchanged"),
-
-        NETWORK_MANAGER_REQUEST("Events.NetworkManager.Request"),
-        NETWORK_MANAGER_RESPONSE("Events.NetworkManager.Response"),
-        NETWORK_MANAGER_REQUEST_FAILED("Events.NetworkManager.RequestFailed"),
-        NETWORK_MANAGER_REQUEST_FINISHED("Events.NetworkManager.RequestFinished"),
-
-        FRAME_MANAGER_FRAME_ATTACHED("Events.FrameManager.FrameAttached"),
-        FRAME_MANAGER_FRAME_NAVIGATED("Events.FrameManager.FrameNavigated"),
-        FRAME_MANAGER_FRAME_DETACHED("Events.FrameManager.FrameDetached"),
-        FRAME_MANAGER_LIFECYCLE_EVENT("Events.FrameManager.LifecycleEvent"),
-        FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT("Events.FrameManager.FrameNavigatedWithinDocument"),
-        FRAME_MANAGER_EXECUTION_CONTEXTCREATED("Events.FrameManager.ExecutionContextCreated"),
-        FRAME_MANAGER_EXECUTION_CONTEXTDESTROYED("Events.FrameManager.ExecutionContextDestroyed"),
-
-        CONNECTION_DISCONNECTED("Events.Connection.Disconnected"),
-        CDPSESSION_DISCONNECTED("Events.CDPSession.Disconnected");
-
-        private String name;
-
-        Event(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-
-    public enum Result {
-
-        CONTENT_SUCCESS("Content-success"),
-        SUCCESS("success"),
-        TIMEOUT("timeout"),
-        TERMINATION("termination"),
-        ERROR("error");
-
-        private final String result;
-
-        Result(String result) {
-            this.result = result;
-        }
-
-        public String getResult() {
-            return result;
-        }
-
-    }
-
-    public enum Paper {
-
-        letter(8.5, 11),
-        legal(8.5, 14),
-        tabloid(11, 17),
-        ledger(17, 11),
-        a0(33.1, 46.8),
-        a1(23.4, 33.1),
-        a2(16.54, 23.4),
-        a3(11.7, 16.54),
-        a4(8.27, 11.7),
-        a5(5.83, 8.27),
-        a6(4.13, 5.83);
-
-        private double width;
-
-        private double height;
-
-        Paper(double width, double height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        public double getWidth() {
-            return width;
-        }
-
-        public void setWidth(double width) {
-            this.width = width;
-        }
-
-        public double getHeight() {
-            return height;
-        }
-
-        public void setHeight(double height) {
-            this.height = height;
-        }
-
-    }
-
-    public enum PageEvaluateType {
-
-        STRING("string"),
-        NUMBER("number"),
-        FUNCTION("function");
-
-        private String type;
-
-        PageEvaluateType(String type) {
-            this.type = type;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-    }
-
-    public enum DialogType {
-
-        Alert("alert"),
-        BeforeUnload("beforeunload"),
-        Confirm("confirm"),
-        Prompt("prompt");
-
-        private String type;
-
-        DialogType(String type) {
-            this.type = type;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public void setType(String type) {
-            this.type = type;
-        }
-
-    }
-
-    /**
-     * 视力缺陷类,设置不同级别的实力缺陷，截图有不同的效果
-     */
-    public enum VisionDeficiency {
-
-        ACHROMATOPSIA("achromatopsia"),
-        DEUTERANOPIA("deuteranopia"),
-        PROTANOPIA("protanopia"),
-        TRITANOPIA("tritanopia"),
-        BLURREDVISION("blurredVision"),
-        NONE("none");
-
-        private final String value;
-
-        VisionDeficiency(String value) {
-            this.value = value;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
     }
 
 }

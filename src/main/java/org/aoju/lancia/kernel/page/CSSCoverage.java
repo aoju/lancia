@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,19 +25,20 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.nimble.*;
-import org.aoju.lancia.worker.BrowserListener;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.nimble.css.CSSStyleSheetHeader;
+import org.aoju.lancia.nimble.css.Range;
+import org.aoju.lancia.nimble.css.StyleSheetAddedPayload;
+import org.aoju.lancia.nimble.profiler.CoverageEntry;
+import org.aoju.lancia.nimble.profiler.CoverageRange;
 import org.aoju.lancia.worker.CDPSession;
-import org.aoju.lancia.worker.ListenerWrapper;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Kimi Liu
@@ -49,7 +50,7 @@ public class CSSCoverage {
     private final CDPSession client;
     private final HashMap<String, String> stylesheetURLs;
     private final HashMap<String, String> stylesheetSources;
-    private final List<ListenerWrapper> eventListeners;
+    private final List<BrowserListenerWrapper> eventListeners;
     private boolean enabled;
     private boolean resetOnNavigation;
 
@@ -70,7 +71,7 @@ public class CSSCoverage {
         this.stylesheetURLs.clear();
         this.stylesheetSources.clear();
 
-        BrowserListener<StyleSheetAddedPayload> addLis = new BrowserListener<StyleSheetAddedPayload>() {
+        DefaultBrowserListener<StyleSheetAddedPayload> addLis = new DefaultBrowserListener<StyleSheetAddedPayload>() {
             @Override
             public void onBrowserEvent(StyleSheetAddedPayload event) {
                 CSSCoverage cssCoverage = (CSSCoverage) this.getTarget();
@@ -80,7 +81,7 @@ public class CSSCoverage {
         addLis.setMethod("CSS.styleSheetAdded");
         addLis.setTarget(this);
 
-        BrowserListener<Object> clearLis = new BrowserListener<Object>() {
+        DefaultBrowserListener<Object> clearLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 CSSCoverage cssCoverage = (CSSCoverage) this.getTarget();
@@ -106,17 +107,16 @@ public class CSSCoverage {
     }
 
     private void onStyleSheet(StyleSheetAddedPayload event) {
-        StyleSheetHeader header = event.getHeader();
-        if (StringKit.isEmpty(header.getSourceURL())) {
-            return;
-        }
+        CSSStyleSheetHeader header = event.getHeader();
+        // Ignore anonymous scripts
+        if (StringKit.isEmpty(header.getSourceURL())) return;
 
         Builder.commonExecutor().submit(() -> {
             Map<String, Object> params = new HashMap<>();
             params.put("styleSheetId", header.getStyleSheetId());
-            JSONObject response = client.send("CSS.getStyleSheetText", params, true);
+            JsonNode response = client.send("CSS.getStyleSheetText", params, true);
             stylesheetURLs.put(header.getStyleSheetId(), header.getSourceURL());
-            stylesheetSources.put(header.getStyleSheetId(), response.getString("text"));
+            stylesheetSources.put(header.getStyleSheetId(), response.get("text").asText());
         });
 
     }
@@ -125,27 +125,29 @@ public class CSSCoverage {
         Assert.isTrue(this.enabled, "CSSCoverage is not enabled");
         this.enabled = false;
 
-        JSONObject ruleTrackingResponse = this.client.send("CSS.stopRuleUsageTracking", null, true);
+        JsonNode ruleTrackingResponse = this.client.send("CSS.stopRuleUsageTracking", null, true);
 
         this.client.send("CSS.disable", null, false);
         this.client.send("DOM.disable", null, false);
 
         Builder.removeEventListeners(this.eventListeners);
 
+        // aggregate by styleSheetId
         Map<String, List<CoverageRange>> styleSheetIdToCoverage = new HashMap<>();
-        JSONObject ruleUsageNode = ruleTrackingResponse.getJSONObject("ruleUsage");
-        for (String key : ruleUsageNode.keySet()) {
-            JSONObject entry = ruleUsageNode.getJSONObject(key);
-            List<CoverageRange> ranges = styleSheetIdToCoverage.get(entry.getString("styleSheetId"));
+        JsonNode ruleUsageNode = ruleTrackingResponse.get("ruleUsage");
+        Iterator<JsonNode> elements = ruleUsageNode.elements();
+        while (elements.hasNext()) {
+            JsonNode entry = elements.next();
+            List<CoverageRange> ranges = styleSheetIdToCoverage.get(entry.get("styleSheetId").asText());
             if (ranges == null) {
                 ranges = new ArrayList<>();
-                styleSheetIdToCoverage.put(entry.getString("styleSheetId"), ranges);
+                styleSheetIdToCoverage.put(entry.get("styleSheetId").asText(), ranges);
             }
-            boolean used = entry.getBoolean("used");
+            boolean used = entry.get("used").asBoolean();
             if (used)
-                ranges.add(new CoverageRange(entry.getInteger("startOffset"), entry.getInteger("endOffset"), 1));
+                ranges.add(new CoverageRange(entry.get("startOffset").asInt(), entry.get("endOffset").asInt(), 1));
             else
-                ranges.add(new CoverageRange(entry.getInteger("startOffset"), entry.getInteger("endOffset"), 0));
+                ranges.add(new CoverageRange(entry.get("startOffset").asInt(), entry.get("endOffset").asInt(), 0));
         }
 
 

@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,8 +26,6 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 属性对象
- *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
@@ -35,24 +33,24 @@ package org.aoju.lancia.nimble.runtime;
 public class PropertyPreview {
 
     /**
-     * 名称
+     * Property name.
      */
     private String name;
     /**
-     * 对象类型
+     * Object type. Accessor means that the property itself is an accessor property.
      * "object"|"function"|"undefined"|"string"|"number"|"boolean"|"symbol"|"accessor"|"bigint"
      */
     private String type;
     /**
-     * 用户友好的属性值字符串
+     * User-friendly property value string.
      */
     private String value;
     /**
-     * 嵌套值预览
+     * Nested value preview.
      */
     private ObjectPreview valuePreview;
     /**
-     * 对象子类型提示
+     * Object subtype hint. Specified for `object` type values only.
      * "array"|"null"|"node"|"regexp"|"date"|"map"|"set"|"weakmap"|"weakset"|"iterator"|"generator"|"error"
      */
     private String subtype;

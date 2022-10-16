@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.page;
 
 /**
- * 当框架与父框架分离时触发
+ * Fired when frame has been detached from its parent.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,7 +35,7 @@ package org.aoju.lancia.nimble.page;
 public class FrameDetachedPayload {
 
     /**
-     * 已分离的框架的ID
+     * Id of the frame that has been detached.
      */
     private String frameId;
 

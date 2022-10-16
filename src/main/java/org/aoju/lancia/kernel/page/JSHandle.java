@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,9 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
@@ -88,7 +87,7 @@ public class JSHandle {
                 "            result[propertyName] = object[propertyName];\n" +
                 "            return result;\n" +
                 "        }";
-        JSHandle objectHandle = (JSHandle) this.evaluateHandle(pageFunction, Arrays.asList(propertyName));
+        JSHandle objectHandle = (JSHandle) this.evaluateHandle(pageFunction, Collections.singletonList(propertyName));
         Map<String, JSHandle> properties = objectHandle.getProperties();
         JSHandle result = properties.get(propertyName);
         objectHandle.dispose();
@@ -99,16 +98,18 @@ public class JSHandle {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
         params.put("ownProperties", true);
-        JSONObject response = this.client.send("Runtime.getProperties", params, true);
-        Map<String, JSHandle> result = new HashMap<>();
-        List<JSONObject> list = response.getObject("result", new TypeReference<List<JSONObject>>() {
-        });
-        Iterator<JSONObject> iterator = list.iterator();
+        JsonNode response = this.client.send("Runtime.getProperties", params, true);
+        Map<String, JSHandle> result = new LinkedHashMap<>();
+        Iterator<JsonNode> iterator = response.get("result").iterator();
         while (iterator.hasNext()) {
-            JSONObject property = iterator.next();
-            if (!property.getBoolean("enumerable"))
+            JsonNode property = iterator.next();
+            if (!property.get("enumerable").asBoolean())
                 continue;
-            result.put(property.getString("name"), createJSHandle(this.context, JSON.toJavaObject(property.getJSONObject("value"), RemoteObject.class)));
+            try {
+                result.put(property.get("name").asText(), createJSHandle(this.context, org.aoju.lancia.Builder.OBJECTMAPPER.treeToValue(property.get("value"), RemoteObject.class)));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
         return result;
     }
@@ -120,13 +121,17 @@ public class JSHandle {
             params.put("objectId", this.remoteObject.getObjectId());
             params.put("returnByValue", true);
             params.put("awaitPromise", true);
-            JSONObject response = this.client.send("Runtime.callFunctionOn", params, true);
-            return Builder.valueFromRemoteObject(JSON.parseObject(JSON.toJSONString(response.get("result")), RemoteObject.class));
-
+            JsonNode response = this.client.send("Runtime.callFunctionOn", params, true);
+            try {
+                return Builder.valueFromRemoteObject(org.aoju.lancia.Builder.OBJECTMAPPER.treeToValue(response.get("result"), RemoteObject.class));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         }
         return Builder.valueFromRemoteObject(this.remoteObject);
     }
 
+    /* This always returns null but children can define this and return an ElementHandle */
     public ElementHandle asElement() {
         return null;
     }
@@ -159,19 +164,19 @@ public class JSHandle {
         return "JSHandle:" + Builder.valueFromRemoteObject(this.remoteObject);
     }
 
-    public ExecutionContext getContext() {
+    protected ExecutionContext getContext() {
         return context;
     }
 
-    public void setContext(ExecutionContext context) {
+    protected void setContext(ExecutionContext context) {
         this.context = context;
     }
 
-    public boolean getDisposed() {
+    protected boolean getDisposed() {
         return disposed;
     }
 
-    public void setDisposed(boolean disposed) {
+    protected void setDisposed(boolean disposed) {
         this.disposed = disposed;
     }
 

@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,8 +25,8 @@
  ********************************************************************************/
 package org.aoju.lancia.worker;
 
-
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -47,14 +47,15 @@ public class Messages {
 
     private String method;
 
-    private transient boolean needRemove;
+    @JsonIgnore
+    private boolean needRemove;
 
-    private transient CountDownLatch countDownLatch;
-
+    @JsonIgnore
+    private CountDownLatch countDownLatch;
     /**
      * 本次发送消息返回的结果
      */
-    private JSONObject result;
+    private JsonNode result;
 
     private String sessionId;
 
@@ -95,11 +96,11 @@ public class Messages {
         this.countDownLatch = countDownLatch;
     }
 
-    public JSONObject getResult() {
+    public JsonNode getResult() {
         return result;
     }
 
-    public void setResult(JSONObject result) {
+    public void setResult(JsonNode result) {
         this.result = result;
     }
 

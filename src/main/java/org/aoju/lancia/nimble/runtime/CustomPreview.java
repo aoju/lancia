@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -33,14 +33,14 @@ package org.aoju.lancia.nimble.runtime;
 public class CustomPreview {
 
     /**
-     * formatter.header（object，config）调用的JSON字符串化结果
-     * 它包含代表RemoteObject的json ML数组。
+     * The JSON-stringified result of formatter.header(object, config) call.
+     * It contains json ML array that represents RemoteObject.
      */
     private String header;
     /**
-     * 如果由于formatter.hasBody调用而导致formatter返回true，
-     * 则bodyGetterId将*包含用于返回formatter.body（object，config）
-     * 调用结果的函数的RemoteObjectId。 *结果值为json ML数组。
+     * If formatter returns true as a result of formatter.hasBody call then bodyGetterId will
+     * contain RemoteObjectId for the function that returns result of formatter.body(object, config) call.
+     * The result value is json ML array.
      */
     private String bodyGetterId;
 

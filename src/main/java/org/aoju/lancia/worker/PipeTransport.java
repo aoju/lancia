@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -57,9 +57,9 @@ public class PipeTransport implements Transport {
     public PipeTransport(InputStream pipeReader, OutputStream pipeWriter) {
         this.pipeReader = pipeReader;
         this.pipeWriter = pipeWriter;
-        readThread = new Thread(new ReaderThread());
+        readThread = new Thread(new PipeReaderThread());
         readThread.start();
-        writerThread = new Thread(new WriterThread());
+        writerThread = new Thread(new PipeWriterThread());
         writerThread.start();
     }
 
@@ -73,12 +73,21 @@ public class PipeTransport implements Transport {
     }
 
     @Override
+    public void onMessage(String message) {
+    }
+
+    @Override
+    public void onClose() {
+
+    }
+
+    @Override
     public void close() {
         IoKit.close(pipeWriter);
         IoKit.close(pipeReader);
     }
 
-    private class WriterThread implements Runnable {
+    private class PipeWriterThread implements Runnable {
 
         @Override
         public void run() {
@@ -99,7 +108,7 @@ public class PipeTransport implements Transport {
     /**
      * 读取管道中的消息线程
      */
-    private class ReaderThread implements Runnable {
+    private class PipeReaderThread implements Runnable {
 
         @Override
         public void run() {
@@ -112,7 +121,7 @@ public class PipeTransport implements Transport {
                     } else {
                         String message = pendingMessage.toString();
                         pendingMessage.delete(0, pendingMessage.length());
-                        call(message);
+                        onMessage(message);
                     }
                 } catch (IOException e) {
                     Logger.error("read message from chrome error ", e);
