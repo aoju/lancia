@@ -31,12 +31,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-/**
- * @author Kimi Liu
- * @version 1.2.8
- * @since JDK 1.8+
- */
-public interface Sockets {
+public interface WebSocket {
 
     /**
      * sends the closing handshake. may be send in response to an other handshake.
@@ -161,7 +156,7 @@ public interface Sockets {
     boolean isClosed();
 
     /**
-     * Retrieve the Sockets 'ReadyState'. This represents the state of the connection. It returns a
+     * Retrieve the WebSocket 'ReadyState'. This represents the state of the connection. It returns a
      * numerical value, as per W3C WebSockets specs.
      *
      * @return Returns '0 = CONNECTING', '1 = OPEN', '2 = CLOSING' or '3 = CLOSED'
@@ -185,10 +180,10 @@ public interface Sockets {
     <T> void setAttachment(T attachment);
 
     /**
-     * Returns the used Sec-Sockets-SocketProtocol for this websocket connection
+     * Returns the used Sec-WebSocket-SocketProtocol for this websocket connection
      *
-     * @return the Sec-Sockets-SocketProtocol or null, if no draft available
-     * @throws IllegalArgumentException the underlying draft does not support a Sec-Sockets-SocketProtocol
+     * @return the Sec-WebSocket-SocketProtocol or null, if no draft available
+     * @throws IllegalArgumentException the underlying draft does not support a Sec-WebSocket-SocketProtocol
      */
     SocketProtocol getProtocol();
 

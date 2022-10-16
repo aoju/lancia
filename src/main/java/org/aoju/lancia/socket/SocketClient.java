@@ -28,6 +28,7 @@ package org.aoju.lancia.socket;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.worker.exception.SocketException;
 
+import javax.net.SocketFactory;
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,21 +49,17 @@ import java.util.concurrent.CountDownLatch;
  * <var>onMessage</var> to be useful. At runtime the user is expected to establish a connection via
  * {@link #connect()}, then receive events like {@link #onMessage(String)} via the overloaded
  * methods and to {@link #send(String)} data to the server.
- *
- * @author Kimi Liu
- * @version 1.2.8
- * @since JDK 1.8+
  */
-public abstract class SocketFactory extends ListenerBuilder implements Runnable, Sockets {
+public abstract class SocketClient extends ListenerBuilder implements Runnable, WebSocket {
 
     /**
      * The underlying engine
      */
     private final SocketBuilder engine;
     /**
-     * The SocketFactory for this SocketFactory
+     * The SocketFactory for this SocketClient
      */
-    private final javax.net.SocketFactory socketFactory = null;
+    private final SocketFactory socketFactory = null;
     /**
      * The used proxy, if any
      */
@@ -80,7 +77,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      */
     protected URI uri;
     /**
-     * The org.aoju.lancia.socket for this SocketFactory
+     * The org.aoju.lancia.socket for this SocketClient
      */
     private Socket socket = null;
     /**
@@ -105,42 +102,42 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
     private int connectTimeout = 0;
 
     /**
-     * Constructs a SocketFactory instance and sets it to the connect to the specified URI. The
+     * Constructs a SocketClient instance and sets it to the connect to the specified URI. The
      * channel does not attampt to connect automatically. The connection will be established once you
      * call <var>connect</var>.
      *
      * @param serverUri the server URI to connect to
      */
-    public SocketFactory(URI serverUri) {
+    public SocketClient(URI serverUri) {
         this(serverUri, new Draft_6455());
     }
 
     /**
-     * Constructs a SocketFactory instance and sets it to the connect to the specified URI. The
+     * Constructs a SocketClient instance and sets it to the connect to the specified URI. The
      * channel does not attampt to connect automatically. The connection will be established once you
      * call <var>connect</var>.
      *
      * @param serverUri     the server URI to connect to
      * @param protocolDraft The draft which should be used for this connection
      */
-    public SocketFactory(URI serverUri, Draft_6455 protocolDraft) {
+    public SocketClient(URI serverUri, Draft_6455 protocolDraft) {
         this(serverUri, protocolDraft, null, 0);
     }
 
     /**
-     * Constructs a SocketFactory instance and sets it to the connect to the specified URI. The
+     * Constructs a SocketClient instance and sets it to the connect to the specified URI. The
      * channel does not attampt to connect automatically. The connection will be established once you
      * call <var>connect</var>.
      *
      * @param serverUri   the server URI to connect to
      * @param httpHeaders Additional HTTP-Headers
      */
-    public SocketFactory(URI serverUri, Map<String, String> httpHeaders) {
+    public SocketClient(URI serverUri, Map<String, String> httpHeaders) {
         this(serverUri, new Draft_6455(), httpHeaders);
     }
 
     /**
-     * Constructs a SocketFactory instance and sets it to the connect to the specified URI. The
+     * Constructs a SocketClient instance and sets it to the connect to the specified URI. The
      * channel does not attampt to connect automatically. The connection will be established once you
      * call <var>connect</var>.
      *
@@ -148,12 +145,12 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * @param protocolDraft The draft which should be used for this connection
      * @param httpHeaders   Additional HTTP-Headers
      */
-    public SocketFactory(URI serverUri, Draft_6455 protocolDraft, Map<String, String> httpHeaders) {
+    public SocketClient(URI serverUri, Draft_6455 protocolDraft, Map<String, String> httpHeaders) {
         this(serverUri, protocolDraft, httpHeaders, 0);
     }
 
     /**
-     * Constructs a SocketFactory instance and sets it to the connect to the specified URI. The
+     * Constructs a SocketClient instance and sets it to the connect to the specified URI. The
      * channel does not attampt to connect automatically. The connection will be established once you
      * call <var>connect</var>.
      *
@@ -162,8 +159,8 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * @param httpHeaders    Additional HTTP-Headers
      * @param connectTimeout The Timeout for the connection
      */
-    public SocketFactory(URI serverUri, Draft_6455 draft, Map<String, String> httpHeaders,
-                         int connectTimeout) {
+    public SocketClient(URI serverUri, Draft_6455 draft, Map<String, String> httpHeaders,
+                        int connectTimeout) {
         if (serverUri == null) {
             throw new IllegalArgumentException();
         } else if (draft == null) {
@@ -185,7 +182,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      */
     public void connect() {
         if (connectReadThread != null) {
-            throw new IllegalStateException("SocketFactory objects are not reuseable");
+            throw new IllegalStateException("SocketClient objects are not reuseable");
         }
         connectReadThread = new Thread(this);
         connectReadThread.setName("WebSocketConnectReadThread-" + connectReadThread.getId());
@@ -244,7 +241,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
     }
 
     @Override
-    protected Collection<Sockets> getConnections() {
+    protected Collection<WebSocket> getConnections() {
         return Collections.singletonList(engine);
     }
 
@@ -422,7 +419,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * Calls subclass' implementation of <var>onMessage</var>.
      */
     @Override
-    public final void onWebsocketMessage(Sockets conn, String message) {
+    public final void onWebsocketMessage(WebSocket conn, String message) {
         onMessage(message);
     }
 
@@ -430,7 +427,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * Calls subclass' implementation of <var>onOpen</var>.
      */
     @Override
-    public final void onWebsocketOpen(Sockets conn, HandshakeBuilder handshake) {
+    public final void onWebsocketOpen(WebSocket conn, HandshakeBuilder handshake) {
         startConnectionLostTimer();
         onOpen(handshake);
         connectLatch.countDown();
@@ -440,7 +437,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * Calls subclass' implementation of <var>onClose</var>.
      */
     @Override
-    public final void onWebsocketClose(Sockets conn, int code, String reason, boolean remote) {
+    public final void onWebsocketClose(WebSocket conn, int code, String reason, boolean remote) {
         stopConnectionLostTimer();
         if (writeThread != null) {
             writeThread.interrupt();
@@ -454,22 +451,22 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      * Calls subclass' implementation of <var>onIOError</var>.
      */
     @Override
-    public final void onWebsocketError(Sockets conn, Exception ex) {
+    public final void onWebsocketError(WebSocket conn, Exception ex) {
         onError(ex);
     }
 
     @Override
-    public final void onWriteDemand(Sockets conn) {
+    public final void onWriteDemand(WebSocket conn) {
         // nothing to do
     }
 
     @Override
-    public void onWebsocketCloseInitiated(Sockets conn, int code, String reason) {
+    public void onWebsocketCloseInitiated(WebSocket conn, int code, String reason) {
         onCloseInitiated(code, reason);
     }
 
     @Override
-    public void onWebsocketClosing(Sockets conn, int code, String reason, boolean remote) {
+    public void onWebsocketClosing(WebSocket conn, int code, String reason, boolean remote) {
         onClosing(code, reason, remote);
     }
 
@@ -500,12 +497,12 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
      *
      * @return the engine
      */
-    public Sockets getConnection() {
+    public WebSocket getConnection() {
         return engine;
     }
 
     @Override
-    public InetSocketAddress getLocalSocketAddress(Sockets conn) {
+    public InetSocketAddress getLocalSocketAddress(WebSocket conn) {
         if (socket != null) {
             return (InetSocketAddress) socket.getLocalSocketAddress();
         }
@@ -513,7 +510,7 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
     }
 
     @Override
-    public InetSocketAddress getRemoteSocketAddress(Sockets conn) {
+    public InetSocketAddress getRemoteSocketAddress(WebSocket conn) {
         if (socket != null) {
             return (InetSocketAddress) socket.getRemoteSocketAddress();
         }
@@ -650,9 +647,9 @@ public abstract class SocketFactory extends ListenerBuilder implements Runnable,
 
     private class WebsocketWriteThread implements Runnable {
 
-        private final SocketFactory webSocketClient;
+        private final SocketClient webSocketClient;
 
-        WebsocketWriteThread(SocketFactory webSocketClient) {
+        WebsocketWriteThread(SocketClient webSocketClient) {
             this.webSocketClient = webSocketClient;
         }
 

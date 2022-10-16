@@ -37,12 +37,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for additional implementations for the server as well as the client
- *
- * @author Kimi Liu
- * @version 1.2.8
- * @since JDK 1.8+
  */
-public abstract class ListenerBuilder implements Listeners {
+public abstract class ListenerBuilder implements SocketListener {
 
     /**
      * Attribute to sync on
@@ -69,7 +65,7 @@ public abstract class ListenerBuilder implements Listeners {
      */
     private long connectionLostTimeout = TimeUnit.SECONDS.toNanos(60);
     /**
-     * Attribute to keep track if the Sockets Server/Client is running/connected
+     * Attribute to keep track if the WebSocket Server/Client is running/connected
      */
     private boolean websocketRunning = false;
 
@@ -102,9 +98,9 @@ public abstract class ListenerBuilder implements Listeners {
                 Logger.trace("Connection lost timer restarted");
                 //Reset all the pings
                 try {
-                    ArrayList<Sockets> connections = new ArrayList<>(getConnections());
+                    ArrayList<WebSocket> connections = new ArrayList<>(getConnections());
                     SocketBuilder socketBuilder;
-                    for (Sockets conn : connections) {
+                    for (WebSocket conn : connections) {
                         if (conn instanceof SocketBuilder) {
                             socketBuilder = (SocketBuilder) conn;
                             socketBuilder.updateLastPong();
@@ -158,7 +154,7 @@ public abstract class ListenerBuilder implements Listeners {
             /**
              * Keep the connections in a separate list to not cause deadlocks
              */
-            private final ArrayList<Sockets> connections = new ArrayList<>();
+            private final ArrayList<WebSocket> connections = new ArrayList<>();
 
             @Override
             public void run() {
@@ -169,7 +165,7 @@ public abstract class ListenerBuilder implements Listeners {
                     synchronized (syncConnectionLost) {
                         minimumPongTime = (long) (System.nanoTime() - (connectionLostTimeout * 1.5));
                     }
-                    for (Sockets conn : connections) {
+                    for (WebSocket conn : connections) {
                         executeConnectionLostDetection(conn, minimumPongTime);
                     }
                 } catch (Exception e) {
@@ -188,12 +184,12 @@ public abstract class ListenerBuilder implements Listeners {
      * Send a ping to the endpoint or close the connection since the other endpoint did not respond
      * with a ping
      *
-     * @param sockets         the websocket instance
+     * @param webSocket       the websocket instance
      * @param minimumPongTime the lowest/oldest allowable last pong time (in nanoTime) before we
      *                        consider the connection to be lost
      */
-    private void executeConnectionLostDetection(Sockets sockets, long minimumPongTime) {
-        if (!(sockets instanceof SocketBuilder socketBuilder)) {
+    private void executeConnectionLostDetection(WebSocket webSocket, long minimumPongTime) {
+        if (!(webSocket instanceof SocketBuilder socketBuilder)) {
             return;
         }
         if (socketBuilder.getLastPong() < minimumPongTime) {
@@ -214,7 +210,7 @@ public abstract class ListenerBuilder implements Listeners {
      *
      * @return the currently available connections
      */
-    protected abstract Collection<Sockets> getConnections();
+    protected abstract Collection<WebSocket> getConnections();
 
     /**
      * Cancel any running timer for the connection lost detection
@@ -268,6 +264,21 @@ public abstract class ListenerBuilder implements Listeners {
      */
     public void setReuseAddr(boolean reuseAddr) {
         this.reuseAddr = reuseAddr;
+    }
+
+
+    @Override
+    public void onWebsocketHandshakeReceivedAsClient(WebSocket conn, HandshakeBuilder request, HandshakeBuilder response) {
+
+    }
+
+    /**
+     * This default implementation does not do anything which will cause the connections to always
+     * progress.
+     */
+    @Override
+    public void onWebsocketHandshakeSentAsClient(WebSocket conn, HandshakeBuilder request) {
+        //To overwrite
     }
 
 }

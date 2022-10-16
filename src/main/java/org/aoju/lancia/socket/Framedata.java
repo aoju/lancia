@@ -94,9 +94,9 @@ public class Framedata {
     /**
      * 1010 indicates that an endpoint (client) is terminating the connection because it has expected
      * the server to negotiate one or more extension, but the server didn't return them in the
-     * response message of the Sockets handshake. The list of extensions which are needed SHOULD
+     * response message of the WebSocket handshake. The list of extensions which are needed SHOULD
      * appear in the /reason/ part of the Close frame. Note that this status code is not used by the
-     * server, because it can fail the Sockets handshake instead.
+     * server, because it can fail the WebSocket handshake instead.
      */
     public static final int EXTENSION = 1010;
     /**

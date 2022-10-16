@@ -23,83 +23,91 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.worker.exception;
+package org.aoju.lancia.worker;
+
+import org.aoju.bus.core.lang.Assert;
+import org.aoju.bus.logger.Logger;
+import org.aoju.lancia.socket.Draft_6455;
+import org.aoju.lancia.socket.HandshakeBuilder;
+import org.aoju.lancia.socket.SocketClient;
+
+import java.net.URI;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * exception which indicates that a invalid data was received
+ * 与chromuim通过Socket通信实现
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class SocketException extends Exception {
+public class SocketTransport extends SocketClient implements Transport {
 
-    /**
-     * Serializable
-     */
-    private static final long serialVersionUID = 1L;
+    private Consumer<String> messageConsumer = null;
 
-    /**
-     * attribute which value will be returned
-     */
-    private final int value;
+    private Connection connection = null;
 
-    public SocketException() {
-        this.value = 0;
+    public SocketTransport(URI serverURI) {
+        super(serverURI);
     }
 
-    /**
-     * constructor for a SocketException
-     *
-     * @param value the value which will be returned
-     */
-    public SocketException(int value) {
-        this.value = value;
+    public SocketTransport(URI serverUri, Draft_6455 draft) {
+        super(serverUri, draft);
     }
 
-    /**
-     * constructor for a SocketException.
-     *
-     * @param value the value which will be returned.
-     * @param s     the detail message.
-     */
-    public SocketException(int value, String s) {
-        super(s);
-        this.value = value;
+    public SocketTransport(URI serverUri, Map<String, String> httpHeaders) {
+        super(serverUri, httpHeaders);
     }
 
-    /**
-     * constructor for a LimitExceededException
-     * <p>
-     * calling SocketException with closecode TOOBIG
-     *
-     * @param s     the detail message.
-     * @param value the allowed size which was not enough
-     */
-    public SocketException(String s, int value) {
-        // this.value = limit;
-        // this(Framedata.TOOBIG, s);
-        this(value, s);
+    @Override
+    public void send(String text) {
+        if (this.connection == null) {
+            Logger.warn("Transport connection is null, maybe closed?");
+            return;
+        }
+        Logger.debug(text);
+        super.send(text);
     }
 
-    /**
-     * constructor for a SocketException.
-     *
-     * @param value the value which will be returned.
-     * @param t     the throwable causing this exception.
-     */
-    public SocketException(int value, Throwable t) {
-        super(t);
-        this.value = value;
+    @Override
+    public void onMessage(String message) {
+        Assert.notNull(this.messageConsumer, "MessageConsumer must be initialized");
+        this.messageConsumer.accept(message);
     }
 
-    /**
-     * Getter value
-     *
-     * @return the value
-     */
-    public int getValue() {
-        return value;
+    @Override
+    public void onClose() {
+        this.close();
+    }
+
+    @Override
+    public void onClose(int code, String reason, boolean remote) {
+        Logger.info("Connection closed by " + (remote ? "remote peer" : "us") + " Code: " + code);
+        this.onClose();
+        if (this.connection != null) {
+            this.connection.dispose();
+        }
+    }
+
+    @Override
+    public void onError(Exception e) {
+        Logger.error("Websocket error:", e.getMessage());
+    }
+
+
+    @Override
+    public void onOpen(HandshakeBuilder serverHandshake) {
+        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
+    }
+
+    public void addConsumer(Consumer<String> consumer) {
+        this.messageConsumer = consumer;
+    }
+
+
+    public void addConnection(Connection connection) {
+        this.connection = connection;
     }
 
 }

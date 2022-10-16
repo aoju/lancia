@@ -42,12 +42,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Represents one end (client or server) of a single SocketBuilder connection. Takes care of the
  * "handshake" phase, then allows for easy sending of text frames, and receiving frames through an
  * event-based model.
- *
- * @author Kimi Liu
- * @version 1.2.8
- * @since JDK 1.8+
  */
-public class SocketBuilder implements Sockets {
+public class SocketBuilder implements WebSocket {
 
     /**
      * The default port of WebSockets, as defined in the spec. If the nullary constructor is used,
@@ -76,9 +72,9 @@ public class SocketBuilder implements Sockets {
      */
     public final BlockingQueue<ByteBuffer> inQueue;
     /**
-     * The listener to notify of Sockets events.
+     * The listener to notify of WebSocket events.
      */
-    private final Listeners wsl;
+    private final SocketListener wsl;
     /**
      * Attribut to synchronize the write
      */
@@ -122,7 +118,7 @@ public class SocketBuilder implements Sockets {
      * @param listener The listener for this instance
      * @param draft    The draft which should be used
      */
-    public SocketBuilder(Listeners listener, Draft_6455 draft) {
+    public SocketBuilder(SocketListener listener, Draft_6455 draft) {
         // org.aoju.lancia.socket can be null because we want do be able to create the object without already having a bound channel
         if ((draft == null)) {
             throw new IllegalArgumentException("parameters must not be null");
@@ -188,12 +184,25 @@ public class SocketBuilder implements Sockets {
         try {
             HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
             if (Builder.HandshakeState.MATCHED == draft.acceptHandshakeAsClient(handshakerequest, tmphandshake)) {
+                try {
+                    wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, tmphandshake);
+                } catch (SocketException e) {
+                    Logger.trace("Closing due to invalid data exception. Possible handshake rejection", e);
+                    flushAndClose(e.getValue(), e.getMessage(), false);
+                    return false;
+                } catch (RuntimeException e) {
+                    Logger.error("Closing since client was never connected", e);
+                    wsl.onWebsocketError(this, e);
+                    flushAndClose(Framedata.NEVER_CONNECTED, e.getMessage(), false);
+                    return false;
+                }
                 open(tmphandshake);
                 return true;
             } else {
                 Logger.trace("Closing due to protocol error: draft {} refuses handshake", draft);
                 close(Framedata.PROTOCOL_ERROR, "draft " + draft + " refuses handshake");
             }
+
         } catch (SocketException e) {
             Logger.trace("Closing due to invalid handshake", e);
             close(e);
@@ -427,12 +436,24 @@ public class SocketBuilder implements Sockets {
         return !this.outQueue.isEmpty();
     }
 
-    public void startHandshake(HandshakeBuilder handshake) {
+    public void startHandshake(HandshakeBuilder handshake) throws SocketException {
         // Store the HandshakeBuilder Request we are about to send
         this.handshakerequest = draft.postProcessHandshakeRequestAsClient(handshake);
 
         resourceDescriptor = handshake.getResourceDescriptor();
         assert (resourceDescriptor != null);
+
+        // Notify Listener
+        try {
+            wsl.onWebsocketHandshakeSentAsClient(this, this.handshakerequest);
+        } catch (SocketException e) {
+            // Stop if the client code throws an exception
+            throw new SocketException(Framedata.PROTOCOL_ERROR, "HandshakeBuilder data rejected by client.");
+        } catch (RuntimeException e) {
+            Logger.error("Exception in startHandshake", e);
+            wsl.onWebsocketError(this, e);
+            throw new SocketException(Framedata.PROTOCOL_ERROR, "rejected because of " + e);
+        }
 
         // Send
         write(draft.createHandshake(this.handshakerequest));
@@ -531,7 +552,7 @@ public class SocketBuilder implements Sockets {
      *
      * @return the websocket listener associated with this instance
      */
-    public Listeners getWebSocketListener() {
+    public SocketListener getWebSocketListener() {
         return wsl;
     }
 
@@ -551,7 +572,7 @@ public class SocketBuilder implements Sockets {
             return null;
         }
         if (!(draft instanceof Draft_6455)) {
-            throw new IllegalArgumentException("This draft does not support Sec-Sockets-SocketProtocol");
+            throw new IllegalArgumentException("This draft does not support Sec-WebSocket-SocketProtocol");
         }
         return draft.getProtocol();
     }

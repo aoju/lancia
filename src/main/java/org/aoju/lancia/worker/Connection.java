@@ -79,9 +79,9 @@ public class Connection extends EventEmitter implements Consumer<String> {
         this.url = url;
         this.transport = transport;
         this.delay = delay;
-        if (this.transport instanceof TransportBuilder) {
-            ((TransportBuilder) this.transport).addConsumer(this);
-            ((TransportBuilder) this.transport).addConnection(this);
+        if (this.transport instanceof SocketTransport) {
+            ((SocketTransport) this.transport).addConsumer(this);
+            ((SocketTransport) this.transport).addConnection(this);
         }
         // 赋予默认值，调用方使用该构造方法后，需要set connection options
         this.connectionOptions = new ConnectionOptions();

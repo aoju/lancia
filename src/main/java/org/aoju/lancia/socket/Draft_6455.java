@@ -54,22 +54,22 @@ public class Draft_6455 {
     /**
      * HandshakeBuilder specific field for the key
      */
-    private static final String SEC_WEB_SOCKET_KEY = "Sec-Sockets-Key";
+    private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
 
     /**
      * HandshakeBuilder specific field for the socketProtocol
      */
-    private static final String SEC_WEB_SOCKET_PROTOCOL = "Sec-Sockets-SocketProtocol";
+    private static final String SEC_WEB_SOCKET_PROTOCOL = "Sec-WebSocket-SocketProtocol";
 
     /**
      * Handshake specific field for the extension
      */
-    private static final String SEC_WEB_SOCKET_EXTENSIONS = "Sec-Sockets-Extensions";
+    private static final String SEC_WEB_SOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
 
     /**
      * Handshake specific field for the accept
      */
-    private static final String SEC_WEB_SOCKET_ACCEPT = "Sec-Sockets-Accept";
+    private static final String SEC_WEB_SOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
     /**
      * Handshake specific field for the upgrade
@@ -293,7 +293,7 @@ public class Draft_6455 {
         }
         if (!request.hasFieldValue(SEC_WEB_SOCKET_KEY) || !response
                 .hasFieldValue(SEC_WEB_SOCKET_ACCEPT)) {
-            Logger.trace("acceptHandshakeAsClient - Missing Sec-Sockets-Key or Sec-Sockets-Accept");
+            Logger.trace("acceptHandshakeAsClient - Missing Sec-WebSocket-Key or Sec-WebSocket-Accept");
             return Builder.HandshakeState.NOT_MATCHED;
         }
 
@@ -302,7 +302,7 @@ public class Draft_6455 {
         seckeyChallenge = generateFinalKey(seckeyChallenge);
 
         if (!seckeyChallenge.equals(seckeyAnswer)) {
-            Logger.trace("acceptHandshakeAsClient - Wrong key for Sec-Sockets-Key.");
+            Logger.trace("acceptHandshakeAsClient - Wrong key for Sec-WebSocket-Key.");
             return Builder.HandshakeState.NOT_MATCHED;
         }
         Builder.HandshakeState extensionState = Builder.HandshakeState.NOT_MATCHED;
@@ -346,7 +346,7 @@ public class Draft_6455 {
         byte[] random = new byte[16];
         reuseableRandom.nextBytes(random);
         request.put(SEC_WEB_SOCKET_KEY, Base64.encode(random));
-        request.put("Sec-Sockets-Version", "13");// overwriting the previous
+        request.put("Sec-WebSocket-Version", "13");// overwriting the previous
         StringBuilder requestedExtensions = new StringBuilder();
         if (requestedExtensions.length() != 0) {
             request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
