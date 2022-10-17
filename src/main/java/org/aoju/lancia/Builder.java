@@ -270,6 +270,14 @@ public class Builder {
      */
     private static final int RETRY_TIMES = 5;
     private static final String FAIL_RESULT = "-1";
+
+    private static final Map<String, QueryHandler> QUERY_HANDLER = new HashMap<>();
+
+    /**
+     * 单线程，一个浏览器只能有一个trcing 任务
+     */
+    private static ExecutorService COMMON_EXECUTOR = null;
+
     public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
         private static final long serialVersionUID = -6918778699407093058L;
 
@@ -298,12 +306,6 @@ public class Builder {
             });
         }
     };
-
-    /**
-     * 单线程，一个浏览器只能有一个trcing 任务
-     */
-    private static ExecutorService COMMON_EXECUTOR = null;
-    private static final Map<String, QueryHandler> QUERY_HANDLER = new HashMap<>();
 
     public static final String toString(InputStream in) throws IOException {
         StringWriter wirter = null;
@@ -348,6 +350,10 @@ public class Builder {
 
     public static final void unregisterCustomQueryHandler(String name) {
         QUERY_HANDLER.remove(name);
+    }
+
+    public void clearQueryHandlers() {
+        QUERY_HANDLER.clear();
     }
 
     public static Map<String, QueryHandler> customQueryHandlers() {
@@ -529,16 +535,6 @@ public class Builder {
             message += " " + dataNode;
         }
         return message;
-    }
-
-    /**
-     * 是否是win64
-     *
-     * @return true is win64
-     */
-    public static final boolean isWin64() {
-        String arch = System.getProperty("os.arch");
-        return arch.contains("64");
     }
 
     public static final void chmod(String path, String perms) throws IOException {
@@ -891,10 +887,6 @@ public class Builder {
     public static final boolean isFunction(String pageFunction) {
         pageFunction = pageFunction.trim();
         return pageFunction.startsWith("function") || pageFunction.startsWith("async") || pageFunction.contains("=>");
-    }
-
-    public void clearQueryHandlers() {
-        QUERY_HANDLER.clear();
     }
 
     static class DownloadCallable implements Callable<String> {

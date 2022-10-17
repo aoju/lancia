@@ -58,17 +58,14 @@ public class Draft_6455 {
      * 扩展的握手特定字段
      */
     private static final String SEC_WEB_SOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
-
     /**
      * 用于接受的握手特定字段
      */
     private static final String SEC_WEB_SOCKET_ACCEPT = "Sec-WebSocket-Accept";
-
     /**
      * 用于升级的握手特定字段
      */
     private static final String UPGRADE = "Upgrade";
-
     /**
      * 用于连接的握手特定字段
      */
@@ -91,34 +88,31 @@ public class Draft_6455 {
      */
     private String negotiatedExtension;
     /**
-     * Attribute for the current incomplete frame
+     * 属性的当前不完整帧
      */
     private ByteBuffer incompleteframe;
 
     /**
-     * Constructor for the websocket socketProtocol specified by RFC 6455 with default extensions
+     * 由RFC 6455指定的带有默认扩展名的websocket socketProtocol的构造函数
      */
     public Draft_6455() {
         this(Collections.emptyList());
     }
 
     /**
-     * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions and
-     * protocols
+     * 由RFC 6455指定的带有自定义扩展和协议的websocket socketProtocol的构造函数
      *
-     * @param inputExtensions the extensions which should be used for this draft
+     * @param inputExtensions 本协议应该使用的扩展
      */
     public Draft_6455(List<String> inputExtensions) {
         this(inputExtensions, Integer.MAX_VALUE);
     }
 
     /**
-     * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions and
-     * protocols
+     * 由RFC 6455指定的带有自定义扩展和协议的websocket socketProtocol的构造函数
      *
-     * @param inputExtensions   the extensions which should be used for this draft
-     * @param inputMaxFrameSize the maximum allowed size of a frame (the real payload size, decoded
-     *                          frames can be bigger)
+     * @param inputExtensions   本协议应该使用的扩展
+     * @param inputMaxFrameSize 帧的最大允许大小(实际有效载荷大小，解码帧可以更大)
      */
     public Draft_6455(List<String> inputExtensions, int inputMaxFrameSize) {
         if (inputExtensions == null || inputMaxFrameSize < 1) {
@@ -133,7 +127,7 @@ public class Draft_6455 {
             }
         }
         knownExtensions.addAll(inputExtensions);
-        //We always add the DefaultExtension to implement the normal RFC 6455 specification
+        // 总是添加defaultex张力来实现常规的RFC 6455规范
         if (!hasDefault) {
             knownExtensions.add(this.knownExtensions.size(), negotiatedExtension);
         }
@@ -154,7 +148,7 @@ public class Draft_6455 {
                 return b;
             }
         }
-        // ensure that there wont be any bytes skipped
+        // 确保不会有任何字节被跳过
         buf.position(buf.position() - b.position());
         return null;
     }
@@ -172,7 +166,8 @@ public class Draft_6455 {
             throw new SocketException(buf.capacity() + 128);
         }
 
-        String[] firstLineTokens = line.split(" ", 3);// eg. HTTP/1.1 101 Switching the Protocols
+        // HTTP/1.1 101协议切换
+        String[] firstLineTokens = line.split(" ", 3);
         if (firstLineTokens.length != 3) {
             throw new SocketException(Framedata.PROTOCOL_ERROR);
         }
@@ -185,7 +180,7 @@ public class Draft_6455 {
             if (pair.length != 2) {
                 throw new SocketException(Framedata.PROTOCOL_ERROR, "not an http header");
             }
-            // If the handshake contains already a specific key, append the new value
+            // 如果握手已经包含一个特定的键，则添加新值
             if (handshake.hasFieldValue(pair[0])) {
                 handshake.put(pair[0], handshake.getFieldValue(pair[0]) + "; " + pair[1].replaceFirst("^ +", ""));
             } else {
@@ -200,14 +195,14 @@ public class Draft_6455 {
     }
 
     /**
-     * Checking the handshake for the role as client
+     * 检查客户端角色的握手
      *
-     * @param firstLineTokens the token of the first line split as as an string array
-     * @param line            the whole line
-     * @return a handshake
+     * @param firstLineTokens 第一行的标记作为字符串数组分割
+     * @param line            整个行
+     * @return the {@link HandshakeBuilder}
      */
     private static HandshakeBuilder translateHandshakeHttpClient(String[] firstLineTokens, String line) throws SocketException {
-        // translating/parsing the response from the SERVER
+        // 转换/解析来自SERVER的响应
         if (!"101".equals(firstLineTokens[1])) {
             throw new SocketException(Framedata.PROTOCOL_ERROR, String.format("Invalid status code received: %s Status line: %s", firstLineTokens[1], line));
         }
@@ -276,11 +271,13 @@ public class Draft_6455 {
     public HandshakeBuilder postProcessHandshakeRequestAsClient(
             HandshakeBuilder request) {
         request.put(UPGRADE, "websocket");
-        request.put(CONNECTION, UPGRADE); // to respond to a Connection keep alives
+        // 以响应连接保持活跃
+        request.put(CONNECTION, UPGRADE);
         byte[] random = new byte[16];
         reuseableRandom.nextBytes(random);
         request.put(SEC_WEB_SOCKET_KEY, Base64.encode(random));
-        request.put("Sec-WebSocket-Version", "13");// overwriting the previous
+        // 覆盖之前的
+        request.put("Sec-WebSocket-Version", "13");
         StringBuilder requestedExtensions = new StringBuilder();
         if (requestedExtensions.length() != 0) {
             request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
@@ -324,7 +321,7 @@ public class Draft_6455 {
         try {
             bui.isValid();
         } catch (SocketException e) {
-            throw new IllegalArgumentException(e); // can only happen when one builds close frames(Close)
+            throw new IllegalArgumentException(e);
         }
         if (fin) {
             continuousFrameType = null;
@@ -488,7 +485,7 @@ public class Draft_6455 {
      */
     private TranslatedPayloadMetaData translateSingleFramePayloadLength(ByteBuffer buffer,
                                                                         String optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize)
-    throws SocketException {
+            throws SocketException {
         int payloadlength = oldPayloadlength;
         int realpacketsize = oldRealpacketsize;
         if (Builder.PING.equals(optcode) || Builder.PONG.equals(optcode) || Builder.CLOSING.equals(optcode)) {

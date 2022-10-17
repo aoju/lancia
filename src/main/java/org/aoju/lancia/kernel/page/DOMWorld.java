@@ -427,7 +427,7 @@ public class DOMWorld {
         String polling = waitForVisible || waitForHidden ? "raf" : "mutation";
         String title = (isXPath ? "XPath" : "selector") + " " + "\"" + selectorOrXPath + "\"" + (waitForHidden ? " to be hidden" : "");
 
-        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selectorOrXPath, "(element, selector) =>\n" +
+        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selectorOrXPath, "(element, selector) =>\n" +
                 "      element.querySelector(selector)");
         QueryHandler queryHandler = queryHandlerAndSelector.getQueryHandler();
         String updatedSelector = queryHandlerAndSelector.getUpdatedSelector();

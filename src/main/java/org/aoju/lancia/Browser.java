@@ -73,7 +73,7 @@ public class Browser extends EventEmitter {
      */
     public static Browser INSTANCE;
     /**
-     * 浏览器对应的websocket client包装类，用于发送和接受消息
+     * 浏览器对应的socket包装类，用于发送和接受消息
      */
     private final Connection connection;
     /**
@@ -184,15 +184,14 @@ public class Browser extends EventEmitter {
         return browser;
     }
 
-    public static synchronized Browser init() {
-        return init(null);
+    public static synchronized Browser newInstance() {
+        return newInstance(null);
     }
 
     /**
      * 设置浏览器参数
      */
-    public static synchronized Browser init(LaunchOptions options) {
-
+    public static synchronized Browser newInstance(LaunchOptions options) {
         try {
             Fetcher.on();
         } catch (InterruptedException | ExecutionException | IOException e) {
@@ -234,7 +233,7 @@ public class Browser extends EventEmitter {
         }
         LaunchOptions opts = options;
         INSTANCE.onDisconnected(b -> {
-            String command = "ps -ef | grep chrome | awk '{print $2}' | xargs kill -9";
+            String command = "ps -ef | grep chrome | grep -v \"grep\" | awk '{print $2}' | xargs kill -9";
             if (Platform.isWindows()) {
                 command = "taskkill /f /im chrome.exe";
             }
@@ -244,7 +243,7 @@ public class Browser extends EventEmitter {
             } catch (Exception e) {
                 Logger.error(e);
             }
-            init(opts);
+            newInstance(opts);
         });
         return INSTANCE;
     }
