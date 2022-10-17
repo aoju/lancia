@@ -92,7 +92,7 @@ public class SocketTransport extends SocketClient implements Transport {
 
     @Override
     public void onError(Exception e) {
-        Logger.error("Websocket runtime exception {}", e.getMessage());
+       // Logger.error("Websocket runtime exception {}", e.getMessage());
     }
 
 
