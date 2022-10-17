@@ -23,7 +23,7 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.nimble.target;
+package org.aoju.lancia.nimble.targets;
 
 import org.aoju.lancia.kernel.page.TargetInfo;
 

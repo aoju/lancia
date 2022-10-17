@@ -50,6 +50,7 @@ gradlew.bat
 
 # maven stuff (to be removed when trunk becomes 4.x)
 *-execution-hints.log
+target/
 dependency-reduced-pom.xml
 
 # testing stuff

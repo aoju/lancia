@@ -23,27 +23,23 @@
  * THE SOFTWARE.                                                                 *
  *                                                                               *
  ********************************************************************************/
-package org.aoju.lancia.nimble.target;
-
-import org.aoju.lancia.kernel.page.TargetInfo;
+package org.aoju.lancia.nimble.targets;
 
 /**
- * Issued when a possible inspection target is created.
- *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class TargetCreatedPayload {
+public class TargetDestroyedPayload {
 
-    private TargetInfo targetInfo;
+    private String targetId;
 
-    public TargetInfo getTargetInfo() {
-        return targetInfo;
+    public String getTargetId() {
+        return targetId;
     }
 
-    public void setTargetInfo(TargetInfo targetInfo) {
-        this.targetInfo = targetInfo;
+    public void setTargetId(String targetId) {
+        this.targetId = targetId;
     }
 
 }
