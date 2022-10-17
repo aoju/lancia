@@ -401,7 +401,7 @@ public abstract class SocketClient extends ListenerBuilder implements Runnable, 
                         : "");
 
         HandshakeBuilder handshake = new HandshakeBuilder();
-        handshake.setResourceDescriptor(path);
+        handshake.setDescriptor(path);
         handshake.put("Host", host);
         if (headers != null) {
             for (Map.Entry<String, String> kv : headers.entrySet()) {

@@ -45,11 +45,11 @@ public class HandshakeBuilder {
     /**
      * Attribute for the http status
      */
-    private short httpstatus;
+    private short status;
     /**
      * Attribute for the http status message
      */
-    private String httpstatusmessage;
+    private String message;
     /**
      * Attribute for the content of the handshake
      */
@@ -57,7 +57,7 @@ public class HandshakeBuilder {
     /**
      * Attribute for the resource descriptor
      */
-    private String resourceDescriptor = "*";
+    private String descriptor = "*";
 
 
     /**
@@ -95,32 +95,31 @@ public class HandshakeBuilder {
         return map.containsKey(name);
     }
 
-    public String getHttpStatusMessage() {
-        return httpstatusmessage;
+    public String getMessage() {
+        return message;
     }
 
-    public void setHttpStatusMessage(String message) {
-        this.httpstatusmessage = message;
+    public void setMessage(String message) {
+        this.message = message;
     }
 
-    public short getHttpStatus() {
-        return httpstatus;
+    public short getStatus() {
+        return this.status;
     }
 
-    public void setHttpStatus(short status) {
-        httpstatus = status;
+    public void setStatus(short status) {
+        this.status = status;
     }
 
-    public String getResourceDescriptor() {
-        return resourceDescriptor;
+    public String getDescriptor() {
+        return this.descriptor;
     }
 
-
-    public void setResourceDescriptor(String resourceDescriptor) {
-        if (resourceDescriptor == null) {
+    public void setDescriptor(String descriptor) {
+        if (descriptor == null) {
             throw new IllegalArgumentException("http resource descriptor must not be null");
         }
-        this.resourceDescriptor = resourceDescriptor;
+        this.descriptor = descriptor;
     }
 
 }

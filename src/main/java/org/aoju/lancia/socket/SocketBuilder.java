@@ -78,7 +78,7 @@ public class SocketBuilder implements WebSocket {
     /**
      * The listener to notify of WebSocket events.
      */
-    private final SocketListener wsl;
+    private final SocketListener listener;
     /**
      * Attribut to synchronize the write
      */
@@ -102,11 +102,11 @@ public class SocketBuilder implements WebSocket {
     /**
      * stores the handshake sent by this websocket ( Role.CLIENT only )
      */
-    private HandshakeBuilder handshakerequest = null;
-    private String closemessage = null;
-    private Integer closecode = null;
-    private Boolean closedremotely = null;
-    private String resourceDescriptor = null;
+    private HandshakeBuilder handshakeRequest = null;
+    private Integer closeCode = null;
+    private Boolean closeRemote = null;
+    private String closeMessage = null;
+    private String descriptor = null;
     /**
      * Attribute, when the last pong was received
      */
@@ -129,7 +129,7 @@ public class SocketBuilder implements WebSocket {
         }
         this.outQueue = new LinkedBlockingQueue<>();
         inQueue = new LinkedBlockingQueue<>();
-        this.wsl = listener;
+        this.listener = listener;
         if (draft != null) {
             this.draft = draft.copyInstance();
         }
@@ -187,16 +187,16 @@ public class SocketBuilder implements WebSocket {
         socketBuffer.mark();
         try {
             HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
-            if (Builder.MATCHED == draft.acceptHandshakeAsClient(handshakerequest, tmphandshake)) {
+            if (Builder.MATCHED == draft.acceptHandshakeAsClient(handshakeRequest, tmphandshake)) {
                 try {
-                    wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, tmphandshake);
+                    this.listener.onWebsocketHandshakeReceivedAsClient(this, handshakeRequest, tmphandshake);
                 } catch (SocketException e) {
                     Logger.trace("Closing due to invalid data exception. Possible handshake rejection", e);
                     flushAndClose(e.getValue(), e.getMessage(), false);
                     return false;
                 } catch (RuntimeException e) {
                     Logger.error("Closing since client was never connected", e);
-                    wsl.onWebsocketError(this, e);
+                    this.listener.onWebsocketError(this, e);
                     flushAndClose(Framedata.NEVER_CONNECTED, e.getMessage(), false);
                     return false;
                 }
@@ -224,7 +224,7 @@ public class SocketBuilder implements WebSocket {
             }
         } catch (SocketException e) {
             Logger.error("Closing due to invalid data in frame", e);
-            wsl.onWebsocketError(this, e);
+            listener.onWebsocketError(this, e);
             close(e);
         } catch (VirtualMachineError | ThreadDeath | LinkageError e) {
             Logger.error("Got fatal error during frame processing");
@@ -232,7 +232,7 @@ public class SocketBuilder implements WebSocket {
         } catch (Error e) {
             Logger.error("Closing web org.aoju.lancia.socket due to an error during frame processing");
             Exception exception = new Exception(e);
-            wsl.onWebsocketError(this, exception);
+            listener.onWebsocketError(this, exception);
             String errorMessage = "Got error " + e.getClass().getName();
             close(Framedata.UNEXPECTED_CONDITION, errorMessage);
         }
@@ -265,9 +265,9 @@ public class SocketBuilder implements WebSocket {
                     try {
                         if (!remote) {
                             try {
-                                wsl.onWebsocketCloseInitiated(this, code, message);
+                                listener.onWebsocketCloseInitiated(this, code, message);
                             } catch (RuntimeException e) {
-                                wsl.onWebsocketError(this, e);
+                                listener.onWebsocketError(this, e);
                             }
                         }
                         if (isOpen()) {
@@ -279,7 +279,7 @@ public class SocketBuilder implements WebSocket {
                         }
                     } catch (SocketException e) {
                         Logger.error("generated frame is invalid", e);
-                        wsl.onWebsocketError(this, e);
+                        listener.onWebsocketError(this, e);
                         flushAndClose(Framedata.ABNORMAL_CLOSE, "generated frame is invalid", false);
                     }
                 }
@@ -298,10 +298,10 @@ public class SocketBuilder implements WebSocket {
     }
 
     public void closeConnection() {
-        if (closedremotely == null) {
+        if (closeRemote == null) {
             throw new IllegalStateException("this method must be used in conjunction with flushAndClose");
         }
-        closeConnection(closecode, closemessage, closedremotely);
+        closeConnection(closeCode, this.closeMessage, closeRemote);
     }
 
     protected void closeConnection(int code, boolean remote) {
@@ -339,47 +339,47 @@ public class SocketBuilder implements WebSocket {
             }
         }
         try {
-            this.wsl.onWebsocketClose(this, code, message, remote);
+            this.listener.onWebsocketClose(this, code, message, remote);
         } catch (RuntimeException e) {
 
-            wsl.onWebsocketError(this, e);
+            listener.onWebsocketError(this, e);
         }
         if (draft != null) {
             draft.reset();
         }
-        handshakerequest = null;
+        handshakeRequest = null;
         readyState = ReadyState.CLOSED;
     }
 
     public synchronized void flushAndClose(int code, String message, boolean remote) {
-        if (flushandclosestate) {
+        if (this.flushandclosestate) {
             return;
         }
-        closecode = code;
-        closemessage = message;
-        closedremotely = remote;
+        this.closeCode = code;
+        this.closeMessage = message;
+        this.closeRemote = remote;
 
-        flushandclosestate = true;
+        this.flushandclosestate = true;
 
-        wsl.onWriteDemand(
+        this.listener.onWriteDemand(
                 this); // ensures that all outgoing frames are flushed before closing the connection
         try {
-            wsl.onWebsocketClosing(this, code, message, remote);
+            listener.onWebsocketClosing(this, code, message, remote);
         } catch (RuntimeException e) {
             Logger.error("Exception in onWebsocketClosing", e);
-            wsl.onWebsocketError(this, e);
+            listener.onWebsocketError(this, e);
         }
         if (draft != null) {
             draft.reset();
         }
-        handshakerequest = null;
+        this.handshakeRequest = null;
     }
 
     public void eot() {
         if (readyState == ReadyState.NOT_YET_CONNECTED) {
             closeConnection(Framedata.NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
-            closeConnection(closecode, closemessage, closedremotely);
+            closeConnection(closeCode, this.closeMessage, closeRemote);
         } else if (Builder.NONE.equals(draft.getCloseHandshakeType())) {
             closeConnection(Framedata.NORMAL, true);
         } else if (Builder.ONEWAY.equals(draft.getCloseHandshakeType())) {
@@ -442,25 +442,25 @@ public class SocketBuilder implements WebSocket {
 
     public void startHandshake(HandshakeBuilder handshake) throws SocketException {
         // Store the HandshakeBuilder Request we are about to send
-        this.handshakerequest = draft.postProcessHandshakeRequestAsClient(handshake);
+        this.handshakeRequest = draft.postProcessHandshakeRequestAsClient(handshake);
 
-        resourceDescriptor = handshake.getResourceDescriptor();
-        assert (resourceDescriptor != null);
+        descriptor = handshake.getDescriptor();
+        assert (descriptor != null);
 
         // Notify Listener
         try {
-            wsl.onWebsocketHandshakeSentAsClient(this, this.handshakerequest);
+            listener.onWebsocketHandshakeSentAsClient(this, this.handshakeRequest);
         } catch (SocketException e) {
             // Stop if the client code throws an exception
             throw new SocketException(Framedata.PROTOCOL_ERROR, "HandshakeBuilder data rejected by client.");
         } catch (RuntimeException e) {
             Logger.error("Exception in startHandshake", e);
-            wsl.onWebsocketError(this, e);
+            listener.onWebsocketError(this, e);
             throw new SocketException(Framedata.PROTOCOL_ERROR, "rejected because of " + e);
         }
 
         // Send
-        write(draft.createHandshake(this.handshakerequest));
+        write(draft.createHandshake(this.handshakeRequest));
     }
 
     private void write(ByteBuffer buf) {
@@ -468,7 +468,7 @@ public class SocketBuilder implements WebSocket {
                 buf.remaining() > 1000 ? "too big to display" : new String(buf.array()));
 
         outQueue.add(buf);
-        wsl.onWriteDemand(this);
+        listener.onWriteDemand(this);
     }
 
     /**
@@ -489,9 +489,9 @@ public class SocketBuilder implements WebSocket {
         readyState = ReadyState.OPEN;
         updateLastPong();
         try {
-            wsl.onWebsocketOpen(this, d);
+            listener.onWebsocketOpen(this, d);
         } catch (RuntimeException e) {
-            wsl.onWebsocketError(this, e);
+            listener.onWebsocketError(this, e);
         }
     }
 
@@ -522,12 +522,12 @@ public class SocketBuilder implements WebSocket {
 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
-        return wsl.getRemoteSocketAddress(this);
+        return listener.getRemoteSocketAddress(this);
     }
 
     @Override
     public InetSocketAddress getLocalSocketAddress() {
-        return wsl.getLocalSocketAddress(this);
+        return listener.getLocalSocketAddress(this);
     }
 
     @Override
@@ -556,8 +556,8 @@ public class SocketBuilder implements WebSocket {
      *
      * @return the websocket listener associated with this instance
      */
-    public SocketListener getWebSocketListener() {
-        return wsl;
+    public SocketListener getListener() {
+        return listener;
     }
 
     @Override

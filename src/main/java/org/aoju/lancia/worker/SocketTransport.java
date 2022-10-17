@@ -92,13 +92,13 @@ public class SocketTransport extends SocketClient implements Transport {
 
     @Override
     public void onError(Exception e) {
-        Logger.error("Websocket error:", e.getMessage());
+        Logger.error("Websocket runtime exception {}", e.getMessage());
     }
 
 
     @Override
-    public void onOpen(HandshakeBuilder serverHandshake) {
-        Logger.info("Websocket serverHandshake status: " + serverHandshake.getHttpStatus());
+    public void onOpen(HandshakeBuilder handshake) {
+        Logger.info("Websocket handshake status : " + handshake.getStatus());
     }
 
     public void addConsumer(Consumer<String> consumer) {

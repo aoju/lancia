@@ -210,8 +210,8 @@ public class Draft_6455 {
             throw new SocketException(Framedata.PROTOCOL_ERROR, String.format("Invalid status line received: %s Status line: %s", firstLineTokens[0], line));
         }
         HandshakeBuilder handshake = new HandshakeBuilder();
-        handshake.setHttpStatus(Short.parseShort(firstLineTokens[1]));
-        handshake.setHttpStatusMessage(firstLineTokens[2]);
+        handshake.setStatus(Short.parseShort(firstLineTokens[1]));
+        handshake.setMessage(firstLineTokens[2]);
         return handshake;
     }
 
@@ -333,7 +333,7 @@ public class Draft_6455 {
 
     public List<ByteBuffer> createHandshake(HandshakeBuilder handshake, boolean withcontent) {
         StringBuilder bui = new StringBuilder(100);
-        bui.append("GET ").append(handshake.getResourceDescriptor()).append(" HTTP/1.1");
+        bui.append("GET ").append(handshake.getDescriptor()).append(" HTTP/1.1");
         bui.append("\r\n");
         Iterator<String> it = handshake.iterateHttpFields();
         while (it.hasNext()) {
@@ -749,11 +749,10 @@ public class Draft_6455 {
     private void processFrameText(SocketBuilder socketBuilder, Framedata frame)
             throws SocketException {
         try {
-            socketBuilder.getWebSocketListener()
+            socketBuilder.getListener()
                     .onWebsocketMessage(socketBuilder, stringUtf8(frame.getPayloadData()));
         } catch (RuntimeException e) {
-            Logger.error("Runtime exception during onWebsocketMessage {} ", e.getMessage());
-            socketBuilder.getWebSocketListener().onWebsocketError(socketBuilder, e);
+            socketBuilder.getListener().onWebsocketError(socketBuilder, new Exception(e.getMessage()));
         }
     }
 
