@@ -26,6 +26,7 @@
 package org.aoju.lancia.socket;
 
 import org.aoju.bus.core.lang.Charset;
+import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.worker.exception.SocketException;
 
@@ -236,7 +237,7 @@ public class Framedata {
      */
     public void setReason(String reason) {
         if (reason == null) {
-            reason = "";
+            reason = Normal.EMPTY;
         }
         this.reason = reason;
         updatePayload();
