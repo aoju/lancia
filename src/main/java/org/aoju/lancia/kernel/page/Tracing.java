@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,9 +27,8 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.worker.BrowserListener;
+import org.aoju.lancia.events.DefaultBrowserListener;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.io.IOException;
@@ -67,7 +66,7 @@ public class Tracing {
     public Tracing(CDPSession client) {
         this.client = client;
         this.recording = false;
-        this.path = Normal.EMPTY;
+        this.path = "";
     }
 
     public void start(String path) {
@@ -84,7 +83,7 @@ public class Tracing {
     public void start(String path, boolean screenshots, Set<String> categories) {
         Assert.isTrue(!this.recording, "Cannot start recording trace while already recording trace.");
         if (categories == null)
-            categories = new HashSet<>(Builder.DEFAULTCATEGORIES);
+            categories = new HashSet<>(org.aoju.lancia.Builder.DEFAULTCATEGORIES);
         if (screenshots)
             categories.add("disabled-by-default-devtools.screenshot");
         this.path = path;
@@ -99,7 +98,7 @@ public class Tracing {
      * 停止追踪
      */
     public void stop() {
-        BrowserListener<JSONObject> traceListener = new BrowserListener<JSONObject>() {
+        DefaultBrowserListener<JSONObject> traceListener = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(JSONObject event) {
                 Tracing tracing;

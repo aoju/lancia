@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -32,8 +32,9 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.PageEvaluateType;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;
-import org.aoju.lancia.nimble.runtime.ExecutionDescription;
+import org.aoju.lancia.nimble.runtime.ExecutionContextDescription;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
 import org.aoju.lancia.worker.CDPSession;
 
@@ -58,7 +59,7 @@ public class ExecutionContext {
     private CDPSession client;
     private DOMWorld world;
 
-    public ExecutionContext(CDPSession client, ExecutionDescription contextPayload, DOMWorld world) {
+    public ExecutionContext(CDPSession client, ExecutionContextDescription contextPayload, DOMWorld world) {
         this.client = client;
         this.world = world;
         this.contextId = contextPayload.getId();
@@ -86,16 +87,16 @@ public class ExecutionContext {
     }
 
     public Object evaluateHandle(String pageFunction, List<Object> args) {
-        return this.evaluateInternal(false, pageFunction, Builder.isFunction(pageFunction) ? Builder.PageEvaluateType.FUNCTION : Builder.PageEvaluateType.STRING, args);
+        return this.evaluateInternal(false, pageFunction, Builder.isFunction(pageFunction) ? PageEvaluateType.FUNCTION : PageEvaluateType.STRING, args);
     }
 
     public Object evaluate(String pageFunction, List<Object> args) {
-        return this.evaluateInternal(true, pageFunction, Builder.isFunction(pageFunction) ? Builder.PageEvaluateType.FUNCTION : Builder.PageEvaluateType.STRING, args);
+        return this.evaluateInternal(true, pageFunction, Builder.isFunction(pageFunction) ? PageEvaluateType.FUNCTION : PageEvaluateType.STRING, args);
     }
 
-    private Object evaluateInternal(boolean returnByValue, String pageFunction, Builder.PageEvaluateType type, List<Object> args) {
+    private Object evaluateInternal(boolean returnByValue, String pageFunction, PageEvaluateType type, List<Object> args) {
         String suffix = "//# sourceURL=" + ExecutionContext.EVALUATION_SCRIPT_URL;
-        if (Builder.PageEvaluateType.STRING.equals(type)) {
+        if (PageEvaluateType.STRING.equals(type)) {
             int contextId = this.contextId;
             String expression = pageFunction;
             String expressionWithSourceUrl = ExecutionContext.SOURCE_URL_REGEX.matcher(expression).find() ? expression : expression + "\n" + suffix;
@@ -114,7 +115,7 @@ public class ExecutionContext {
 
         }
 
-        if (!Builder.PageEvaluateType.FUNCTION.equals(type))
+        if (!PageEvaluateType.FUNCTION.equals(type))
             throw new IllegalArgumentException("Expected to get |string| or |function| as the first argument, but got " + type.name() + " instead.");
         String functionText = pageFunction;
         Map<String, Object> params = new HashMap<>();
@@ -166,7 +167,7 @@ public class ExecutionContext {
         if (arg == null) {
             return null;
         }
-        if (arg instanceof BigInteger)
+        if (arg instanceof BigInteger) // eslint-disable-line valid-typeof
             return objectNode.put("unserializableValue", arg + "n");
         if ("-0".equals(arg))
             return objectNode.put("unserializableValue", "-0");

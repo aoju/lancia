@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,9 +27,9 @@ package org.aoju.lancia.launch;
 
 import org.aoju.lancia.Browser;
 import org.aoju.lancia.Launcher;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.LaunchOption;
+import org.aoju.lancia.option.BrowserOptions;
+import org.aoju.lancia.option.ChromeArgOptions;
+import org.aoju.lancia.option.LaunchOptions;
 import org.aoju.lancia.worker.Transport;
 
 import java.util.List;
@@ -50,13 +50,14 @@ public class FirefoxLauncher implements Launcher {
         this.isPuppeteerCore = isPuppeteerCore;
     }
 
+
     @Override
-    public Browser launch(LaunchOption options) {
+    public Browser launch(LaunchOptions options) {
         return null;
     }
 
     @Override
-    public List<String> defaultArgs(ChromeOption options) {
+    public List<String> defaultArgs(ChromeArgOptions options) {
         return null;
     }
 
@@ -67,7 +68,7 @@ public class FirefoxLauncher implements Launcher {
     }
 
     @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
+    public Browser connect(BrowserOptions options, String browserWSEndpoint, String browserURL, Transport transport) {
         return null;
     }
 

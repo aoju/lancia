@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,15 +27,15 @@ package org.aoju.lancia.kernel.page;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.nimble.runtime.ConsoleCalledPayload;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.nimble.runtime.ConsoleAPICalledPayload;
 import org.aoju.lancia.nimble.runtime.ExceptionDetails;
-import org.aoju.lancia.nimble.runtime.ExecutionDescription;
+import org.aoju.lancia.nimble.runtime.ExecutionContextDescription;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
-import org.aoju.lancia.worker.BrowserListener;
 import org.aoju.lancia.worker.CDPSession;
-import org.aoju.lancia.worker.EventEmitter;
+import org.aoju.lancia.worker.exception.TimeoutException;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -64,14 +64,13 @@ public class Worker extends EventEmitter {
         super();
         this.client = client;
         this.url = url;
-        BrowserListener<JSONObject> executionContextListener = new BrowserListener<JSONObject>() {
+        DefaultBrowserListener<JSONObject> executionContextListener = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(JSONObject event) {
                 Worker worker = (Worker) this.getTarget();
-                ExecutionDescription contextDescription = JSON.parseObject(JSON.toJSONString(event.get("context")), ExecutionDescription.class);
+                ExecutionContextDescription contextDescription = JSON.parseObject(JSON.toJSONString(event.get("context")), ExecutionContextDescription.class);
                 ExecutionContext executionContext = new ExecutionContext(client, contextDescription, null);
                 worker.executionContextCallback(executionContext);
-
             }
         };
         executionContextListener.setMethod("Runtime.executionContextCreated");
@@ -79,16 +78,16 @@ public class Worker extends EventEmitter {
         this.client.addListener(executionContextListener.getMethod(), executionContextListener, true);
 
         this.client.send("Runtime.enable", null, false);
-        BrowserListener<ConsoleCalledPayload> consoleLis = new BrowserListener<ConsoleCalledPayload>() {
+        DefaultBrowserListener<ConsoleAPICalledPayload> consoleLis = new DefaultBrowserListener<>() {
             @Override
-            public void onBrowserEvent(ConsoleCalledPayload event) {
+            public void onBrowserEvent(ConsoleAPICalledPayload event) {
                 consoleAPICalled.call(event.getType(), event.getArgs().stream().map(item -> jsHandleFactory(item)).collect(Collectors.toList()), event.getStackTrace());
             }
         };
         consoleLis.setMethod("Runtime.consoleAPICalled");
         this.client.addListener(consoleLis.getMethod(), consoleLis);
 
-        BrowserListener<JSONObject> exceptionLis = new BrowserListener<JSONObject>() {
+        DefaultBrowserListener<JSONObject> exceptionLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(JSONObject event) {
                 ExceptionDetails exceptionDetails = JSON.toJavaObject(event.getJSONObject("exceptionDetails"), ExceptionDetails.class);
@@ -112,7 +111,7 @@ public class Worker extends EventEmitter {
             this.setContextLatch(new CountDownLatch(1));
             boolean await = this.getContextLatch().await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
             if (!await) {
-                throw new InternalException("Wait for ExecutionContext timeout");
+                throw new TimeoutException("Wait for ExecutionContext timeout");
             }
         }
         return context;

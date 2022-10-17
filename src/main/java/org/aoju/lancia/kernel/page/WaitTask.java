@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,12 +27,14 @@ package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
+import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.PageEvaluateType;
 
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +59,7 @@ public class WaitTask {
     private JSHandle promise;
     private CountDownLatch waitPromiseLatch;
 
-    public WaitTask(DOMWorld domWorld, String predicateBody, String predicateQueryHandlerBody, Builder.PageEvaluateType type, String title, String polling, int timeout, List<Object> args) {
+    public WaitTask(DOMWorld domWorld, String predicateBody, String predicateQueryHandlerBody, PageEvaluateType type, String title, String polling, int timeout, List<Object> args) {
         if (Builder.isNumber(polling)) {
             Assert.isTrue(new BigDecimal(polling).compareTo(new BigDecimal(0)) > 0, "Cannot poll with non-positive interval: " + polling);
         } else {
@@ -66,7 +68,7 @@ public class WaitTask {
         this.domWorld = domWorld;
         this.polling = polling;
         this.timeout = timeout;
-        if (Builder.PageEvaluateType.STRING.equals(type)) {
+        if (PageEvaluateType.STRING.equals(type)) {
             this.predicateBody = "return (" + predicateBody + ");";
         } else {
             if (StringKit.isNotEmpty(predicateQueryHandlerBody)) {
@@ -82,6 +84,8 @@ public class WaitTask {
         this.args = args;
         this.runCount = new AtomicInteger(0);
         domWorld.getWaitTasks().add(this);
+        // Since page navigation requires us to re-install the pageScript, we should track
+        // timeout on our end.
 
         long start = System.currentTimeMillis();
         this.rerun();
@@ -112,10 +116,12 @@ public class WaitTask {
         } catch (RuntimeException e) {
             error = e;
         }
-
+        // Ignore timeouts in pageScript - we track timeouts ourselves.
+        // If the frame's execution context has already changed, `frame.evaluate` will
+        // throw an error - ignore this predicate run altogether.
         boolean isChanged = false;
         try {
-            this.domWorld.evaluate("s => !s", Arrays.asList(success));
+            this.domWorld.evaluate("s => !s", Collections.singletonList(success));
         } catch (Exception e) {
             isChanged = true;
         }
@@ -125,6 +131,8 @@ public class WaitTask {
             return;
         }
 
+        // When the page is navigated, the promise is rejected.
+        // Try again right away.
         if (error != null && error.getMessage().contains("Execution context was destroyed")) {
             return;
         }
@@ -233,6 +241,7 @@ public class WaitTask {
 
     public void terminate(RuntimeException e) {
         this.terminated = true;
+        Logger.error("", e);
         this.cleanup();
     }
 

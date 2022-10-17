@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -31,10 +31,11 @@ import org.aoju.bus.core.lang.Charset;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.ErrorCode;
-import org.aoju.lancia.nimble.HeaderEntry;
-import org.aoju.lancia.nimble.network.RequestWillPayload;
+import org.aoju.lancia.nimble.fetch.HeaderEntry;
+import org.aoju.lancia.nimble.network.RequestWillBeSentPayload;
 import org.aoju.lancia.worker.CDPSession;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -135,7 +136,7 @@ public class Request {
         super();
     }
 
-    public Request(CDPSession client, Frame frame, String interceptionId, boolean allowInterception, RequestWillPayload event, List<Request> redirectChain) {
+    public Request(CDPSession client, Frame frame, String interceptionId, boolean allowInterception, RequestWillBeSentPayload event, List<Request> redirectChain) {
         super();
         this.client = client;
         this.requestId = event.getRequestId();
@@ -231,19 +232,6 @@ public class Request {
     }
 
     /**
-     * 自定义响应, 默认对响应体做base64解码
-     *
-     * @param status      响应状态
-     * @param headers     响应头
-     * @param contentType contentType
-     * @param body        响应体
-     * @return Future
-     */
-    public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body) {
-        return respond(status, headers, contentType, body, true);
-    }
-
-    /**
      * 自定义响应
      *
      * @param status           响应状态
@@ -251,9 +239,10 @@ public class Request {
      * @param contentType      contentType
      * @param body             响应体
      * @param needBase64Decode 自定义响应体是否需要Base64解码
-     * @return Future
+     * @return
      */
     public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body, boolean needBase64Decode) {
+        // Mocking responses for dataURL requests is not currently supported.
         if (url().startsWith("data:")) {
             return null;
         }
@@ -264,7 +253,7 @@ public class Request {
         setInterceptionHandled(true);
         byte[] responseBody = null;
         if (StringKit.isNotEmpty(body)) {
-            responseBody = body.getBytes(Charset.UTF_8);
+            responseBody = body.getBytes(StandardCharsets.UTF_8);
         }
         Map<String, String> responseHeaders = new HashMap<>();
 
@@ -299,12 +288,26 @@ public class Request {
     }
 
     /**
+     * 自定义响应, 默认对响应体做base64解码
+     *
+     * @param status      响应状态
+     * @param headers     响应头
+     * @param contentType contentType
+     * @param body        响应体
+     * @return Future
+     */
+    public JSONObject respond(int status, List<HeaderEntry> headers, String contentType, String body) {
+        return respond(status, headers, contentType, body, true);
+    }
+
+    /**
      * 拒绝发请求
      *
      * @param errorCode errorCode错误码
      * @return Future
      */
     public JSONObject abort(ErrorCode errorCode) {
+        // Request interception is not supported for data: urls.
         if (url().startsWith("data:"))
             return null;
 
@@ -396,22 +399,6 @@ public class Request {
 
     protected void setFromMemoryCache(boolean fromMemoryCache) {
         this.fromMemoryCache = fromMemoryCache;
-    }
-
-    public void setInterceptionId(String interceptionId) {
-        this.interceptionId = interceptionId;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public void setHeaders(Map<String, String> headers) {
-        this.headers = headers;
     }
 
 }

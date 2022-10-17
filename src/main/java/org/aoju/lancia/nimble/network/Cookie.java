@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,56 +26,57 @@
 package org.aoju.lancia.nimble.network;
 
 /**
- * Cookie对象
+ * Cookie object
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
 public class Cookie {
-
     /**
-     * 名称
+     * Cookie name.
      */
     private String name;
     /**
-     * 值
+     * Cookie value.
      */
     private String value;
     /**
-     * 域
+     * Cookie domain.
      */
     private String domain;
     /**
-     * 路径
+     * Cookie path.
      */
     private String path;
     /**
-     * 到期日期，以自秒为单位
+     * Cookie expiration date as the number of seconds since the UNIX epoch.
      */
     private long expires;
     /**
-     * 大小
+     * Cookie size.
      */
     private int size;
     /**
-     * 如果cookie为http-only，则为true
+     * True if cookie is http-only.
      */
     private boolean httpOnly;
     /**
-     * 如果cookie是为安全的，则为true
+     * True if cookie is secure.
      */
     private boolean secure;
     /**
-     * 如果是会话cookie，则为true
+     * True in case of session cookie.
      */
     private boolean session;
     /**
-     * 类型 "Strict"|"Lax"|"None";
+     * Cookie SameSite type.
+     * "Strict"|"Lax"|"None";
      */
     private String sameSite;
     /**
-     * 优先级 "Low"|"Medium"|"High";
+     * Cookie Priority
+     * "Low"|"Medium"|"High";
      */
     private String priority;
 
@@ -165,23 +166,6 @@ public class Cookie {
 
     public void setPriority(String priority) {
         this.priority = priority;
-    }
-
-    @Override
-    public String toString() {
-        return "Cookie{" +
-                "name='" + name + '\'' +
-                ", value='" + value + '\'' +
-                ", domain='" + domain + '\'' +
-                ", path='" + path + '\'' +
-                ", expires=" + expires +
-                ", size=" + size +
-                ", httpOnly=" + httpOnly +
-                ", secure=" + secure +
-                ", session=" + session +
-                ", sameSite='" + sameSite + '\'' +
-                ", priority='" + priority + '\'' +
-                '}';
     }
 
 }

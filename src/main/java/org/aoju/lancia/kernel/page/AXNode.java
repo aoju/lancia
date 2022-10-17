@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,13 +25,14 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.nimble.AXProperty;
-import org.aoju.lancia.nimble.SerializedAXNode;
+import org.aoju.lancia.nimble.accessbility.AXProperty;
+import org.aoju.lancia.nimble.accessbility.SerializedAXNode;
 
+import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -80,7 +81,7 @@ public class AXNode {
             "required",
             "selected"
     };
-    private org.aoju.lancia.nimble.AXNode payload;
+    private org.aoju.lancia.nimble.accessbility.AXNode payload;
     private List<AXNode> children = new ArrayList<>();
     private boolean richlyEditable = false;
     private boolean editable = false;
@@ -94,10 +95,10 @@ public class AXNode {
     public AXNode() {
     }
 
-    public AXNode(org.aoju.lancia.nimble.AXNode payload) {
+    public AXNode(org.aoju.lancia.nimble.accessbility.AXNode payload) {
         this.payload = payload;
-        this.name = this.payload.getName() != null ? String.valueOf(this.payload.getName().getValue()) : Normal.EMPTY;
-        this.role = this.payload.getRole() != null ? String.valueOf(this.payload.getRole().getValue()) : Normal.UNKNOWN;
+        this.name = this.payload.getName() != null ? String.valueOf(this.payload.getName().getValue()) : "";
+        this.role = this.payload.getRole() != null ? String.valueOf(this.payload.getRole().getValue()) : "Unknown";
         List<AXProperty> properties = this.payload.getProperties();
         if (CollKit.isNotEmpty(properties)) {
             for (AXProperty property : properties) {
@@ -116,9 +117,9 @@ public class AXNode {
 
     }
 
-    public static AXNode createTree(List<org.aoju.lancia.nimble.AXNode> payloads) {
+    public static AXNode createTree(List<org.aoju.lancia.nimble.accessbility.AXNode> payloads) {
         Map<String, AXNode> nodeById = new HashMap<>();
-        for (org.aoju.lancia.nimble.AXNode payload : payloads)
+        for (org.aoju.lancia.nimble.accessbility.AXNode payload : payloads)
             nodeById.put(payload.getNodeId(), new AXNode(payload));
         for (AXNode node : nodeById.values()) {
             List<String> childIds = node.getPayload().getChildIds();
@@ -169,14 +170,20 @@ public class AXNode {
     }
 
     public boolean isLeafNode() {
-        if (CollKit.isNotEmpty(this.children)) {
+        if (CollKit.isNotEmpty(this.children))
             return true;
-        }
 
-        if (this.isPlainTextField() || this.isTextOnlyObject()) {
+        // These types of objects may have children that we use as internal
+        // implementation details, but we want to expose them as leaves to platform
+        // accessibility APIs because screen readers might be confused if they find
+        // any children.
+        if (this.isPlainTextField() || this.isTextOnlyObject())
             return true;
-        }
 
+        // Roles whose children are only presentational according to the ARIA and
+        // HTML5 Specs should be hidden from screen readers.
+        // (Note that whilst ARIA buttons can have only presentational children, HTML5
+        // buttons are allowed to have content.)
         switch (this.role) {
             case "doc-cover":
             case "graphics-symbol":
@@ -191,6 +198,7 @@ public class AXNode {
                 break;
         }
 
+        // Here and below: Android heuristics
         if (this.hasFocusableChild())
             return false;
         if (this.focusable && StringKit.isNotEmpty(this.name))
@@ -228,21 +236,19 @@ public class AXNode {
 
     public boolean isInteresting(boolean insideControl) {
 
-        if ("Ignored".equals(this.role) || this.hidden) {
+        if ("Ignored".equals(this.role) || this.hidden)
             return false;
-        }
 
-        if (this.focusable || this.richlyEditable) {
+        if (this.focusable || this.richlyEditable)
             return true;
-        }
 
-        if (this.isControl()) {
+        // If it's not focusable but has a control role, then it's interesting.
+        if (this.isControl())
             return true;
-        }
 
-        if (insideControl) {
+        // A non focusable child of a control is not interesting
+        if (insideControl)
             return false;
-        }
 
         return this.isLeafNode() && StringKit.isNotEmpty(this.name);
     }
@@ -255,54 +261,53 @@ public class AXNode {
                 properties.put(property.getName().toLowerCase(), property.getValue().getValue());
         }
 
-        if (this.payload.getName() != null) {
-
+        if (this.payload.getName() != null)
             properties.put("name", this.payload.getName().getValue());
-        }
-        if (this.payload.getValue() != null) {
+        if (this.payload.getValue() != null)
             properties.put("value", this.payload.getValue().getValue());
-        }
-
-        if (this.payload.getDescription() != null) {
+        if (this.payload.getDescription() != null)
             properties.put("description", this.payload.getDescription().getValue());
-        }
 
         SerializedAXNode node = new SerializedAXNode();
         node.setRole(this.role);
 
+
+        BeanInfo beanInfo = Introspector.getBeanInfo(node.getClass());
+
         for (String userStringProperty : USERSTRING_PROPERTIES) {
-            if (!properties.containsKey(userStringProperty)) {
+            if (!properties.containsKey(userStringProperty))
                 continue;
-            }
             PropertyDescriptor propDesc = new PropertyDescriptor(userStringProperty, SerializedAXNode.class);
             propDesc.getWriteMethod().invoke(node, properties.get(userStringProperty));
         }
 
+
         for (String booleanProperty : BOOLEAN_PROPERTIES) {
-            if ("focused".equals(booleanProperty) && "WebArea".equals(this.role)) {
+            // WebArea's treat focus differently than other nodes. They report whether their frame  has focus,
+            // not whether focus is specifically on the root node.
+            if ("focused".equals(booleanProperty) && "WebArea".equals(this.role))
                 continue;
-            }
             boolean value = (Boolean) properties.get(booleanProperty);
-            if (!value) {
+            if (!value)
                 continue;
-            }
+
             PropertyDescriptor propDesc = new PropertyDescriptor(booleanProperty, SerializedAXNode.class);
             propDesc.getWriteMethod().invoke(node, value);
         }
 
+
         for (String tristateProperty : TRISTATE_PROPERTIES) {
-            if (!properties.containsKey(tristateProperty)) {
+            if (!properties.containsKey(tristateProperty))
                 continue;
-            }
+
             PropertyDescriptor propDesc = new PropertyDescriptor(tristateProperty, SerializedAXNode.class);
             propDesc.getWriteMethod().invoke(node, properties.get(tristateProperty));
         }
 
 
         for (String numericalProperty : NUMERICAL_PROPERTIES) {
-            if (!properties.containsKey(numericalProperty)) {
+            if (!properties.containsKey(numericalProperty))
                 continue;
-            }
             PropertyDescriptor propDesc = new PropertyDescriptor(numericalProperty, SerializedAXNode.class);
             propDesc.getWriteMethod().invoke(node, properties.get(numericalProperty));
         }
@@ -311,20 +316,19 @@ public class AXNode {
         for (String tokenProperty : TOKEN_PROPERTIES) {
             Object value = properties.get(tokenProperty);
 
-            if (value == null || "false".equals(value)) {
+            if (value == null || "false".equals(value))
                 continue;
-            }
             PropertyDescriptor propDesc = new PropertyDescriptor(tokenProperty, SerializedAXNode.class);
             propDesc.getWriteMethod().invoke(node, value);
         }
         return node;
     }
 
-    public org.aoju.lancia.nimble.AXNode getPayload() {
+    public org.aoju.lancia.nimble.accessbility.AXNode getPayload() {
         return payload;
     }
 
-    public void setPayload(org.aoju.lancia.nimble.AXNode payload) {
+    public void setPayload(org.aoju.lancia.nimble.accessbility.AXNode payload) {
         this.payload = payload;
     }
 

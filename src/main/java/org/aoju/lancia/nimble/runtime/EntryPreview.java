@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -33,11 +33,11 @@ package org.aoju.lancia.nimble.runtime;
 public class EntryPreview {
 
     /**
-     * 预览密钥
+     * Preview of the key. Specified for map-like collection entries.
      */
     private ObjectPreview key;
     /**
-     * 预览的值
+     * Preview of the value.
      */
     private ObjectPreview value;
 

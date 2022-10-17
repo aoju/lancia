@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,10 +26,10 @@
 package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.toolkit.CollKit;
-import org.aoju.lancia.nimble.CoverageEntry;
-import org.aoju.lancia.nimble.CoverageRange;
-import org.aoju.lancia.nimble.Point;
-import org.aoju.lancia.nimble.Range;
+import org.aoju.lancia.nimble.css.Point;
+import org.aoju.lancia.nimble.css.Range;
+import org.aoju.lancia.nimble.profiler.CoverageEntry;
+import org.aoju.lancia.nimble.profiler.CoverageRange;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.util.ArrayList;
@@ -73,10 +73,10 @@ public class Coverage {
                 return b.getType() - a.getType();
             int aLength = a.getRange().getEndOffset() - a.getRange().getStartOffset();
             int bLength = b.getRange().getEndOffset() - b.getRange().getStartOffset();
-            // 对于两个“开始”，范围更大的点排在第一位
+            // 对于两个“start”，范围更大的点排在第一位
             if (a.getType() == 0)
                 return bLength - aLength;
-            // 对于两个“终点”，范围更短的点排在第一位
+            // 对于两个“end”，范围更短的点排在第一位
             return aLength - bLength;
         });
 
@@ -84,6 +84,7 @@ public class Coverage {
 
         List<Range> results = new ArrayList<>();
         int lastOffset = 0;
+        // Run scanning line to intersect all ranges.
         for (Point point : points) {
             if (hitCountStack.size() > 0 && lastOffset < point.getOffset() && hitCountStack.get(hitCountStack.size() - 1) > 0) {
                 Range lastResult = results.size() > 0 ? results.get(results.size() - 1) : null;

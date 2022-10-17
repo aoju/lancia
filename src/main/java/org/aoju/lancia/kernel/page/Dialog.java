@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -30,6 +30,7 @@ import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.log.DialogType;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.util.HashMap;
@@ -59,7 +60,7 @@ public class Dialog {
         super();
     }
 
-    public Dialog(CDPSession client, Builder.DialogType type, String message, String defaultValue) {
+    public Dialog(CDPSession client, DialogType type, String message, String defaultValue) {
         super();
         this.client = client;
         this.type = type.getType();

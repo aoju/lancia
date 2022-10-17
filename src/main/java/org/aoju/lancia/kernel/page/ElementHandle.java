@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -33,12 +33,11 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.nimble.BoxModel;
-import org.aoju.lancia.nimble.BoxModelValue;
-import org.aoju.lancia.nimble.ClickablePoint;
+import org.aoju.lancia.nimble.dom.GetBoxModelReturnValue;
+import org.aoju.lancia.nimble.input.ClickablePoint;
 import org.aoju.lancia.nimble.runtime.RemoteObject;
-import org.aoju.lancia.option.ClickOption;
-import org.aoju.lancia.option.ScreenshotOption;
+import org.aoju.lancia.option.ClickOptions;
+import org.aoju.lancia.option.ScreenshotOptions;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.io.IOException;
@@ -112,7 +111,7 @@ public class ElementHandle extends JSHandle {
                 "    element.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });\n" +
                 "  return false;\n" +
                 "}";
-        Object error = this.evaluate(pageFunction, Arrays.asList(this.page.getJavascriptEnabled()));
+        Object error = this.evaluate(pageFunction, List.of(this.page.getJavascriptEnabled()));
         if (error != null && error.getClass().equals(Boolean.class) && (boolean) error) {
             throw new RuntimeException(JSON.toJSONString(error));
         }
@@ -145,6 +144,7 @@ public class ElementHandle extends JSHandle {
         List<List<ClickablePoint>> collect = quads.stream().filter(quad -> computeQuadArea(quad) > 1).collect(Collectors.toList());
         if (collect.size() == 0)
             throw new RuntimeException("Node is either not visible or not an HTMLElement");
+        // Return the middle point of the first quad.
         List<ClickablePoint> quad = collect.get(0);
         int x = 0;
         int y = 0;
@@ -155,40 +155,36 @@ public class ElementHandle extends JSHandle {
         return new ClickablePoint(x / 4, y / 4);
     }
 
-    private BoxModelValue getBoxModel() {
+    private GetBoxModelReturnValue getBoxModel() {
         Map<String, Object> params = new HashMap<>();
         params.put("objectId", this.remoteObject.getObjectId());
         JSONObject result = this.client.send("DOM.getBoxModel", params, true);
-        return JSON.parseObject(JSON.toJSONString(result), BoxModelValue.class);
+        return JSON.parseObject(JSON.toJSONString(result), GetBoxModelReturnValue.class);
     }
 
     /**
      * 截图所选择的元素
      *
-     * @param options 截图配置
-     * @return 图片base64的字节
-     * @throws IOException 异常
+     * @param options                截图配置
+     * @param scrollIntoViewIfNeeded 元素如果不可见时是否需要滚动浏览器
+     * @return
+     * @throws IOException
      */
-    public String screenshot(ScreenshotOption options) throws IOException {
+    public String screenshot(ScreenshotOptions options, boolean scrollIntoViewIfNeeded) throws IOException {
         boolean needsViewportReset = false;
         Clip boundingBox = this.boundingBox();
         Assert.isTrue(boundingBox != null, "Node is either not visible or not an HTMLElement");
         Viewport viewport = this.page.viewport();
         if (viewport != null && (boundingBox.getWidth() > viewport.getWidth() || boundingBox.getHeight() > viewport.getHeight())) {
-            Viewport newViewport = new Viewport(
-                    viewport.getWidth(),
-                    viewport.getHeight(),
-                    viewport.getDeviceScaleFactor(),
-                    viewport.getIsMobile(),
-                    viewport.getHasTouch(),
-                    viewport.getIsLandscape());
+            // Use the original viewport attributes to prevent from reload
+            Viewport newViewport = new Viewport(viewport.getWidth(), viewport.getHeight(), viewport.getDeviceScaleFactor(), viewport.getIsMobile(), viewport.getHasTouch(), viewport.getIsLandscape());
             newViewport.setWidth(Math.max(viewport.getWidth(), (int) Math.ceil(boundingBox.getWidth())));
             newViewport.setHeight(Math.max(viewport.getHeight(), (int) Math.ceil(boundingBox.getHeight())));
 
             this.page.setViewport(newViewport);
             needsViewportReset = true;
         }
-        if (options.isScrollIntoView()) {
+        if (scrollIntoViewIfNeeded) {
             this.scrollIntoViewIfNeeded();
         }
         boundingBox = this.boundingBox();
@@ -209,11 +205,15 @@ public class ElementHandle extends JSHandle {
         return imageData;
     }
 
+    public String screenshot(ScreenshotOptions options) throws IOException {
+        return this.screenshot(options, true);
+    }
+
     public org.aoju.lancia.kernel.page.BoxModel boxModel() {
-        BoxModelValue result = this.getBoxModel();
+        GetBoxModelReturnValue result = this.getBoxModel();
         if (result == null)
             return null;
-        BoxModel model = result.getModel();
+        org.aoju.lancia.nimble.input.BoxModel model = result.getModel();
         List<ClickablePoint> content = this.fromProtocolQuad(model.getContent());
         List<ClickablePoint> padding = this.fromProtocolQuad(model.getPadding());
         List<ClickablePoint> border = this.fromProtocolQuad(model.getBorder());
@@ -224,6 +224,8 @@ public class ElementHandle extends JSHandle {
     }
 
     public int computeQuadArea(List<ClickablePoint> quad) {
+        // Compute sum of all directed areas of adjacent triangles
+        // https://en.wikipedia.org/wiki/Polygon#Simple_polygons
         int area = 0;
         for (int i = 0; i < quad.size(); ++i) {
             ClickablePoint p1 = quad.get(i);
@@ -251,8 +253,8 @@ public class ElementHandle extends JSHandle {
 
     public ElementHandle $(String selector) {
         String defaultHandler = "(element, selector) => element.querySelector(selector)";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
-        JSHandle handle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryOne(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        JSHandle handle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryOne(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         ElementHandle element = handle.asElement();
         if (element != null)
             return element;
@@ -270,7 +272,7 @@ public class ElementHandle extends JSHandle {
                 "                array.push(item);\n" +
                 "            return array;\n" +
                 "        }";
-        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(pageFunction, Arrays.asList(expression));
+        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(pageFunction, Collections.singletonList(expression));
         Map<String, JSHandle> properties = arrayHandle.getProperties();
         arrayHandle.dispose();
         List<ElementHandle> result = new ArrayList<>();
@@ -293,9 +295,9 @@ public class ElementHandle extends JSHandle {
 
     public Object $$eval(String selector, String pageFunction, List<Object> args) {
         String defaultHandler = "(element, selector) => Array.from(element.querySelectorAll(selector))";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
 
-        ElementHandle arrayHandle = (ElementHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        ElementHandle arrayHandle = (ElementHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         ElementHandle result = (ElementHandle) arrayHandle.evaluate(pageFunction, args);
         arrayHandle.dispose();
         return result;
@@ -303,8 +305,8 @@ public class ElementHandle extends JSHandle {
 
     public List<ElementHandle> $$(String selector) {
         String defaultHandler = "(element, selector) => element.querySelectorAll(selector)";
-        QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selector, defaultHandler);
-        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Arrays.asList(queryHandlerAndSelector.getUpdatedSelector()));
+        QuerySelector queryHandlerAndSelector = org.aoju.lancia.Builder.getQueryHandlerAndSelector(selector, defaultHandler);
+        JSHandle arrayHandle = (JSHandle) this.evaluateHandle(queryHandlerAndSelector.getQueryHandler().queryAll(), Collections.singletonList(queryHandlerAndSelector.getUpdatedSelector()));
         Map<String, JSHandle> properties = arrayHandle.getProperties();
         arrayHandle.dispose();
         List<ElementHandle> result = new ArrayList<>();
@@ -332,7 +334,7 @@ public class ElementHandle extends JSHandle {
 
 
     public void click() throws InterruptedException {
-        click(new ClickOption(), true);
+        click(new ClickOptions(), true);
     }
 
     /**
@@ -342,10 +344,10 @@ public class ElementHandle extends JSHandle {
      * @throws InterruptedException 打断异常
      */
     public void click(boolean isBlock) throws InterruptedException {
-        click(new ClickOption(), isBlock);
+        click(new ClickOptions(), isBlock);
     }
 
-    public void click(ClickOption options, boolean isBlock) throws InterruptedException {
+    public void click(ClickOptions options, boolean isBlock) throws InterruptedException {
         this.scrollIntoViewIfNeeded();
         ClickablePoint point = this.clickablePoint();
         if (!isBlock) {
@@ -427,7 +429,7 @@ public class ElementHandle extends JSHandle {
     }
 
     public Clip boundingBox() {
-        BoxModelValue result = this.getBoxModel();
+        GetBoxModelReturnValue result = this.getBoxModel();
         if (result == null)
             return null;
         List<Integer> quad = result.getModel().getBorder();

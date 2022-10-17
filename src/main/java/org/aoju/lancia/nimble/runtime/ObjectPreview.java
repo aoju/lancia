@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,7 +28,7 @@ package org.aoju.lancia.nimble.runtime;
 import java.util.List;
 
 /**
- * 包含缩写的远程对象
+ * Object containing abbreviated remote object value.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -41,24 +41,24 @@ public class ObjectPreview {
      */
     private String type;
     /**
-     * 对象子类型
+     * Object subtype hint. Specified for `object` type values only.
      * "array"|"null"|"node"|"regexp"|"date"|"map"|"set"|"weakmap"|"weakset"|"iterator"|"generator"|"error"
      */
     private String subtype;
     /**
-     * 对象的字符串表示形式
+     * String representation of the object.
      */
     private String description;
     /**
-     * 如果原始对象的某些属性或条目不适合，则为true
+     * True iff some of the properties or entries of the original object did not fit.
      */
     private boolean overflow;
     /**
-     * 属性列表
+     * List of the properties.
      */
     private List<PropertyPreview> properties;
     /**
-     * 条目列表。仅针对"map"和"set"子类型值指定
+     * List of the entries. Specified for `map` and `set` subtype values only.
      */
     private List<EntryPreview> entries;
 

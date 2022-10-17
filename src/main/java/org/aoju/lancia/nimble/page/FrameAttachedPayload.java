@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,7 +28,7 @@ package org.aoju.lancia.nimble.page;
 import org.aoju.lancia.nimble.runtime.StackTrace;
 
 /**
- * 当框架已附加到其父项时触发
+ * Fired when frame has been attached to its parent.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -37,15 +37,15 @@ import org.aoju.lancia.nimble.runtime.StackTrace;
 public class FrameAttachedPayload {
 
     /**
-     * 已附加框架的
+     * Id of the frame that has been attached.
      */
     private String frameId;
     /**
-     * 父帧标识符
+     * Parent frame identifier.
      */
     private String parentFrameId;
     /**
-     * 附加框架的JavaScript堆栈跟踪，仅当框架是从脚本启动时才设置
+     * JavaScript stack trace of when frame was attached, only set if frame initiated from script.
      */
     private StackTrace stack;
 

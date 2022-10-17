@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,64 +28,63 @@ package org.aoju.lancia.nimble.network;
 import java.util.List;
 
 /**
- * 请求的安全细节
+ * Security details about a request.
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
 public class SecurityDetailsPayload {
-
     /**
-     * 协议名称 (e.g. "TLS 1.2" or "QUIC").
+     * Protocol name (e.g. "TLS 1.2" or "QUIC").
      */
     private String protocol;
     /**
-     * 连接使用的密钥交换，如果不适用，则使用空字符串
+     * Key Exchange used by the connection, or the empty string if not applicable.
      */
     private String keyExchange;
     /**
-     * (EC)连接使用的DH组
+     * (EC)DH group used by the connection, if applicable.
      */
     private String keyExchangeGroup;
     /**
-     * 密码的名字
+     * Cipher name.
      */
     private String cipher;
     /**
-     * 注意，AEAD密码没有单独的Macs
+     * TLS MAC. Note that AEAD ciphers do not have separate MACs.
      */
     private String mac;
     /**
-     * 证书ID值
+     * Certificate ID value.
      */
     private int certificateId;
     /**
-     * 证书标题名称
+     * Certificate subject name.
      */
     private String subjectName;
     /**
-     * 标题备选名称(SAN) DNS名称和IP地址
+     * Subject Alternative Name (SAN) DNS names and IP addresses.
      */
     private List<String> sanList;
     /**
-     * 签发CA的名称
+     * Name of the issuing CA.
      */
     private String issuer;
     /**
-     * 证书生效日期
+     * Certificate valid from date.
      */
     private Double validFrom;
     /**
-     * 证书到期日期
+     * Certificate valid to (expiration) date
      */
     private Double validTo;
     /**
-     * 已签名的证书时间戳(SCTs)列表
+     * List of signed certificate timestamps (SCTs).
      */
-    private List<SignedCertificate> signedCertificateList;
+    private List<SignedCertificateTimestamp> signedCertificateTimestampList;
     /**
-     * 该请求是否符合证书透隐私策略
+     * Whether the request complied with Certificate Transparency policy
      */
     private String certificateTransparencyCompliance;
 
@@ -177,12 +176,12 @@ public class SecurityDetailsPayload {
         this.validTo = validTo;
     }
 
-    public List<SignedCertificate> getSignedCertificateTimestampList() {
-        return signedCertificateList;
+    public List<SignedCertificateTimestamp> getSignedCertificateTimestampList() {
+        return signedCertificateTimestampList;
     }
 
-    public void setSignedCertificateTimestampList(List<SignedCertificate> signedCertificateList) {
-        this.signedCertificateList = signedCertificateList;
+    public void setSignedCertificateTimestampList(List<SignedCertificateTimestamp> signedCertificateTimestampList) {
+        this.signedCertificateTimestampList = signedCertificateTimestampList;
     }
 
     public String getCertificateTransparencyCompliance() {
@@ -192,5 +191,4 @@ public class SecurityDetailsPayload {
     public void setCertificateTransparencyCompliance(String certificateTransparencyCompliance) {
         this.certificateTransparencyCompliance = certificateTransparencyCompliance;
     }
-
 }

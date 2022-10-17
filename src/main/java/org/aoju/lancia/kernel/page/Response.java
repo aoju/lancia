@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -72,7 +72,7 @@ public class Response {
 
     private Map<String, String> headers;
 
-    private Security security;
+    private SecurityDetails securityDetails;
 
     private String bodyLoadedErrorMsg;
 
@@ -98,7 +98,7 @@ public class Response {
                 this.headers.put(entry.getKey().toLowerCase(), entry.getValue());
             }
         }
-        this.security = responsePayload.getSecurityDetails() != null ? new Security(responsePayload.getSecurityDetails()) : null;
+        this.securityDetails = responsePayload.getSecurityDetails() != null ? new SecurityDetails(responsePayload.getSecurityDetails()) : null;
     }
 
     /**
@@ -184,8 +184,8 @@ public class Response {
         return this.headers;
     }
 
-    public Security securityDetails() {
-        return this.security;
+    public SecurityDetails securityDetails() {
+        return this.securityDetails;
     }
 
     public boolean fromServiceWorker() {

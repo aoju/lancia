@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,7 +25,6 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel;
 
-import org.aoju.bus.core.lang.Symbol;
 import org.aoju.bus.logger.Logger;
 
 import java.util.HashMap;
@@ -53,30 +52,32 @@ import java.util.Properties;
  */
 public class Standard implements Variables {
 
-    private static final Map<String, String> systemPropertiesSourceMap = new HashMap<>();
-    private static final Map<String, String> systemEnvSourceMap = new HashMap<>();
+    private static final Map<String, String> SYSTEM_PROPERTIES_SOURCEMAP = new HashMap<>();
+    private static final Map<String, String> SYSTEM_ENV_SOURCEMAP = new HashMap<>();
 
     static {
         Properties systemProperties = System.getProperties();
         systemProperties.entrySet().forEach(systemPropertiesEntry -> {
             String key = systemPropertiesEntry.getKey().toString();
             String value = systemPropertiesEntry.getValue() == null ? null : systemPropertiesEntry.getValue().toString();
-            systemPropertiesSourceMap.put(key, value);
+            SYSTEM_PROPERTIES_SOURCEMAP.put(key, value);
         });
 
-        systemEnvSourceMap.putAll(System.getenv());
+        SYSTEM_ENV_SOURCEMAP.putAll(System.getenv());
     }
 
+    @Override
     public String getEnv(String name) {
         // order 0: find from system property
-        String value = this.getPropertyValue(name, systemPropertiesSourceMap, "LanciaSystemProperties");
+        String value = this.getPropertyValue(name, SYSTEM_PROPERTIES_SOURCEMAP, "XSystemProperties");
 
         // order 1: find from env
         if (value == null) {
-            value = this.getPropertyValue(name, systemEnvSourceMap, "LanciaSystemEnv");
+            value = this.getPropertyValue(name, SYSTEM_ENV_SOURCEMAP, "XSystemEnv");
         }
 
-        // order 3: find from LaunchOption
+        // order 3: find from LaunchOptions
+
         return value;
     }
 
@@ -107,19 +108,19 @@ public class Standard implements Variables {
         }
 
         // check name with just dots replaced
-        String noDotName = name.replace(Symbol.DOT, Symbol.UNDERLINE);
+        String noDotName = name.replace(".", "_");
         if (!name.equals(noDotName) && source.containsKey(noDotName)) {
             return noDotName;
         }
 
         // check name with just hyphens replaced
-        String noHyphenName = name.replace(Symbol.MINUS, Symbol.UNDERLINE);
+        String noHyphenName = name.replace("-", "_");
         if (!name.equals(noHyphenName) && source.containsKey(noHyphenName)) {
             return noHyphenName;
         }
 
         // Check name with dots and hyphens replaced
-        String noDotAndHyphenName = noDotName.replace(Symbol.MINUS, Symbol.UNDERLINE);
+        String noDotAndHyphenName = noDotName.replace("-", "_");
         if (!name.equals(noDotAndHyphenName) && source.containsKey(noDotAndHyphenName)) {
             return noDotAndHyphenName;
         }

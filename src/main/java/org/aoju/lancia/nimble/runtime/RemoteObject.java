@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 引用原始JavaScript对象的镜像对象
+ * Mirror object referencing original JavaScript object.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,37 +35,37 @@ package org.aoju.lancia.nimble.runtime;
 public class RemoteObject {
 
     /**
-     * 类型
-     * "object"|"function"|"undefined"|"string"|"number"|"boolean"|"symbol"|"bigint";
+     * Object type. "object"|"function"|"undefined"|"string"|"number"|"boolean"|"symbol"|"bigint";
      */
     private String type;
     /**
-     * 对象子类型提示
+     * Object subtype hint. Specified for `object` type values only.
      * "array"|"null"|"node"|"regexp"|"date"|"map"|"set"|"weakmap"|"weakset"|"iterator"|"generator"|"error"|"proxy"|"promise"|"typedarray"|"arraybuffer"|"dataview";
      */
     private String subtype;
     /**
-     * 对象类（构造函数）的名称
+     * Object class (constructor) name. Specified for `object` type values only.
      */
     private String className;
     /**
-     * 原始值或JSON值
+     * Remote object value in case of primitive values or JSON values (if it was requested).
      */
     private Object value;
     /**
-     * 不能用JSON字符串化的原始值没有`value`，而是获得此*属性
+     * Primitive value which can not be JSON-stringified does not have `value`, but gets this
+     * property.
      */
     private String unserializableValue;
     /**
-     * 对象的字符串表示形式
+     * String representation of the object.
      */
     private String description;
     /**
-     * 唯一的对象标识符
+     * Unique object identifier (for non-primitive values).
      */
     private String objectId;
     /**
-     * 预览包含缩写的属性值。仅针对`object`类型值指定。
+     * Preview containing abbreviated property values. Specified for `object` type values only.
      */
     private ObjectPreview preview;
 

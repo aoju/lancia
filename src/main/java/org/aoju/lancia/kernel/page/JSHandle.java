@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -88,7 +88,7 @@ public class JSHandle {
                 "            result[propertyName] = object[propertyName];\n" +
                 "            return result;\n" +
                 "        }";
-        JSHandle objectHandle = (JSHandle) this.evaluateHandle(pageFunction, Arrays.asList(propertyName));
+        JSHandle objectHandle = (JSHandle) this.evaluateHandle(pageFunction, Collections.singletonList(propertyName));
         Map<String, JSHandle> properties = objectHandle.getProperties();
         JSHandle result = properties.get(propertyName);
         objectHandle.dispose();
@@ -159,19 +159,19 @@ public class JSHandle {
         return "JSHandle:" + Builder.valueFromRemoteObject(this.remoteObject);
     }
 
-    public ExecutionContext getContext() {
+    protected ExecutionContext getContext() {
         return context;
     }
 
-    public void setContext(ExecutionContext context) {
+    protected void setContext(ExecutionContext context) {
         this.context = context;
     }
 
-    public boolean getDisposed() {
+    protected boolean getDisposed() {
         return disposed;
     }
 
-    public void setDisposed(boolean disposed) {
+    protected void setDisposed(boolean disposed) {
         this.disposed = disposed;
     }
 

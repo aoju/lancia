@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,53 +28,56 @@ package org.aoju.lancia.nimble.network;
 import java.util.Map;
 
 /**
- * HTTP请求数据
+ * HTTP request data.
+ * /**
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
 public class RequestPayload {
+
     /**
-     * 请求网址
+     * Request URL (without fragment).
      */
     private String url;
     /**
-     * 请求的URL的片段
+     * Fragment of the requested URL starting with hash, if present.
      */
     private String urlFragment;
     /**
-     * 请求方法
+     * HTTP request method.
      */
     private String method;
     /**
-     * 请求标头
+     * HTTP request headers.
      */
     private Map<String, String> headers;
     /**
-     * POST请求数据
+     * HTTP POST request data.
      */
     private String postData;
     /**
-     * 当有POST请求数据时为True。请注意，当数据太长时，如果此标志为true，则可能仍会省略postData
+     * True when the request has POST data. Note that postData might still be omitted when this flag is true when the data is too long.
      */
     private boolean hasPostData;
     /**
-     * 请求的类型 "blockable"|"optionally-blockable"|"none"
+     * The mixed content type of the request.
+     * "blockable"|"optionally-blockable"|"none"
      */
     private String mixedContentType;
     /**
-     * 发送请求时资源请求的优先级 "VeryLow"|"Low"|"Medium"|"High"|"VeryHigh"
+     * Priority of the resource request at the time request is sent.
+     * "VeryLow"|"Low"|"Medium"|"High"|"VeryHigh"
      */
     private String initialPriority;
     /**
-     * 定义的请求的引用者策略 https://www.w3.org/TR/referrer-policy/
-     * "unsafe-url"|"no-referrer-when-downgrade"|"no-referrer"|"origin"|
-     * "origin-when-cross-origin"|"same-origin"|"strict-origin"|"strict-origin-when-cross-origin";
+     * The referrer policy of the request, as defined in https://www.w3.org/TR/referrer-policy/
+     * "unsafe-url"|"no-referrer-when-downgrade"|"no-referrer"|"origin"|"origin-when-cross-origin"|"same-origin"|"strict-origin"|"strict-origin-when-cross-origin";
      */
     private String referrerPolicy;
     /**
-     * 是否通过链接预加载加载
+     * Whether is loaded via link preload.
      */
     private boolean isLinkPreload;
 
