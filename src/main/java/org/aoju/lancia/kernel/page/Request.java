@@ -35,7 +35,6 @@ import org.aoju.lancia.nimble.fetch.HeaderEntry;
 import org.aoju.lancia.nimble.network.RequestWillBeSentPayload;
 import org.aoju.lancia.worker.CDPSession;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -253,7 +252,7 @@ public class Request {
         setInterceptionHandled(true);
         byte[] responseBody = null;
         if (StringKit.isNotEmpty(body)) {
-            responseBody = body.getBytes(StandardCharsets.UTF_8);
+            responseBody = body.getBytes(Charset.UTF_8);
         }
         Map<String, String> responseHeaders = new HashMap<>();
 
@@ -307,7 +306,6 @@ public class Request {
      * @return Future
      */
     public JSONObject abort(ErrorCode errorCode) {
-        // Request interception is not supported for data: urls.
         if (url().startsWith("data:"))
             return null;
 
@@ -399,6 +397,22 @@ public class Request {
 
     protected void setFromMemoryCache(boolean fromMemoryCache) {
         this.fromMemoryCache = fromMemoryCache;
+    }
+
+    public void setInterceptionId(String interceptionId) {
+        this.interceptionId = interceptionId;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public void setHeaders(Map<String, String> headers) {
+        this.headers = headers;
     }
 
 }
