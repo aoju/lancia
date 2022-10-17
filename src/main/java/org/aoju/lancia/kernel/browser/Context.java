@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -29,12 +29,12 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Browser;
 import org.aoju.lancia.Page;
-import org.aoju.lancia.Builder;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.events.EventHandler;
+import org.aoju.lancia.events.Events;
 import org.aoju.lancia.kernel.page.Target;
-import org.aoju.lancia.option.ChromeOption;
+import org.aoju.lancia.option.ChromeArgOptions;
 import org.aoju.lancia.worker.Connection;
-import org.aoju.lancia.worker.EventEmitter;
-import org.aoju.lancia.worker.EventHandler;
 
 import java.util.HashMap;
 import java.util.List;
@@ -52,24 +52,24 @@ import java.util.stream.Collectors;
  */
 public class Context extends EventEmitter {
 
-    private static final Map<String, String> WEB_PERMISSION_PROTOCOL = new HashMap<>(32);
+    private static final Map<String, String> webPermissionToProtocol = new HashMap<>(32);
 
     static {
-        WEB_PERMISSION_PROTOCOL.put("geolocation", "geolocation");
-        WEB_PERMISSION_PROTOCOL.put("midi", "midi");
-        WEB_PERMISSION_PROTOCOL.put("notifications", "notifications");
-        WEB_PERMISSION_PROTOCOL.put("push", "push");
-        WEB_PERMISSION_PROTOCOL.put("camera", "videoCapture");
-        WEB_PERMISSION_PROTOCOL.put("microphone", "audioCapture");
-        WEB_PERMISSION_PROTOCOL.put("background-sync", "backgroundSync");
-        WEB_PERMISSION_PROTOCOL.put("ambient-light-sensor", "sensors");
-        WEB_PERMISSION_PROTOCOL.put("accelerometer", "sensors");
-        WEB_PERMISSION_PROTOCOL.put("gyroscope", "sensors");
-        WEB_PERMISSION_PROTOCOL.put("magnetometer", "sensors");
-        WEB_PERMISSION_PROTOCOL.put("accessibility-events", "accessibilityEvents");
-        WEB_PERMISSION_PROTOCOL.put("clipboard-read", "clipboardRead");
-        WEB_PERMISSION_PROTOCOL.put("payment-handler", "paymentHandler");
-        WEB_PERMISSION_PROTOCOL.put("midi-sysex", "midiSysex");
+        webPermissionToProtocol.put("geolocation", "geolocation");
+        webPermissionToProtocol.put("midi", "midi");
+        webPermissionToProtocol.put("notifications", "notifications");
+        webPermissionToProtocol.put("push", "push");
+        webPermissionToProtocol.put("camera", "videoCapture");
+        webPermissionToProtocol.put("microphone", "audioCapture");
+        webPermissionToProtocol.put("background-sync", "backgroundSync");
+        webPermissionToProtocol.put("ambient-light-sensor", "sensors");
+        webPermissionToProtocol.put("accelerometer", "sensors");
+        webPermissionToProtocol.put("gyroscope", "sensors");
+        webPermissionToProtocol.put("magnetometer", "sensors");
+        webPermissionToProtocol.put("accessibility-events", "accessibilityEvents");
+        webPermissionToProtocol.put("clipboard-read", "clipboardRead");
+        webPermissionToProtocol.put("payment-handler", "paymentHandler");
+        webPermissionToProtocol.put("midi-sysex", "midiSysex");
     }
 
     /**
@@ -104,7 +104,7 @@ public class Context extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetchanged(EventHandler<Target> handler) {
-        this.on(Builder.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), handler);
+        this.on(Events.BROWSERCONTEXT_TARGETCHANGED.getName(), handler);
     }
 
     /**
@@ -114,8 +114,8 @@ public class Context extends EventEmitter {
      *
      * @param handler 事件处理器
      */
-    public void onTargetcreated(EventHandler<Target> handler) {
-        this.on(Builder.Event.BROWSERCONTEXT_TARGETCREATED.getName(), handler);
+    public void onTrgetcreated(EventHandler<Target> handler) {
+        this.on(Events.BROWSERCONTEXT_TARGETCREATED.getName(), handler);
     }
 
     public void clearPermissionOverrides() {
@@ -138,7 +138,7 @@ public class Context extends EventEmitter {
 
     public void overridePermissions(String origin, List<String> permissions) {
         permissions.replaceAll(item -> {
-            String protocolPermission = WEB_PERMISSION_PROTOCOL.get(item);
+            String protocolPermission = webPermissionToProtocol.get(item);
             Assert.isTrue(protocolPermission != null, "Unknown permission: " + item);
             return protocolPermission;
         });
@@ -160,16 +160,8 @@ public class Context extends EventEmitter {
         return this.browser.targets().stream().filter(target -> target.browserContext() == this).collect(Collectors.toList());
     }
 
-    public Target waitForTarget(Predicate<Target> predicate, ChromeOption options) {
+    public Target waitForTarget(Predicate<Target> predicate, ChromeArgOptions options) {
         return this.browser.waitForTarget(target -> target.browserContext() == this && predicate.test(target), options);
-    }
-
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void setConnection(Connection connection) {
-        this.connection = connection;
     }
 
     public Browser browser() {
@@ -178,22 +170,6 @@ public class Context extends EventEmitter {
 
     public Page newPage() {
         return browser.createPageInContext(this.id);
-    }
-
-    public Browser getBrowser() {
-        return browser;
-    }
-
-    public void setBrowser(Browser browser) {
-        this.browser = browser;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
 }

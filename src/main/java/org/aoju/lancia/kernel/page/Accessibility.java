@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,10 +28,9 @@ package org.aoju.lancia.kernel.page;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
-import org.aoju.lancia.nimble.SerializedAXNode;
+import org.aoju.lancia.nimble.accessbility.SerializedAXNode;
 import org.aoju.lancia.worker.CDPSession;
 
 import java.beans.IntrospectionException;
@@ -63,15 +62,15 @@ public class Accessibility {
         List<JSONObject> list = nodes.toJavaObject(new TypeReference<List<JSONObject>>() {
         });
         Iterator<JSONObject> elements = list.iterator();
-        List<org.aoju.lancia.nimble.AXNode> payloads = new ArrayList<>();
+        List<org.aoju.lancia.nimble.accessbility.AXNode> payloads = new ArrayList<>();
         while (elements.hasNext()) {
-            payloads.add(JSON.toJavaObject(elements.next(), org.aoju.lancia.nimble.AXNode.class));
+            payloads.add(JSON.toJavaObject(elements.next(), org.aoju.lancia.nimble.accessbility.AXNode.class));
         }
         AXNode defaultRoot = AXNode.createTree(payloads);
         AXNode needle = defaultRoot;
         if (StringKit.isNotEmpty(backendNodeId)) {
             String finalBackendNodeId = backendNodeId;
-            needle = defaultRoot.find(node -> finalBackendNodeId.equals(node.getPayload().getBackendDOMNodeId() + Normal.EMPTY));
+            needle = defaultRoot.find(node -> finalBackendNodeId.equals(node.getPayload().getBackendDOMNodeId() + ""));
             if (needle == null)
                 return null;
         }

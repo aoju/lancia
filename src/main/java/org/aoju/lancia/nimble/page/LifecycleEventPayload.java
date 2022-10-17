@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,7 @@
 package org.aoju.lancia.nimble.page;
 
 /**
- * 针对顶层页面生命周期事件（例如导航，加载，绘制等）触发
+ * Fired for top level page lifecycle events such as navigation, load, paint, etc.
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,11 +35,11 @@ package org.aoju.lancia.nimble.page;
 public class LifecycleEventPayload {
 
     /**
-     * I框架的ID
+     * Id of the frame.
      */
     private String frameId;
     /**
-     * 加载程序标识符。如果请求是从worker提取的，则为空字符串
+     * Loader identifier. Empty string if the request is fetched from worker.
      */
     private String loaderId;
 

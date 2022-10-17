@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,16 +26,18 @@
 package org.aoju.lancia.worker;
 
 import com.alibaba.fastjson.JSONObject;
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.events.Events;
+import org.aoju.lancia.worker.exception.ProtocolException;
+import org.aoju.lancia.worker.exception.TimeoutException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 /**
  * CDPSession实例被用来谈论原始的Chrome Devtools协议
@@ -70,7 +72,7 @@ public class CDPSession extends EventEmitter {
         }
         connection = null;
         callbacks.clear();
-        this.emit(Builder.Event.CDPSESSION_DISCONNECTED.getName(), null);
+        this.emit(Events.CDPSESSION_DISCONNECTED.getName(), null);
     }
 
     /**
@@ -85,12 +87,13 @@ public class CDPSession extends EventEmitter {
      */
     public JSONObject send(String method, Map<String, Object> params, boolean isBlock, CountDownLatch outLatch, int timeout) {
         if (connection == null) {
-            throw new InternalException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
+            throw new ProtocolException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
+
         try {
             if (isBlock) {
                 if (outLatch != null) {
@@ -100,12 +103,12 @@ public class CDPSession extends EventEmitter {
                     message.setCountDownLatch(latch);
                 }
                 long id = this.connection.rawSend(message, true, this.callbacks);
-                boolean hasResult = message.waitForResult(this.connection.getConnectionOption().getSessionWaitingResultTimeout(), TimeUnit.MILLISECONDS);
+                boolean hasResult = message.waitForResult(timeout > 0 ? timeout : Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
                 if (!hasResult) {
-                    throw new TimeoutException("Wait " + method + " for sessionWaitingResultTimeout:" + (this.connection.getConnectionOption().getSessionWaitingResultTimeout()) + " MILLISECONDS with no response");
+                    throw new TimeoutException("Wait " + method + " for " + (timeout > 0 ? timeout : Builder.DEFAULT_TIMEOUT) + " MILLISECONDS with no response");
                 }
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new InternalException(message.getErrorText());
+                    throw new ProtocolException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -117,6 +120,7 @@ public class CDPSession extends EventEmitter {
                     this.connection.rawSend(message, false, this.callbacks);
                 }
             }
+
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -133,20 +137,24 @@ public class CDPSession extends EventEmitter {
      */
     public JSONObject send(String method, Map<String, Object> params, boolean isBlock) {
         if (connection == null) {
-            throw new InternalException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
+            throw new ProtocolException("Protocol error (" + method + "): Session closed. Most likely the" + this.targetType + "has been closed.");
         }
         Messages message = new Messages();
         message.setMethod(method);
         message.setParams(params);
         message.setSessionId(this.sessionId);
+
         try {
             if (isBlock) {
                 CountDownLatch latch = new CountDownLatch(1);
                 message.setCountDownLatch(latch);
                 long id = this.connection.rawSend(message, true, this.callbacks);
-                message.waitForResult(0, TimeUnit.MILLISECONDS);
+                boolean hasResult = message.waitForResult(this.connection.getConnectionOptions().getSessionWaitingResultTimeout(), TimeUnit.MILLISECONDS);
+                if (!hasResult) {
+                    throw new TimeoutException("Wait " + method + " for sessionWaitingResultTimeout:" + (this.connection.getConnectionOptions().getSessionWaitingResultTimeout()) + " MILLISECONDS with no response");
+                }
                 if (StringKit.isNotEmpty(message.getErrorText())) {
-                    throw new RuntimeException(message.getErrorText());
+                    throw new ProtocolException(message.getErrorText());
                 }
                 return callbacks.remove(id).getResult();
             } else {
@@ -171,9 +179,9 @@ public class CDPSession extends EventEmitter {
     }
 
     public void onMessage(JSONObject node) {
-        Long idLong = node.getLong(Builder.RECV_MESSAGE_ID_PROPERTY);
-        if (idLong != null) {
-            Messages callback = this.callbacks.get(idLong);
+        Long id = node.getLong(Builder.RECV_MESSAGE_ID_PROPERTY);
+        if (id != null) {
+            Messages callback = this.callbacks.get(id);
             if (callback != null) {
                 try {
                     JSONObject errNode = node.getJSONObject(Builder.RECV_MESSAGE_ERROR_PROPERTY);
@@ -188,7 +196,7 @@ public class CDPSession extends EventEmitter {
                 } finally {
                     // 最后把callback都移除掉，免得关闭页面后打印错误
                     if (callback.getNeedRemove()) {
-                        this.callbacks.remove(idLong);
+                        this.callbacks.remove(id);
                     }
                     // 放行等待的线程
                     if (callback.getCountDownLatch() != null) {
@@ -200,9 +208,8 @@ public class CDPSession extends EventEmitter {
         } else {
             JSONObject paramsNode = node.getJSONObject(Builder.RECV_MESSAGE_PARAMS_PROPERTY);
             String method = node.getString(Builder.RECV_MESSAGE_METHOD_PROPERTY);
-            if (method != null) {
+            if (method != null)
                 this.emit(method, paramsNode);
-            }
         }
     }
 

@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,7 +26,8 @@
 package org.aoju.lancia.nimble.page;
 
 /**
- * 页面上有关框架的信息
+ * Information about the Frame on the page.
+ * /**
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -35,40 +36,40 @@ package org.aoju.lancia.nimble.page;
 public class FramePayload {
 
     /**
-     * 框架唯一标识符
+     * Frame unique identifier.
      */
     private String id;
+
     /**
-     * 父帧标识符
+     * Parent frame identifier.
      */
     private String parentId;
     /**
-     * 与此框架关联的加载程序的标识符
+     * Identifier of the loader associated with this frame.
      */
     private String loaderId;
     /**
-     * 标记中指定的框架名称
+     * Frame's name as specified in the tag.
      */
     private String name;
     /**
-     * 框架文档的URL，没有片段
+     * Frame document's URL without fragment.
      */
     private String url;
     /**
-     * 框架文档的URL片段，包括“＃”
+     * Frame document's URL fragment including the '#'.
      */
     private String urlFragment;
     /**
-     * 框架文档的安全来源
+     * Frame document's security origin.
      */
     private String securityOrigin;
     /**
-     * 框架文档的mimeType，由浏览器确定
+     * Frame document's mimeType as determined by the browser.
      */
     private String mimeType;
     /**
-     * 如果框架加载失败，则其中包含无法加载的URL
-     * 请注意，与上述网址不同，该网址可能包含一个片段
+     * If the frame failed to load, this contains the URL that could not be loaded. Note that unlike url above, this URL may contain a fragment.
      */
     private String unreachableUrl;
 

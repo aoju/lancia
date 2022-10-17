@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,11 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.worker.BrowserListener;
-import org.aoju.lancia.worker.ListenerWrapper;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.events.Events;
+import org.aoju.lancia.worker.exception.TerminateException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,17 +54,17 @@ public class LifecycleWatcher {
 
     private Request navigationRequest;
 
-    private List<ListenerWrapper> eventListeners;
+    private List<BrowserListenerWrapper> eventListeners;
 
     private String initialLoaderId;
 
     private boolean hasSameDocumentNavigation;
 
+
     private Object lifecyclePromise = null;
-
     private Object sameDocumentNavigationPromise = null;
-
     private Object newDocumentNavigationPromise = null;
+
 
     public LifecycleWatcher() {
         super();
@@ -92,17 +93,17 @@ public class LifecycleWatcher {
         });
 
         this.eventListeners = new ArrayList<>();
-        BrowserListener<Object> disconnecteListener = new BrowserListener<Object>() {
+        DefaultBrowserListener<Object> disconnecteListener = new DefaultBrowserListener<Object>() {
             @Override
             public void onBrowserEvent(Object event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
-                watcher.terminate(new InternalException("Navigation failed because browser has disconnected!"));
+                watcher.terminate(new TerminateException("Navigation failed because browser has disconnected!"));
             }
         };
         disconnecteListener.setTarget(this);
-        disconnecteListener.setMethod(Builder.Event.CDPSESSION_DISCONNECTED.getName());
+        disconnecteListener.setMethod(Events.CDPSESSION_DISCONNECTED.getName());
 
-        BrowserListener<Object> lifecycleEventListener = new BrowserListener<Object>() {
+        DefaultBrowserListener<Object> lifecycleEventListener = new DefaultBrowserListener<Object>() {
             @Override
             public void onBrowserEvent(Object event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
@@ -110,9 +111,9 @@ public class LifecycleWatcher {
             }
         };
         lifecycleEventListener.setTarget(this);
-        lifecycleEventListener.setMethod(Builder.Event.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
+        lifecycleEventListener.setMethod(Events.FRAME_MANAGER_LIFECYCLE_EVENT.getName());
 
-        BrowserListener<Frame> documentListener = new BrowserListener<Frame>() {
+        DefaultBrowserListener<Frame> documentListener = new DefaultBrowserListener<Frame>() {
             @Override
             public void onBrowserEvent(Frame event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
@@ -120,9 +121,9 @@ public class LifecycleWatcher {
             }
         };
         documentListener.setTarget(this);
-        documentListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
+        documentListener.setMethod(Events.FRAME_MANAGER_FRAME_NAVIGATED_WITHIN_DOCUMENT.getName());
 
-        BrowserListener<Frame> detachedListener = new BrowserListener<Frame>() {
+        DefaultBrowserListener<Frame> detachedListener = new DefaultBrowserListener<Frame>() {
             @Override
             public void onBrowserEvent(Frame event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
@@ -130,9 +131,9 @@ public class LifecycleWatcher {
             }
         };
         detachedListener.setTarget(this);
-        detachedListener.setMethod(Builder.Event.FRAME_MANAGER_FRAME_DETACHED.getName());
+        detachedListener.setMethod(Events.FRAME_MANAGER_FRAME_DETACHED.getName());
 
-        BrowserListener<Request> requestListener = new BrowserListener<Request>() {
+        DefaultBrowserListener<Request> requestListener = new DefaultBrowserListener<Request>() {
             @Override
             public void onBrowserEvent(Request event) {
                 LifecycleWatcher watcher = (LifecycleWatcher) this.getTarget();
@@ -140,7 +141,7 @@ public class LifecycleWatcher {
             }
         };
         requestListener.setTarget(this);
-        requestListener.setMethod(Builder.Event.NETWORK_MANAGER_REQUEST.getName());
+        requestListener.setMethod(Events.NETWORK_MANAGER_REQUEST.getName());
         eventListeners.add(Builder.addEventListener(this.frameManager.getClient(), disconnecteListener.getMethod(), disconnecteListener));
         eventListeners.add(Builder.addEventListener(this.frameManager, lifecycleEventListener.getMethod(), lifecycleEventListener));
         eventListeners.add(Builder.addEventListener(frameManager, documentListener.getMethod(), documentListener));
@@ -160,7 +161,7 @@ public class LifecycleWatcher {
     public void lifecycleCallback() {
         this.lifecyclePromise = new Object();
         if (this.frameManager.getContentLatch() != null) {
-            this.frameManager.setNavigateResult(Builder.Result.CONTENT_SUCCESS.getResult());
+            this.frameManager.setNavigateResult("Content-success");
             this.frameManager.getContentLatch().countDown();
         }
     }
@@ -187,6 +188,7 @@ public class LifecycleWatcher {
     }
 
     private void checkLifecycleComplete() {
+        // We expect navigation to commit.
         if (!checkLifecycle(this.frame, this.expectedLifecycle)) return;
         this.lifecycleCallback();
         if (this.frame.getLoaderId().equals(this.initialLoaderId) && !this.hasSameDocumentNavigation)
@@ -220,12 +222,12 @@ public class LifecycleWatcher {
         return this.lifecyclePromise;
     }
 
-    private void terminate(InternalException e) {
+    private void terminate(TerminateException e) {
         terminationCallback();
     }
 
     public void terminationCallback() {
-        setNavigateResult(Builder.Result.TERMINATION.getResult());
+        setNavigateResult("termination");
     }
 
     public String createTimeoutPromise() {
@@ -243,17 +245,17 @@ public class LifecycleWatcher {
     public void newDocumentNavigationCompleteCallback() {
         this.newDocumentNavigationPromise = new Object();
         if ("new".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult(Builder.Result.SUCCESS.getResult());
+            setNavigateResult("success");
     }
 
     public void sameDocumentNavigationCompleteCallback() {
         this.sameDocumentNavigationPromise = new Object();
         if ("same".equals(this.frameManager.getDocumentNavigationPromiseType()) || "all".equals(this.frameManager.getDocumentNavigationPromiseType()))
-            setNavigateResult(Builder.Result.SUCCESS.getResult());
+            setNavigateResult("success");
     }
 
     private void setNavigateResult(String result) {
-        if (this.frameManager.getDocumentLatch() != null && !Builder.Result.CONTENT_SUCCESS.getResult().equals(result)) {
+        if (this.frameManager.getDocumentLatch() != null && !"Content-success".equals(result)) {
             this.frameManager.setNavigateResult(result);
             this.frameManager.getDocumentLatch().countDown();
         }

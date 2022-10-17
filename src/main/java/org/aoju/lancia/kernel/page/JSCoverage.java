@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -31,10 +31,12 @@ import org.aoju.bus.core.lang.Assert;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.nimble.*;
-import org.aoju.lancia.worker.BrowserListener;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.nimble.css.Range;
+import org.aoju.lancia.nimble.debugger.ScriptParsedPayload;
+import org.aoju.lancia.nimble.profiler.*;
 import org.aoju.lancia.worker.CDPSession;
-import org.aoju.lancia.worker.ListenerWrapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,10 +52,11 @@ import java.util.Map;
  */
 public class JSCoverage {
 
+
     private final CDPSession client;
     private final Map<String, String> scriptSources;
     private final Map<String, String> scriptURLs;
-    private final List<ListenerWrapper> eventListeners;
+    private final List<BrowserListenerWrapper> eventListeners;
     private boolean enabled;
     private boolean resetOnNavigation;
 
@@ -76,7 +79,7 @@ public class JSCoverage {
         this.enabled = true;
         this.scriptURLs.clear();
         this.scriptSources.clear();
-        BrowserListener<ScriptParsedPayload> scriptParsedLis = new BrowserListener<ScriptParsedPayload>() {
+        DefaultBrowserListener<ScriptParsedPayload> scriptParsedLis = new DefaultBrowserListener<ScriptParsedPayload>() {
             @Override
             public void onBrowserEvent(ScriptParsedPayload event) {
                 JSCoverage jsCoverage = (JSCoverage) this.getTarget();
@@ -87,7 +90,7 @@ public class JSCoverage {
         scriptParsedLis.setMethod("Debugger.scriptParsed");
         this.eventListeners.add(Builder.addEventListener(this.client, scriptParsedLis.getMethod(), scriptParsedLis));
 
-        BrowserListener<Object> clearedLis = new BrowserListener<Object>() {
+        DefaultBrowserListener<Object> clearedLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 JSCoverage jsCoverage = (JSCoverage) this.getTarget();
@@ -108,6 +111,7 @@ public class JSCoverage {
         params.clear();
         params.put("skip", true);
         this.client.send("Debugger.setSkipAllPauses", params, true);
+
     }
 
     private void onExecutionContextsCleared() {
@@ -145,7 +149,7 @@ public class JSCoverage {
         Builder.removeEventListeners(this.eventListeners);
 
         List<CoverageEntry> coverage = new ArrayList<>();
-        TakePreciseCoverage profileResponse = JSON.toJavaObject(result, TakePreciseCoverage.class);
+        TakePreciseCoverageReturnValue profileResponse = JSON.toJavaObject(result, TakePreciseCoverageReturnValue.class);
         if (CollKit.isEmpty(profileResponse.getResult())) {
             return coverage;
         }

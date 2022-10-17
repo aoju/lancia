@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,15 +26,16 @@
 package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.lang.Charset;
-import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.PageEvaluateType;
 import org.aoju.lancia.option.*;
+import org.aoju.lancia.worker.exception.NavigateException;
+import org.aoju.lancia.worker.exception.TimeoutException;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.MessageFormat;
@@ -53,7 +54,7 @@ public class DOMWorld {
 
     private Frame frame;
 
-    private Timeout timeout;
+    private TimeoutSettings timeoutSettings;
 
     private boolean detached;
 
@@ -71,11 +72,11 @@ public class DOMWorld {
         super();
     }
 
-    public DOMWorld(FrameManager frameManager, Frame frame, Timeout timeout) {
+    public DOMWorld(FrameManager frameManager, Frame frame, TimeoutSettings timeoutSettings) {
         super();
         this.frameManager = frameManager;
         this.frame = frame;
-        this.timeout = timeout;
+        this.timeoutSettings = timeoutSettings;
         this.documentPromise = null;
         this.contextPromise = null;
         this.setContext(null);
@@ -132,9 +133,9 @@ public class DOMWorld {
         if (this.contextPromise == null) {
             this.waitForContext = new CountDownLatch(1);
             try {
-                boolean await = this.waitForContext.await(Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
+                boolean await = this.waitForContext.await(org.aoju.lancia.Builder.DEFAULT_TIMEOUT, TimeUnit.MILLISECONDS);
                 if (!await) {
-                    throw new InternalException("Wait for ExecutionContext time out");
+                    throw new TimeoutException("Wait for ExecutionContext time out");
                 }
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -187,20 +188,20 @@ public class DOMWorld {
         return document.$$(selector);
     }
 
-    public void setContent(String html, NavigateOption options) {
+    public void setContent(String html, PageNavigateOptions options) {
         List<String> waitUntil;
         int timeout;
         if (options == null) {
             waitUntil = new ArrayList<>();
             waitUntil.add("load");
-            timeout = this.timeout.navigationTimeout();
+            timeout = this.timeoutSettings.navigationTimeout();
         } else {
             if (CollKit.isEmpty(waitUntil = options.getWaitUntil())) {
                 waitUntil = new ArrayList<>();
                 waitUntil.add("load");
             }
             if ((timeout = options.getTimeout()) <= 0) {
-                timeout = this.timeout.navigationTimeout();
+                timeout = this.timeoutSettings.navigationTimeout();
             }
         }
         LifecycleWatcher watcher = new LifecycleWatcher(this.frameManager, this.frame, waitUntil, timeout);
@@ -208,7 +209,7 @@ public class DOMWorld {
                 "      document.open();\n" +
                 "      document.write(html);\n" +
                 "      document.close();\n" +
-                "    }", Arrays.asList(html));
+                "    }", Collections.singletonList(html));
         if (watcher.lifecyclePromise() != null) {
             return;
         }
@@ -218,17 +219,17 @@ public class DOMWorld {
             this.frameManager.setNavigateResult(null);
             boolean await = latch.await(timeout, TimeUnit.MILLISECONDS);
             if (await) {
-                if (Builder.Result.CONTENT_SUCCESS.getResult().equals(this.frameManager.getNavigateResult())) {
+                if (NavigateResult.CONTENT_SUCCESS.getResult().equals(this.frameManager.getNavigateResult())) {
 
-                } else if (Builder.Result.TIMEOUT.getResult().equals(this.frameManager.getNavigateResult())) {
-                    throw new InternalException("setContent timeout :" + html);
-                } else if (Builder.Result.TERMINATION.getResult().equals(this.frameManager.getNavigateResult())) {
-                    throw new InternalException("Navigating frame was detached");
+                } else if (NavigateResult.TIMEOUT.getResult().equals(this.frameManager.getNavigateResult())) {
+                    throw new TimeoutException("setContent timeout :" + html);
+                } else if (NavigateResult.TERMINATION.getResult().equals(this.frameManager.getNavigateResult())) {
+                    throw new NavigateException("Navigating frame was detached");
                 } else {
-                    throw new InternalException("UnNokwn result " + this.frameManager.getNavigateResult());
+                    throw new NavigateException("UnNokwn result " + this.frameManager.getNavigateResult());
                 }
             } else {
-                throw new InternalException("setContent timeout " + html);
+                throw new TimeoutException("setContent timeout " + html);
             }
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -237,7 +238,7 @@ public class DOMWorld {
         }
     }
 
-    public ElementHandle addScriptTag(ScriptTagOption options) throws IOException {
+    public ElementHandle addScriptTag(ScriptTagOptions options) throws IOException {
         if (StringKit.isNotEmpty(options.getUrl())) {
             try {
                 ExecutionContext context = this.executionContext();
@@ -248,8 +249,8 @@ public class DOMWorld {
             }
         }
         if (StringKit.isNotEmpty(options.getPath())) {
-            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), Charset.UTF_8);
-            String content = String.join("\n", contents) + "//# sourceURL=" + options.getPath().replaceAll("\n", Normal.EMPTY);
+            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), StandardCharsets.UTF_8);
+            String content = String.join("\n", contents) + "//# sourceURL=" + options.getPath().replaceAll("\n", "");
             ExecutionContext context = this.executionContext();
             ElementHandle evaluateHandle = (ElementHandle) context.evaluateHandle(addScriptContent(), Arrays.asList(content, options.getType()));
             return evaluateHandle.asElement();
@@ -292,24 +293,24 @@ public class DOMWorld {
                 "    }";
     }
 
-    public ElementHandle addStyleTag(StyleTagOption options) throws IOException {
+    public ElementHandle addStyleTag(StyleTagOptions options) throws IOException {
         if (options != null && StringKit.isNotEmpty(options.getUrl())) {
             ExecutionContext context = this.executionContext();
-            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleUrl(), Arrays.asList(options.getUrl()));
+            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleUrl(), Collections.singletonList(options.getUrl()));
             return handle.asElement();
         }
 
         if (options != null && StringKit.isNotEmpty(options.getPath())) {
-            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), Charset.UTF_8);
-            String content = String.join("\n", contents) + "/*# sourceURL=" + options.getPath().replaceAll("\n", Normal.EMPTY) + "*/";
+            List<String> contents = Files.readAllLines(Paths.get(options.getPath()), StandardCharsets.UTF_8);
+            String content = String.join("\n", contents) + "/*# sourceURL=" + options.getPath().replaceAll("\n", "") + "*/";
             ExecutionContext context = this.executionContext();
-            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleContent(), Arrays.asList(content));
+            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleContent(), List.of(content));
             return handle.asElement();
         }
 
         if (options != null && StringKit.isNotEmpty(options.getContent())) {
             ExecutionContext context = this.executionContext();
-            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleContent(), Arrays.asList(options.getContent()));
+            ElementHandle handle = (ElementHandle) context.evaluateHandle(addStyleContent(), Collections.singletonList(options.getContent()));
             return handle.asElement();
         }
 
@@ -346,7 +347,7 @@ public class DOMWorld {
                 "    }";
     }
 
-    public void click(String selector, ClickOption options, boolean isBlock) throws InterruptedException {
+    public void click(String selector, ClickOptions options, boolean isBlock) throws InterruptedException {
         ElementHandle handle = this.$(selector);
         Assert.isTrue(handle != null, "No node found for selector: " + selector);
         if (isBlock) {
@@ -408,14 +409,14 @@ public class DOMWorld {
         handle.dispose();
     }
 
-    public ElementHandle waitForSelector(String selector, WaitForOption options) throws InterruptedException {
+    public ElementHandle waitForSelector(String selector, WaitForSelectorOptions options) throws InterruptedException {
         return this.waitForSelectorOrXPath(selector, false, options);
     }
 
-    private ElementHandle waitForSelectorOrXPath(String selectorOrXPath, boolean isXPath, WaitForOption options) throws InterruptedException {
+    private ElementHandle waitForSelectorOrXPath(String selectorOrXPath, boolean isXPath, WaitForSelectorOptions options) throws InterruptedException {
         boolean waitForVisible = false;
         boolean waitForHidden = false;
-        int timeout = this.timeout.timeout();
+        int timeout = this.timeoutSettings.timeout();
         if (options != null) {
             waitForVisible = options.getVisible();
             waitForHidden = options.getHidden();
@@ -424,7 +425,7 @@ public class DOMWorld {
             }
         }
         String polling = waitForVisible || waitForHidden ? "raf" : "mutation";
-        String title = (isXPath ? "XPath" : "selector") + " " + "\"" + selectorOrXPath + "\"" + (waitForHidden ? " to be hidden" : Normal.EMPTY);
+        String title = (isXPath ? "XPath" : "selector") + " " + "\"" + selectorOrXPath + "\"" + (waitForHidden ? " to be hidden" : "");
 
         QuerySelector queryHandlerAndSelector = Builder.getQueryHandlerAndSelector(selectorOrXPath, "(element, selector) =>\n" +
                 "      element.querySelector(selector)");
@@ -454,7 +455,7 @@ public class DOMWorld {
                 "        }";
         List<Object> args = new ArrayList<>();
         args.addAll(Arrays.asList(updatedSelector, isXPath, waitForVisible, waitForHidden));
-        WaitTask waitTask = new WaitTask(this, predicate, queryHandler.queryOne(), Builder.PageEvaluateType.FUNCTION, title, polling, timeout, args);
+        WaitTask waitTask = new WaitTask(this, predicate, queryHandler.queryOne(), PageEvaluateType.FUNCTION, title, polling, timeout, args);
         JSHandle handle = waitTask.getPromise();
         if (handle == null) {
             return null;
@@ -466,7 +467,7 @@ public class DOMWorld {
         return handle.asElement();
     }
 
-    public ElementHandle waitForXPath(String xpath, WaitForOption options) throws InterruptedException {
+    public ElementHandle waitForXPath(String xpath, WaitForSelectorOptions options) throws InterruptedException {
         return this.waitForSelectorOrXPath(xpath, true, options);
     }
 
@@ -474,9 +475,9 @@ public class DOMWorld {
         return (String) this.evaluate("() => document.title", new ArrayList<>());
     }
 
-    public JSHandle waitForFunction(String pageFunction, Builder.PageEvaluateType type, WaitForOption options, List<Object> args) throws InterruptedException {
+    public JSHandle waitForFunction(String pageFunction, PageEvaluateType type, WaitForSelectorOptions options, List<Object> args) throws InterruptedException {
         String polling = "raf";
-        int timeout = this.timeout.timeout();
+        int timeout = this.timeoutSettings.timeout();
         if (StringKit.isNotEmpty(options.getPolling())) {
             polling = options.getPolling();
         }

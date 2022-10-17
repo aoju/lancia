@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,26 +27,34 @@ package org.aoju.lancia;
 
 import com.alibaba.fastjson.JSONObject;
 import org.aoju.bus.core.lang.Assert;
-import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
+import org.aoju.bus.core.toolkit.ObjectKit;
 import org.aoju.bus.core.toolkit.StringKit;
+import org.aoju.bus.health.Platform;
+import org.aoju.bus.logger.Logger;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.events.EventHandler;
+import org.aoju.lancia.events.Events;
 import org.aoju.lancia.kernel.browser.Context;
+import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.kernel.page.Target;
 import org.aoju.lancia.kernel.page.TargetInfo;
 import org.aoju.lancia.kernel.page.TaskQueue;
 import org.aoju.lancia.kernel.page.Viewport;
-import org.aoju.lancia.nimble.TargetCreatedPayload;
-import org.aoju.lancia.nimble.TargetDestroyedPayload;
-import org.aoju.lancia.nimble.TargetInfoChangedPayload;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.worker.BrowserListener;
+import org.aoju.lancia.nimble.targets.TargetCreatedPayload;
+import org.aoju.lancia.nimble.targets.TargetDestroyedPayload;
+import org.aoju.lancia.nimble.targets.TargetInfoChangedPayload;
+import org.aoju.lancia.option.ChromeArgOptions;
+import org.aoju.lancia.option.LaunchOptions;
+import org.aoju.lancia.option.LaunchOptionsBuilder;
 import org.aoju.lancia.worker.Connection;
-import org.aoju.lancia.worker.EventEmitter;
-import org.aoju.lancia.worker.EventHandler;
+import org.aoju.lancia.worker.exception.TimeoutException;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -61,7 +69,11 @@ import java.util.stream.Collectors;
 public class Browser extends EventEmitter {
 
     /**
-     * 浏览器对应的websocket client包装类，用于发送和接受消息
+     * 当前实例
+     */
+    public static Browser INSTANCE;
+    /**
+     * 浏览器对应的socket包装类，用于发送和接受消息
      */
     private final Connection connection;
     /**
@@ -84,11 +96,8 @@ public class Browser extends EventEmitter {
      * 浏览器上下文
      */
     private final Map<String, Context> contexts;
-
     private final Process process;
-
     private final TaskQueue<String> screenshotTaskQueue;
-
     private final Function<Object, Object> closeCallback;
 
     public Browser(Connection connection, List<String> contextIds, boolean ignoreHTTPSErrors,
@@ -103,7 +112,7 @@ public class Browser extends EventEmitter {
             closeCallback = o -> null;
         }
         this.closeCallback = closeCallback;
-        this.defaultContext = new Context(connection, this, Normal.EMPTY);
+        this.defaultContext = new Context(connection, this, "");
         this.contexts = new HashMap<>();
         if (CollKit.isNotEmpty(contextIds)) {
             for (String contextId : contextIds) {
@@ -111,18 +120,18 @@ public class Browser extends EventEmitter {
             }
         }
         this.targets = new ConcurrentHashMap<>();
-        BrowserListener<Object> disconnectedLis = new BrowserListener<>() {
+        DefaultBrowserListener<Object> disconnectedLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 Browser browser = (Browser) this.getTarget();
-                browser.emit(Builder.Event.BROWSER_DISCONNECTED.getName(), null);
+                browser.emit(Events.BROWSER_DISCONNECTED.getName(), null);
             }
         };
         disconnectedLis.setTarget(this);
-        disconnectedLis.setMethod(Builder.Event.CONNECTION_DISCONNECTED.getName());
+        disconnectedLis.setMethod(Events.CONNECTION_DISCONNECTED.getName());
         this.connection.addListener(disconnectedLis.getMethod(), disconnectedLis);
 
-        BrowserListener<TargetCreatedPayload> targetCreatedLis = new BrowserListener<>() {
+        DefaultBrowserListener<TargetCreatedPayload> targetCreatedLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetCreatedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -133,7 +142,7 @@ public class Browser extends EventEmitter {
         targetCreatedLis.setMethod("Target.targetCreated");
         this.connection.addListener(targetCreatedLis.getMethod(), targetCreatedLis);
 
-        BrowserListener<TargetDestroyedPayload> targetDestroyedLis = new BrowserListener<>() {
+        DefaultBrowserListener<TargetDestroyedPayload> targetDestroyedLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetDestroyedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -144,7 +153,7 @@ public class Browser extends EventEmitter {
         targetDestroyedLis.setMethod("Target.targetDestroyed");
         this.connection.addListener(targetDestroyedLis.getMethod(), targetDestroyedLis);
 
-        BrowserListener<TargetInfoChangedPayload> targetInfoChangedLis = new BrowserListener<>() {
+        DefaultBrowserListener<TargetInfoChangedPayload> targetInfoChangedLis = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(TargetInfoChangedPayload event) {
                 Browser browser = (Browser) this.getTarget();
@@ -175,14 +184,82 @@ public class Browser extends EventEmitter {
         return browser;
     }
 
+    public static synchronized Browser newInstance() {
+        if (ObjectKit.isEmpty(INSTANCE)) {
+            return newInstance(null);
+        }
+        return INSTANCE;
+    }
+
+    /**
+     * 设置浏览器参数
+     */
+    public static synchronized Browser newInstance(LaunchOptions options) {
+        try {
+            Fetcher.on();
+        } catch (InterruptedException | ExecutionException | IOException e) {
+            throw new RuntimeException(e);
+        }
+        if (ObjectKit.isNotEmpty(options)) {
+            options = new LaunchOptionsBuilder()
+                    .args(options.getArgs())
+                    .headless(options.getHeadless())
+                    .viewport(options.getViewport())
+                    .ignoreHTTPSErrors(options.getIgnoreHTTPSErrors())
+                    .slowMo(options.getSlowMo())
+                    .build();
+        } else {
+            List<String> list = new ArrayList<>();
+            list.add("--disable-gpu");
+            list.add("--disable-dev-shm-usage");
+            list.add("--no-first-run");
+            list.add("--no-sandbox");
+            list.add("--disable-setuid-sandbox");
+            list.add("--no-zygote");
+            list.add("--proxy-server='direct://'");
+            list.add("--proxy-bypass-list=*");
+
+            options = new LaunchOptionsBuilder()
+                    .args(list)
+                    .headless(true)
+                    .viewport(null)
+                    .ignoreHTTPSErrors(true)
+                    .slowMo(250)
+                    .build();
+        }
+
+        try {
+            INSTANCE = Puppeteer.launch(options);
+            INSTANCE = Puppeteer.connect(INSTANCE.wsEndpoint(), null, null);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        LaunchOptions opts = options;
+        INSTANCE.onDisconnected(b -> {
+            String command = "ps -ef | grep chrome | grep -v \"grep\" | awk '{print $2}' | xargs kill -9";
+            if (Platform.isWindows()) {
+                command = "taskkill /f /im chrome.exe";
+            }
+            try {
+                Process process = Runtime.getRuntime().exec(command);
+                process.waitFor();
+            } catch (Exception e) {
+                Logger.error(e);
+            }
+            newInstance(opts);
+        });
+        return INSTANCE;
+    }
+
     private void targetDestroyed(TargetDestroyedPayload event) {
         Target target = this.targets.remove(event.getTargetId());
         target.initializedCallback(false);
         target.closedCallback();
         if (target.waitInitializedPromise()) {
-            this.emit(Builder.Event.BROWSER_TARGETDESTROYED.getName(), target);
-            target.browserContext().emit(Builder.Event.BROWSER_TARGETDESTROYED.getName(), target);
+            this.emit(Events.BROWSER_TARGETDESTROYED.getName(), target);
+            target.browserContext().emit(Events.BROWSER_TARGETDESTROYED.getName(), target);
         }
+
     }
 
     private void targetInfoChanged(TargetInfoChangedPayload event) {
@@ -192,8 +269,8 @@ public class Browser extends EventEmitter {
         boolean wasInitialized = target.getIsInitialized();
         target.targetInfoChanged(event.getTargetInfo());
         if (wasInitialized && !previousURL.equals(target.url())) {
-            this.emit(Builder.Event.BROWSER_TARGETCHANGED.getName(), target);
-            target.browserContext().emit(Builder.Event.BROWSERCONTEXT_TARGETCHANGED.getName(), target);
+            this.emit(Events.BROWSER_TARGETCHANGED.getName(), target);
+            target.browserContext().emit(Events.BROWSERCONTEXT_TARGETCHANGED.getName(), target);
         }
     }
 
@@ -248,8 +325,8 @@ public class Browser extends EventEmitter {
         }
         this.targets.put(targetInfo.getTargetId(), target);
         if (target.waitInitializedPromise()) {
-            this.emit(Builder.Event.BROWSER_TARGETCREATED.getName(), target);
-            context.emit(Builder.Event.BROWSERCONTEXT_TARGETCREATED.getName(), target);
+            this.emit(Events.BROWSER_TARGETCREATED.getName(), target);
+            context.emit(Events.BROWSERCONTEXT_TARGETCREATED.getName(), target);
         }
     }
 
@@ -260,7 +337,7 @@ public class Browser extends EventEmitter {
      * @param options   浏览器启动参数
      * @return target
      */
-    public Target waitForTarget(Predicate<Target> predicate, ChromeOption options) {
+    public Target waitForTarget(Predicate<Target> predicate, ChromeArgOptions options) {
         int timeout = options.getTimeout();
         long base = System.currentTimeMillis();
         long now = 0;
@@ -275,7 +352,7 @@ public class Browser extends EventEmitter {
             }
             now = System.currentTimeMillis() - base;
         }
-        throw new InternalException("Waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
+        throw new TimeoutException("waiting for target failed: timeout " + options.getTimeout() + "ms exceeded");
     }
 
     /**
@@ -383,7 +460,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onDisconnected(EventHandler<Object> handler) {
-        this.on(Builder.Event.BROWSER_DISCONNECTED.getName(), handler);
+        this.on(Events.BROWSER_DISCONNECTED.getName(), handler);
     }
 
     /**
@@ -394,7 +471,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetchanged(EventHandler<Target> handler) {
-        this.on(Builder.Event.BROWSER_TARGETCHANGED.getName(), handler);
+        this.on(Events.BROWSER_TARGETCHANGED.getName(), handler);
     }
 
     /**
@@ -405,7 +482,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetcreated(EventHandler<Target> handler) {
-        this.on(Builder.Event.BROWSER_TARGETCREATED.getName(), handler);
+        this.on(Events.BROWSER_TARGETCREATED.getName(), handler);
     }
 
     /**
@@ -416,7 +493,7 @@ public class Browser extends EventEmitter {
      * @param handler 事件处理器
      */
     public void onTargetdestroyed(EventHandler<Target> handler) {
-        this.on(Builder.Event.BROWSER_TARGETDESTROYED.getName(), handler);
+        this.on(Events.BROWSER_TARGETDESTROYED.getName(), handler);
     }
 
     public Map<String, Target> getTargets() {

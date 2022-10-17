@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,8 +26,6 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 调用信息
- *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
@@ -35,27 +33,27 @@ package org.aoju.lancia.nimble.runtime;
 public class CallFrame {
 
     /**
-     * 函数名称
+     * JavaScript function name.
      */
     private String functionName;
 
     /**
-     * 脚本ID
+     * JavaScript script id.
      */
     private String scriptId;
 
     /**
-     * 名称或URL
+     * JavaScript script name or url.
      */
     private String url;
 
     /**
-     * 脚本行号
+     * JavaScript script line number (0-based).
      */
     private int lineNumber;
 
     /**
-     * 脚本列号
+     * JavaScript script column number (0-based).
      */
     private int columnNumber;
 

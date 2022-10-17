@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -27,6 +27,7 @@ package org.aoju.lancia.kernel.page;
 
 import org.aoju.bus.core.lang.Normal;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.nimble.PageEvaluateType;
 import org.aoju.lancia.nimble.page.FramePayload;
 import org.aoju.lancia.option.*;
 import org.aoju.lancia.worker.CDPSession;
@@ -83,8 +84,8 @@ public class Frame {
         this.detached = false;
         this.loaderId = Normal.EMPTY;
         this.lifecycleEvents = new HashSet<>();
-        this.mainWorld = new DOMWorld(frameManager, this, frameManager.getTimeout());
-        this.secondaryWorld = new DOMWorld(frameManager, this, frameManager.getTimeout());
+        this.mainWorld = new DOMWorld(frameManager, this, frameManager.getTimeoutSettings());
+        this.secondaryWorld = new DOMWorld(frameManager, this, frameManager.getTimeoutSettings());
         this.childFrames = new CopyOnWriteArraySet<>();
         if (this.parentFrame != null)
             this.parentFrame.getChildFrames().add(this);
@@ -112,7 +113,7 @@ public class Frame {
         this.url = url;
     }
 
-    public Response waitForNavigation(NavigateOption options, CountDownLatch reloadLatch) {
+    public Response waitForNavigation(PageNavigateOptions options, CountDownLatch reloadLatch) {
         return this.frameManager.waitForFrameNavigation(this, options, reloadLatch);
     }
 
@@ -148,15 +149,15 @@ public class Frame {
         return this.mainWorld.$$(selector);
     }
 
-    public ElementHandle addScriptTag(ScriptTagOption options) throws IOException {
+    public ElementHandle addScriptTag(ScriptTagOptions options) throws IOException {
         return this.mainWorld.addScriptTag(options);
     }
 
-    public ElementHandle addStyleTag(StyleTagOption options) throws IOException {
+    public ElementHandle addStyleTag(StyleTagOptions options) throws IOException {
         return this.mainWorld.addStyleTag(options);
     }
 
-    public void click(String selector, ClickOption options, boolean isBlock) throws InterruptedException, ExecutionException {
+    public void click(String selector, ClickOptions options, boolean isBlock) throws InterruptedException, ExecutionException {
         this.secondaryWorld.click(selector, options, isBlock);
     }
 
@@ -187,12 +188,13 @@ public class Frame {
      * @return 元素处理器
      * @throws InterruptedException 打断异常
      */
-    public JSHandle waitFor(String selectorOrFunctionOrTimeout, WaitForOption options, List<Object> args) throws InterruptedException {
+    public JSHandle waitFor(String selectorOrFunctionOrTimeout, WaitForSelectorOptions options, List<Object> args) throws InterruptedException {
         String xPathPattern = "//";
 
         if (Builder.isFunction(selectorOrFunctionOrTimeout)) {
             return this.waitForFunction(selectorOrFunctionOrTimeout, options, args);
         } else if (Builder.isNumber(selectorOrFunctionOrTimeout)) {
+//            return new Promise(fulfill => setTimeout(fulfill, /** @type {number} */ (selectorOrFunctionOrTimeout)));
             Thread.sleep(Long.parseLong(selectorOrFunctionOrTimeout));
             return null;
         } else {
@@ -201,9 +203,10 @@ public class Frame {
             }
             return this.waitForSelector(selectorOrFunctionOrTimeout, options);
         }
+
     }
 
-    public ElementHandle waitForSelector(String selector, WaitForOption options) throws InterruptedException {
+    public ElementHandle waitForSelector(String selector, WaitForSelectorOptions options) throws InterruptedException {
         ElementHandle handle = this.secondaryWorld.waitForSelector(selector, options);
         if (handle == null)
             return null;
@@ -213,8 +216,8 @@ public class Frame {
         return result;
     }
 
-    public JSHandle waitForFunction(String pageFunction, WaitForOption options, List<Object> args) throws InterruptedException {
-        return this.mainWorld.waitForFunction(pageFunction, Builder.isFunction(pageFunction) ? Builder.PageEvaluateType.FUNCTION : Builder.PageEvaluateType.STRING, options, args);
+    public JSHandle waitForFunction(String pageFunction, WaitForSelectorOptions options, List<Object> args) throws InterruptedException {
+        return this.mainWorld.waitForFunction(pageFunction, Builder.isFunction(pageFunction) ? PageEvaluateType.FUNCTION : PageEvaluateType.STRING, options, args);
     }
 
     public String title() {
@@ -226,7 +229,7 @@ public class Frame {
         this.url = framePayload.getUrl();
     }
 
-    public JSHandle waitForXPath(String xpath, WaitForOption options) throws InterruptedException {
+    public JSHandle waitForXPath(String xpath, WaitForSelectorOptions options) throws InterruptedException {
         ElementHandle handle = this.secondaryWorld.waitForXPath(xpath, options);
         if (handle == null)
             return null;
@@ -241,7 +244,7 @@ public class Frame {
         this.lifecycleEvents.add("load");
     }
 
-    public Response goTo(String url, NavigateOption options, boolean isBlock) throws InterruptedException {
+    public Response goTo(String url, PageNavigateOptions options, boolean isBlock) throws InterruptedException {
         return this.frameManager.navigateFrame(this, url, options, isBlock);
     }
 
@@ -265,7 +268,7 @@ public class Frame {
         return this.secondaryWorld.content();
     }
 
-    public void setContent(String html, NavigateOption options) {
+    public void setContent(String html, PageNavigateOptions options) {
         this.secondaryWorld.setContent(html, options);
     }
 

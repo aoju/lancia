@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,12 +25,12 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.lancia.option.ScreenshotOption;
+import org.aoju.lancia.option.ScreenshotOptions;
 
 import java.util.function.BiFunction;
 
 /**
- * 任务队列
+ * 任务队列,截图专用的类
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -41,7 +41,7 @@ public class TaskQueue<R> {
     public TaskQueue() {
     }
 
-    public Object postTask(BiFunction<String, ScreenshotOption, R> function, String screenshotType, ScreenshotOption options) {
+    public Object postTask(BiFunction<String, ScreenshotOptions, R> function, String screenshotType, ScreenshotOptions options) {
         return function.apply(screenshotType, options);
     }
 

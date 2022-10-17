@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,15 +25,21 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.browser;
 
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.IoKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.health.Platform;
 import org.aoju.bus.logger.Logger;
 import org.aoju.lancia.Builder;
-import org.aoju.lancia.option.ConnectionOption;
-import org.aoju.lancia.option.LaunchOption;
-import org.aoju.lancia.worker.*;
+import org.aoju.lancia.events.BrowserListenerWrapper;
+import org.aoju.lancia.events.DefaultBrowserListener;
+import org.aoju.lancia.events.EventEmitter;
+import org.aoju.lancia.option.ConnectionOptions;
+import org.aoju.lancia.option.LaunchOptions;
+import org.aoju.lancia.worker.Connection;
+import org.aoju.lancia.worker.Transport;
+import org.aoju.lancia.worker.TransportFactory;
+import org.aoju.lancia.worker.exception.LaunchException;
+import org.aoju.lancia.worker.exception.TimeoutException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -60,7 +66,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
     private final String executablePath;
     private final List<String> processArguments;
     private final String tempDirectory;
-    private final List<ListenerWrapper> listeners = new ArrayList<>();
+    private final List<BrowserListenerWrapper> listeners = new ArrayList<>();
     private Process process;
     private Connection connection;
     private boolean closed;
@@ -79,7 +85,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * @param options 启动参数
      * @throws IOException io异常
      */
-    public void start(LaunchOption options) throws IOException {
+    public void start(LaunchOptions options) throws IOException {
         if (process != null) {
             throw new RuntimeException("This process has previously been started.");
         }
@@ -116,8 +122,8 @@ public class Runner extends EventEmitter implements AutoCloseable {
      *
      * @param options 启动参数
      */
-    private void addProcessListener(LaunchOption options) {
-        BrowserListener<Object> exitListener = new BrowserListener<>() {
+    private void addProcessListener(LaunchOptions options) {
+        DefaultBrowserListener<Object> exitListener = new DefaultBrowserListener<>() {
             @Override
             public void onBrowserEvent(Object event) {
                 Runner runner = (Runner) this.getTarget();
@@ -129,7 +135,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         this.listeners.add(Builder.addEventListener(this, exitListener.getMethod(), exitListener));
 
         if (options.getHandleSIGINT()) {
-            BrowserListener<Object> sigintListener = new BrowserListener<>() {
+            DefaultBrowserListener<Object> sigintListener = new DefaultBrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -142,7 +148,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         }
 
         if (options.getHandleSIGTERM()) {
-            BrowserListener<Object> sigtermListener = new BrowserListener<>() {
+            DefaultBrowserListener<Object> sigtermListener = new DefaultBrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -155,7 +161,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
         }
 
         if (options.getHandleSIGHUP()) {
-            BrowserListener<Object> sighubListener = new BrowserListener<>() {
+            DefaultBrowserListener<Object> sighubListener = new DefaultBrowserListener<>() {
                 @Override
                 public void onBrowserEvent(Object event) {
                     Runner runner = (Runner) this.getTarget();
@@ -173,10 +179,25 @@ public class Runner extends EventEmitter implements AutoCloseable {
      */
     public void kill() {
         this.destroyForcibly();
+        //delete user-data-dir
         try {
             if (StringKit.isNotEmpty(tempDirectory)) {
                 removeFolderByCmd(tempDirectory);
+//                FileUtil.removeFolder(tempDirectory);
+                //同时把以前没删除干净的文件夹也重新删除一遍
+//                Stream<Path> remainTempDirectories = Files.list(Paths.get(tempDirectory).getParent());
+//                remainTempDirectories.forEach(path -> {
+//                    if (path.getFileName().toString().startsWith(Builder.PROFILE_PREFIX)) {
+////                        FileUtil.removeFolder(path.toString());
+//                        try {
+//                            removeFolderByCmd(path.toString());
+//                        } catch (IOException | InterruptedException e) {
+//
+//                        }
+//                    }
+//                });
             }
+
         } catch (Exception e) {
             Logger.error("kill chrome process error ", e);
         }
@@ -224,9 +245,9 @@ public class Runner extends EventEmitter implements AutoCloseable {
      * @param connectionOptions 链接选项
      * @return
      */
-    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio, ConnectionOption connectionOptions) throws InterruptedException {
+    public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio, ConnectionOptions connectionOptions) throws InterruptedException {
         Connection connection = this.setUpConnection(usePipe, timeout, slowMo, dumpio);
-        connection.setConnectionOption(connectionOptions);
+        connection.setConnectionOptions(connectionOptions);
         return connection;
     }
 
@@ -243,11 +264,18 @@ public class Runner extends EventEmitter implements AutoCloseable {
     public Connection setUpConnection(boolean usePipe, int timeout, int slowMo, boolean dumpio) throws InterruptedException {
         if (usePipe) {
             // pipe connection
-            throw new InternalException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea");
+            /*
+            throw new LaunchException("Temporarily not supported pipe connect to chromuim.If you have a pipe connect to chromium idea,pleaze new a issue in github:https://github.com/aoju/lancia/issues");
+            InputStream pipeRead = this.getProcess().getInputStream();
+            OutputStream pipeWrite = this.getProcess().getOutputStream();
+            PipeTransport transport = new PipeTransport(pipeRead, pipeWrite);
+            this.connection = new Connection("", transport, slowMo);
+            */
         } else {
-            // websoket connection
+            /// websoket connection
             String waitForWSEndpoint = waitForWSEndpoint(timeout, dumpio);
-            this.connection = new Connection(waitForWSEndpoint, TransportFactory.create(waitForWSEndpoint), slowMo);
+            Transport transport = TransportFactory.create(waitForWSEndpoint);
+            this.connection = new Connection(waitForWSEndpoint, transport, slowMo);
             Logger.info("Connect to browser by websocket url: " + waitForWSEndpoint);
         }
         return this.connection;
@@ -351,11 +379,11 @@ public class Runner extends EventEmitter implements AutoCloseable {
         private final AtomicBoolean success = new AtomicBoolean(false);
         private final AtomicReference<String> chromeOutput = new AtomicReference<>("");
 
-        private int timeout;
+        private final int timeout;
 
-        private boolean dumpio;
+        private final boolean dumpio;
 
-        private InputStream inputStream;
+        private final InputStream inputStream;
 
         private Thread readThread;
 
@@ -407,7 +435,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
                     if (readThread != null) {
                         readThread = null;
                     }
-                    throw new InternalException(
+                    throw new TimeoutException(
                             "Timed out after " + timeout + " ms while trying to connect to the browser!"
                                     + "Chrome output: "
                                     + chromeOutput.get());
@@ -420,7 +448,7 @@ public class Runner extends EventEmitter implements AutoCloseable {
             }
             String url = ws.toString();
             if (StringKit.isEmpty(url)) {
-                throw new InternalException("Can't get WSEndpoint");
+                throw new LaunchException("Can't get WSEndpoint");
             }
             return url;
         }

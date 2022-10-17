@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -26,8 +26,6 @@
 package org.aoju.lancia.nimble.runtime;
 
 /**
- * 当上下文被取消时发出
- *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
@@ -38,7 +36,7 @@ public class BindingCalledPayload {
 
     private String payload;
     /**
-     * 进行调用的上下文的标识符
+     * Identifier of the context where the call was made.
      */
     private int executionContextId;
 

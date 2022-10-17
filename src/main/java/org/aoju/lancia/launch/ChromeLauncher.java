@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -28,9 +28,6 @@ package org.aoju.lancia.launch;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
-import org.aoju.bus.core.lang.Http;
-import org.aoju.bus.core.lang.Normal;
-import org.aoju.bus.core.exception.InternalException;
 import org.aoju.bus.core.toolkit.CollKit;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.bus.logger.Logger;
@@ -40,13 +37,14 @@ import org.aoju.lancia.Launcher;
 import org.aoju.lancia.kernel.browser.Fetcher;
 import org.aoju.lancia.kernel.browser.Revision;
 import org.aoju.lancia.kernel.browser.Runner;
-import org.aoju.lancia.option.BrowserOption;
-import org.aoju.lancia.option.ChromeOption;
-import org.aoju.lancia.option.FetcherOption;
-import org.aoju.lancia.option.LaunchOption;
+import org.aoju.lancia.option.BrowserOptions;
+import org.aoju.lancia.option.ChromeArgOptions;
+import org.aoju.lancia.option.FetcherOptions;
+import org.aoju.lancia.option.LaunchOptions;
 import org.aoju.lancia.worker.Connection;
 import org.aoju.lancia.worker.Transport;
 import org.aoju.lancia.worker.TransportFactory;
+import org.aoju.lancia.worker.exception.LaunchException;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -75,6 +73,10 @@ public class ChromeLauncher implements Launcher {
 
     private String preferredRevision;
 
+    public ChromeLauncher() {
+
+    }
+
     public ChromeLauncher(String projectRoot, String preferredRevision, boolean isPuppeteerCore) {
         super();
         this.projectRoot = projectRoot;
@@ -82,12 +84,8 @@ public class ChromeLauncher implements Launcher {
         this.isPuppeteerCore = isPuppeteerCore;
     }
 
-    public ChromeLauncher() {
-
-    }
-
     @Override
-    public Browser launch(LaunchOption options) throws IOException {
+    public Browser launch(LaunchOptions options) throws IOException {
         String temporaryUserDataDir = null;
         List<String> chromeArguments = defaultArgs(options);
 
@@ -116,10 +114,10 @@ public class ChromeLauncher implements Launcher {
         boolean usePipe = chromeArguments.contains("--remote-debugging-pipe");
 
         Logger.trace("Calling " + chromeExecutable + String.join(" ", chromeArguments));
-        Runner runner = new Runner(chromeExecutable, chromeArguments, temporaryUserDataDir);
+        Runner runner = new Runner(chromeExecutable, chromeArguments, temporaryUserDataDir);//
         try {
             runner.start(options);
-            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo(), options.getDumpio(), options.getConnectionOption());
+            Connection connection = runner.setUpConnection(usePipe, options.getTimeout(), options.getSlowMo(), options.getDumpio(), options.getConnectionOptions());
             Function<Object, Object> closeCallback = (s) -> {
                 runner.closeQuietly();
                 return null;
@@ -129,7 +127,7 @@ public class ChromeLauncher implements Launcher {
             return browser;
         } catch (IOException | InterruptedException e) {
             runner.kill();
-            throw new InternalException("Failed to launch the browser process:" + e.getMessage(), e);
+            throw new LaunchException("Failed to launch the browser process:" + e.getMessage(), e);
         }
     }
 
@@ -140,9 +138,9 @@ public class ChromeLauncher implements Launcher {
      * @return 默认的启动参数
      */
     @Override
-    public List<String> defaultArgs(ChromeOption options) {
+    public List<String> defaultArgs(ChromeArgOptions options) {
         List<String> chromeArguments = new ArrayList<>();
-        LaunchOption launchOptions;
+        LaunchOptions launchOptions;
         if (StringKit.isNotEmpty(options.getUserDataDir())) {
             chromeArguments.add("--user-data-dir=" + options.getUserDataDir());
         }
@@ -162,8 +160,8 @@ public class ChromeLauncher implements Launcher {
             chromeArguments.add("about:blank");
             chromeArguments.addAll(args);
         }
-        if (options instanceof LaunchOption) {
-            launchOptions = (LaunchOption) options;
+        if (options instanceof LaunchOptions) {
+            launchOptions = (LaunchOptions) options;
             if (!launchOptions.getIgnoreAllDefaultArgs()) {
                 chromeArguments.addAll(Builder.DEFAULT_ARGS);
             }
@@ -180,13 +178,13 @@ public class ChromeLauncher implements Launcher {
     @Override
     public String resolveExecutablePath(String chromeExecutable) throws IOException {
         boolean puppeteerCore = getIsPuppeteerCore();
-        FetcherOption fetcherOption = new FetcherOption();
-        fetcherOption.setProduct(this.product());
-        Fetcher fetcher = new Fetcher(this.projectRoot, fetcherOption);
+        FetcherOptions fetcherOptions = new FetcherOptions();
+        fetcherOptions.setProduct(this.product());
+        Fetcher fetcher = new Fetcher(this.projectRoot, fetcherOptions);
         if (!puppeteerCore) {
             // 指定了启动路径，则启动指定路径的chrome
             if (StringKit.isNotEmpty(chromeExecutable)) {
-                boolean assertDir = Builder.isExecutable(Paths.get(chromeExecutable).normalize().toAbsolutePath().toString());
+                boolean assertDir = Builder.assertExecutable(Paths.get(chromeExecutable).normalize().toAbsolutePath().toString());
                 if (!assertDir) {
                     throw new IllegalArgumentException("given chromeExecutable \"" + chromeExecutable + "\" is not executable");
                 }
@@ -196,7 +194,7 @@ public class ChromeLauncher implements Launcher {
             for (int i = 0; i < Builder.EXECUTABLE_ENV.length; i++) {
                 chromeExecutable = VARIABLES.getEnv(Builder.EXECUTABLE_ENV[i]);
                 if (StringKit.isNotEmpty(chromeExecutable)) {
-                    boolean assertDir = Builder.isExecutable(chromeExecutable);
+                    boolean assertDir = Builder.assertExecutable(chromeExecutable);
                     if (!assertDir) {
                         throw new IllegalArgumentException("given chromeExecutable is not is not executable");
                     }
@@ -205,11 +203,11 @@ public class ChromeLauncher implements Launcher {
             }
 
             // 环境变量中配置了chrome版本，就用环境变量中的版本
-            String revision = VARIABLES.getEnv(Builder.PUPPETEER_CHROMIUM_REVISION_ENV);
+            String revision = VARIABLES.getEnv(Builder.PUPPETEER_CHROMIUM_REVISION);
             if (StringKit.isNotEmpty(revision)) {
                 Revision revisionInfo = fetcher.revisionInfo(revision);
                 if (!revisionInfo.isLocal()) {
-                    throw new InternalException(
+                    throw new LaunchException(
                             "Tried to use PUPPETEER_CHROMIUM_REVISION env variable to launch browser but did not find executable at: "
                                     + revisionInfo.getExecutablePath());
                 }
@@ -221,7 +219,7 @@ public class ChromeLauncher implements Launcher {
                 localRevisions.sort(Comparator.reverseOrder());
                 Revision revisionInfo = fetcher.revisionInfo(localRevisions.get(0));
                 if (!revisionInfo.isLocal()) {
-                    throw new InternalException(
+                    throw new LaunchException(
                             "Tried to use PUPPETEER_CHROMIUM_REVISION env variable to launch browser but did not find executable at: "
                                     + revisionInfo.getExecutablePath());
                 }
@@ -232,7 +230,7 @@ public class ChromeLauncher implements Launcher {
             for (int i = 0; i < Builder.PROBABLE_CHROME_EXECUTABLE_PATH.length; i++) {
                 chromeExecutable = Builder.PROBABLE_CHROME_EXECUTABLE_PATH[i];
                 if (StringKit.isNotEmpty(chromeExecutable)) {
-                    boolean assertDir = Builder.isExecutable(chromeExecutable);
+                    boolean assertDir = Builder.assertExecutable(chromeExecutable);
                     if (assertDir) {
                         return chromeExecutable;
                     }
@@ -242,21 +240,21 @@ public class ChromeLauncher implements Launcher {
 
         Revision revision = fetcher.revisionInfo(this.preferredRevision);
         if (!revision.isLocal())
-            throw new InternalException(MessageFormat.format("Could not find browser revision {0}. Pleaze download a browser binary.", this.preferredRevision));
+            throw new LaunchException(MessageFormat.format("Could not find browser revision {0}. Pleaze download a browser binary.", this.preferredRevision));
         return revision.getExecutablePath();
     }
 
     @Override
-    public Browser connect(BrowserOption options, String browserWSEndpoint, String browserURL, Transport transport) {
+    public Browser connect(BrowserOptions options, String browserWSEndpoint, String browserURL, Transport transport) {
         final Connection connection;
         try {
             if (transport != null) {
-                connection = new Connection(Normal.EMPTY, transport, options.getSlowMo(), options.getConnectionOption());
+                connection = new Connection("", transport, options.getSlowMo(), options.getConnectionOptions());
             } else if (StringKit.isNotEmpty(browserWSEndpoint)) {
-                connection = new Connection(browserWSEndpoint, TransportFactory.create(browserWSEndpoint), options.getSlowMo(), options.getConnectionOption());
+                connection = new Connection(browserWSEndpoint, TransportFactory.create(browserWSEndpoint), options.getSlowMo(), options.getConnectionOptions());
             } else if (StringKit.isNotEmpty(browserURL)) {
                 String connectionURL = getWSEndpoint(browserURL);
-                connection = new Connection(connectionURL, TransportFactory.create(connectionURL), options.getSlowMo(), options.getConnectionOption());
+                connection = new Connection(connectionURL, TransportFactory.create(connectionURL), options.getSlowMo(), options.getConnectionOptions());
             } else {
                 throw new IllegalArgumentException("Exactly one of browserWSEndpoint, browserURL or transport must be passed to puppeteer.connect");
             }
@@ -273,19 +271,22 @@ public class ChromeLauncher implements Launcher {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     /**
-     * 通过格式为 http://${host}:${port} 的地址发送 GET 请求获取浏览器的 WebSocket 连接端点
+     * 通过格式为 http://${host}:${port} 的地址发送 GET 请求获取浏览器的 Sockets 连接端点
      *
      * @param browserURL 浏览器地址
-     * @return WebSocket 连接端点
+     * @return Sockets 连接端点
      * @throws IOException 请求出错
      */
     private String getWSEndpoint(String browserURL) throws IOException {
-        URL url = URI.create(browserURL).resolve("/json/version").toURL();
+        URI uri = URI.create(browserURL).resolve("/json/version");
+        URL url = uri.toURL();
+
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod(Http.GET);
+        conn.setRequestMethod("GET");
         conn.connect();
         int responseCode = conn.getResponseCode();
         if (responseCode != HttpURLConnection.HTTP_OK) {

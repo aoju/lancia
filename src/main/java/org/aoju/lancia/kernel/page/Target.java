@@ -2,7 +2,7 @@
  *                                                                               *
  * The MIT License (MIT)                                                         *
  *                                                                               *
- * Copyright (c) 2015-2021 aoju.org and other contributors.                      *
+ * Copyright (c) 2015-2022 aoju.org and other contributors.                      *
  *                                                                               *
  * Permission is hereby granted, free of charge, to any person obtaining a copy  *
  * of this software and associated documentation files (the "Software"), to deal *
@@ -25,11 +25,11 @@
  ********************************************************************************/
 package org.aoju.lancia.kernel.page;
 
-import org.aoju.bus.core.lang.Normal;
 import org.aoju.bus.core.toolkit.StringKit;
 import org.aoju.lancia.Browser;
-import org.aoju.lancia.Page;
 import org.aoju.lancia.Builder;
+import org.aoju.lancia.Page;
+import org.aoju.lancia.events.Events;
 import org.aoju.lancia.kernel.browser.Context;
 import org.aoju.lancia.worker.CDPSession;
 import org.aoju.lancia.worker.SessionFactory;
@@ -53,19 +53,26 @@ public class Target {
 
     private TargetInfo targetInfo;
 
+
     private Context context;
+
 
     private boolean ignoreHTTPSErrors;
 
+
     private Viewport viewport;
+
 
     private TaskQueue<String> screenshotTaskQueue;
 
     private String targetId;
 
+
     private Page pagePromise;
 
+
     private Worker workerPromise;
+
 
     private boolean isInitialized;
 
@@ -120,9 +127,10 @@ public class Target {
         return this.workerPromise;
     }
 
+
     public void closedCallback() {
         if (pagePromise != null) {
-            this.pagePromise.emit(Builder.Event.PAGE_CLOSE.getName(), null);
+            this.pagePromise.emit(Events.PAGE_CLOSE.getName(), null);
             this.pagePromise.setClosed(true);
         }
         this.isClosedPromiseLatch.countDown();
@@ -170,12 +178,12 @@ public class Target {
                 return true;
             }
             Page openerPage = opener.getPagePromise();
-            if (openerPage.getListenerCount(Builder.Event.PAGE_POPUP.getName()) <= 0) {
+            if (openerPage.getListenerCount(Events.PAGE_POPUP.getName()) <= 0) {
                 this.initializedPromise = true;
                 return true;
             }
             Page pupopPage = this.page();
-            pupopPage.emit(Builder.Event.PAGE_POPUP.getName(), pupopPage);
+            pupopPage.emit(Events.PAGE_POPUP.getName(), pupopPage);
             this.initializedPromise = true;
             return true;
         } finally {
@@ -308,7 +316,7 @@ public class Target {
 
     public void targetInfoChanged(TargetInfo targetInfo) {
         this.targetInfo = targetInfo;
-        if (!this.isInitialized && (!"page".equals(this.targetInfo.getType()) || !Normal.EMPTY.equals(this.targetInfo.getUrl()))) {
+        if (!this.isInitialized && (!"page".equals(this.targetInfo.getType()) || !"".equals(this.targetInfo.getUrl()))) {
             this.isInitialized = true;
             this.initializedCallback(true);
         }
