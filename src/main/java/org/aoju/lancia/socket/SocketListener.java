@@ -31,6 +31,10 @@ import java.net.InetSocketAddress;
 
 /**
  * 由WebSocketClient实现。其中的方法由WebSocket调用。几乎每个方法都接受第一个参数conn，它表示各自事件的源。
+ *
+ * @author Kimi Liu
+ * @version 1.2.8
+ * @since JDK 1.8+
  */
 public interface SocketListener {
 

@@ -25,56 +25,30 @@
  ********************************************************************************/
 package org.aoju.lancia.socket;
 
-import org.aoju.bus.core.lang.Normal;
-
-import java.util.regex.Pattern;
-
 /**
- * Class which represents the protocol used as Sec-Sockets-SocketProtocol
+ * 枚举，表示websocket可能处于的状态
  *
  * @author Kimi Liu
  * @version 1.2.8
  * @since JDK 1.8+
  */
-public class SocketProtocol {
+public enum ReadyState {
 
     /**
-     * Attribute for the provided protocol
+     * 没有连接
      */
-    private final String provided;
-
+    NOT_YET_CONNECTED,
     /**
-     * Constructor for a Sec-Websocket-SocketProtocol
-     *
-     * @param provided the protocol string
+     * 打开
      */
-    public SocketProtocol(String provided) {
-        if (provided == null) {
-            throw new IllegalArgumentException();
-        }
-        this.provided = provided;
-    }
-
-    public boolean accept(String inputProtocolHeader) {
-        if (Normal.EMPTY.equals(provided)) {
-            return true;
-        }
-        String protocolHeader = Pattern.compile(" ").matcher(inputProtocolHeader).replaceAll("");
-        String[] headers = Pattern.compile(",").split(protocolHeader);
-        for (String header : headers) {
-            if (provided.equals(header)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public String getProvided() {
-        return this.provided;
-    }
-
-    public SocketProtocol copyInstance() {
-        return new SocketProtocol(getProvided());
-    }
+    OPEN,
+    /**
+     * 关闭中
+     */
+    CLOSING,
+    /**
+     * 关闭
+     */
+    CLOSED
 
 }

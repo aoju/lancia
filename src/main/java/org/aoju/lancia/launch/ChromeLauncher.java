@@ -202,7 +202,7 @@ public class ChromeLauncher implements Launcher {
             }
 
             // 环境变量中配置了chrome版本，就用环境变量中的版本
-            String revision = VARIABLES.getEnv(Builder.PUPPETEER_CHROMIUM_REVISION_ENV);
+            String revision = VARIABLES.getEnv(Builder.PUPPETEER_CHROMIUM_REVISION);
             if (StringKit.isNotEmpty(revision)) {
                 Revision revisionInfo = fetcher.revisionInfo(revision);
                 if (!revisionInfo.isLocal()) {

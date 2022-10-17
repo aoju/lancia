@@ -79,35 +79,6 @@ import java.util.regex.Pattern;
  */
 public class Builder {
 
-    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
-        private static final long serialVersionUID = -6918778699407093058L;
-
-        {
-            put("chrome", new HashMap<>() {
-                private static final long serialVersionUID = 3441562966233820720L;
-
-                {
-                    put("host", "https://npm.taobao.org/mirrors");
-                    put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
-                    put("mac", "%s/chromium-browser-snapshots/Mac/%s/%s.zip");
-                    put("win32", "%s/chromium-browser-snapshots/Win/%s/%s.zip");
-                    put("win64", "%s/chromium-browser-snapshots/Win_x64/%s/%s.zip");
-                }
-            });
-            put("firefox", new HashMap<>() {
-                private static final long serialVersionUID = 2053771138227029401L;
-
-                {
-                    put("host", "https://github.com/puppeteer/juggler/releases");
-                    put("linux", "%s/download/%s/%s.zip");
-                    put("mac", "%s/download/%s/%s.zip");
-                    put("win32", "%s/download/%s/%s.zip");
-                    put("win64", "%s/download/%s/%s.zip");
-                }
-            });
-        }
-    };
-
     /**
      * 指定版本
      */
@@ -117,29 +88,25 @@ public class Builder {
      */
     public static final String PROFILE_PREFIX = "puppeteer_dev_chrome_profile-";
     /**
+     * 把浏览器版本存放到环境变量的字段
+     */
+    public static final String PUPPETEER_CHROMIUM_REVISION = "PUPPETEER_CHROMIUM_REVISION";
+    /**
      * 把产品存放到环境变量的所有可用字段
      */
     public static final String[] PRODUCT_ENV = {
-            "PUPPETEER_PRODUCT", "java_config_puppeteer_product", "java_package_config_puppeteer_product"
+            "PUPPETEER_PRODUCT",
+            "java_config_puppeteer_product",
+            "java_package_config_puppeteer_product"
     };
-
     /**
      * 把浏览器执行路径存放到环境变量的所有可用字段
      */
     public static final String[] EXECUTABLE_ENV = {
-            "PUPPETEER_EXECUTABLE_PATH", "java_config_puppeteer_executable_path", "java_package_config_puppeteer_executable_path"
+            "PUPPETEER_EXECUTABLE_PATH",
+            "java_config_puppeteer_executable_path",
+            "java_package_config_puppeteer_executable_path"
     };
-
-    /**
-     * 把浏览器版本存放到环境变量的字段
-     */
-    public static final String PUPPETEER_CHROMIUM_REVISION_ENV = "PUPPETEER_CHROMIUM_REVISION";
-
-    /**
-     * 读取流中的数据的buffer size
-     */
-    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
-
     /**
      * 启动浏览器时，如果没有指定路径，那么会从以下路径搜索可执行的路径
      */
@@ -214,32 +181,6 @@ public class Builder {
             .setVisibility(PropertyAccessor.FIELD, Visibility.ANY)
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
-    /**
-     * 从浏览器的websocket接受到消息中有以下这些字段，在处理消息用到这些字段
-     */
-    public static final String RECV_MESSAGE_METHOD_PROPERTY = "method";
-    public static final String RECV_MESSAGE_PARAMS_PROPERTY = "params";
-    public static final String RECV_MESSAGE_ID_PROPERTY = "id";
-    public static final String RECV_MESSAGE_RESULT_PROPERTY = "result";
-    public static final String RECV_MESSAGE_SESSION_ID_PROPERTY = "sessionId";
-    public static final String RECV_MESSAGE_TARGETINFO_PROPERTY = "targetInfo";
-    public static final String RECV_MESSAGE_TYPE_PROPERTY = "type";
-    public static final String RECV_MESSAGE_ERROR_PROPERTY = "error";
-    public static final String RECV_MESSAGE_ERROR_MESSAGE_PROPERTY = "message";
-    public static final String RECV_MESSAGE_ERROR_DATA_PROPERTY = "data";
-    public static final String RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY = "targetId";
-    public static final String RECV_MESSAGE_STREAM_PROPERTY = "stream";
-    public static final String RECV_MESSAGE_STREAM_EOF_PROPERTY = "eof";
-    public static final String RECV_MESSAGE_STREAM_DATA_PROPERTY = "data";
-    public static final String RECV_MESSAGE_BASE64ENCODED_PROPERTY = "base64Encoded";
-
-
-    /**
-     * 默认的超时时间：启动浏览器实例超时，websocket接受消息超时等
-     */
-    public static final int DEFAULT_TIMEOUT = 30000;
-
     /**
      * 追踪信息的默认分类
      */
@@ -263,6 +204,47 @@ public class Builder {
     };
 
     /**
+     * 从浏览器的websocket接受到消息中有以下这些字段，在处理消息用到这些字段
+     */
+    public static final String RECV_MESSAGE_METHOD_PROPERTY = "method";
+    public static final String RECV_MESSAGE_PARAMS_PROPERTY = "params";
+    public static final String RECV_MESSAGE_ID_PROPERTY = "id";
+    public static final String RECV_MESSAGE_RESULT_PROPERTY = "result";
+    public static final String RECV_MESSAGE_SESSION_ID_PROPERTY = "sessionId";
+    public static final String RECV_MESSAGE_TARGETINFO_PROPERTY = "targetInfo";
+    public static final String RECV_MESSAGE_TYPE_PROPERTY = "type";
+    public static final String RECV_MESSAGE_ERROR_PROPERTY = "error";
+    public static final String RECV_MESSAGE_ERROR_MESSAGE_PROPERTY = "message";
+    public static final String RECV_MESSAGE_ERROR_DATA_PROPERTY = "data";
+    public static final String RECV_MESSAGE_TARFETINFO_TARGETID_PROPERTY = "targetId";
+    public static final String RECV_MESSAGE_STREAM_PROPERTY = "stream";
+    public static final String RECV_MESSAGE_STREAM_EOF_PROPERTY = "eof";
+    public static final String RECV_MESSAGE_STREAM_DATA_PROPERTY = "data";
+    public static final String RECV_MESSAGE_BASE64ENCODED_PROPERTY = "base64Encoded";
+
+    /**
+     * 读取流中的数据的buffer size
+     */
+    public static final int DEFAULT_BUFFER_SIZE = 8 * 1024;
+
+    public static final String NONE = "NONE";
+    public static final String ONEWAY = "ONEWAY";
+    public static final String TWOWAY = "TWOWAY";
+
+    public static final String MATCHED = "MATCHED";
+    public static final String NOT_MATCHED = "NOT_MATCHED";
+    public static final String CONTINUOUS = "CONTINUOUS";
+    public static final String TEXT = "TEXT";
+    public static final String BINARY = "BINARY";
+    public static final String PING = "PING";
+    public static final String PONG = "PONG";
+    public static final String CLOSING = "CLOSING";
+
+    /**
+     * 默认的超时时间：启动浏览器实例超时，websocket接受消息超时等
+     */
+    public static final int DEFAULT_TIMEOUT = 30000;
+    /**
      * 内置线程池的数量
      */
     public static final String COMMONT_THREAD_POOL_NUM = "common_thread_number";
@@ -274,7 +256,7 @@ public class Builder {
      * 连接超时设置
      */
     public static final int CONNECT_TIME_OUT = 10000;
-    private static final Map<String, QueryHandler> customQueryHandlers = new HashMap<>();
+
     /**
      * 线程池数量
      */
@@ -288,11 +270,40 @@ public class Builder {
      */
     private static final int RETRY_TIMES = 5;
     private static final String FAIL_RESULT = "-1";
+    public static final Map<String, Map<String, String>> DOWNLOAD_URL = new HashMap<>() {
+        private static final long serialVersionUID = -6918778699407093058L;
+
+        {
+            put("chrome", new HashMap<>() {
+                private static final long serialVersionUID = 3441562966233820720L;
+
+                {
+                    put("host", "https://npm.taobao.org/mirrors");
+                    put("linux", "%s/chromium-browser-snapshots/Linux_x64/%s/%s.zip");
+                    put("mac", "%s/chromium-browser-snapshots/Mac/%s/%s.zip");
+                    put("win32", "%s/chromium-browser-snapshots/Win/%s/%s.zip");
+                    put("win64", "%s/chromium-browser-snapshots/Win_x64/%s/%s.zip");
+                }
+            });
+            put("firefox", new HashMap<>() {
+                private static final long serialVersionUID = 2053771138227029401L;
+
+                {
+                    put("host", "https://github.com/puppeteer/juggler/releases");
+                    put("linux", "%s/download/%s/%s.zip");
+                    put("mac", "%s/download/%s/%s.zip");
+                    put("win32", "%s/download/%s/%s.zip");
+                    put("win64", "%s/download/%s/%s.zip");
+                }
+            });
+        }
+    };
 
     /**
      * 单线程，一个浏览器只能有一个trcing 任务
      */
     private static ExecutorService COMMON_EXECUTOR = null;
+    private static final Map<String, QueryHandler> QUERY_HANDLER = new HashMap<>();
 
     public static final String toString(InputStream in) throws IOException {
         StringWriter wirter = null;
@@ -325,22 +336,22 @@ public class Builder {
     }
 
     public static void registerCustomQueryHandler(String name, QueryHandler handler) {
-        if (customQueryHandlers.containsKey(name))
+        if (QUERY_HANDLER.containsKey(name))
             throw new RuntimeException("A custom query handler named " + name + " already exists");
         Pattern pattern = Pattern.compile("^[a-zA-Z]+$");
         Matcher isValidName = pattern.matcher(name);
         if (!isValidName.matches())
             throw new IllegalArgumentException("Custom query handler names may only contain [a-zA-Z]");
 
-        customQueryHandlers.put(name, handler);
+        QUERY_HANDLER.put(name, handler);
     }
 
     public static final void unregisterCustomQueryHandler(String name) {
-        customQueryHandlers.remove(name);
+        QUERY_HANDLER.remove(name);
     }
 
     public static Map<String, QueryHandler> customQueryHandlers() {
-        return customQueryHandlers;
+        return QUERY_HANDLER;
     }
 
     public static QuerySelector getQueryHandlerAndSelector(String selector, String defaultQueryHandler) {
@@ -883,42 +894,7 @@ public class Builder {
     }
 
     public void clearQueryHandlers() {
-        customQueryHandlers.clear();
-    }
-
-    /**
-     * Enum which represents type of handshake is required for a close
-     */
-    public enum CloseHandshakeType {
-        NONE, ONEWAY, TWOWAY
-    }
-
-    /**
-     * Enum which represents the states a handshake may be in
-     */
-    public enum HandshakeState {
-        /**
-         * Handshake matched this Draft successfully
-         */
-        MATCHED,
-        /**
-         * Handshake is does not match this Draft
-         */
-        NOT_MATCHED
-    }
-
-    /**
-     * Enum which contains the different valid opcodes
-     */
-    public enum Opcode {
-        CONTINUOUS, TEXT, BINARY, PING, PONG, CLOSING
-    }
-
-    /**
-     * Enum which represents the state a websocket may be in
-     */
-    public enum ReadyState {
-        NOT_YET_CONNECTED, OPEN, CLOSING, CLOSED
+        QUERY_HANDLER.clear();
     }
 
     static class DownloadCallable implements Callable<String> {

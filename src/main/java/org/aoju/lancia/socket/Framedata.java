@@ -148,7 +148,7 @@ public class Framedata {
     /**
      * Defines the interpretation of the "Payload data".
      */
-    private final Builder.Opcode optcode;
+    private final String optcode;
     /**
      * Indicates that this is the final fragment in a message.
      */
@@ -189,7 +189,7 @@ public class Framedata {
      *
      * @param op the opcode to use
      */
-    public Framedata(Builder.Opcode op) {
+    public Framedata(String op) {
         optcode = op;
         unmaskedpayload = ByteBuffer.allocate(0);
         fin = true;
@@ -204,12 +204,12 @@ public class Framedata {
      * @param opcode the opcode representing the frame
      * @return the frame with a specific opcode
      */
-    public static Framedata get(Builder.Opcode opcode) {
+    public static Framedata get(String opcode) {
         if (opcode == null) {
             throw new IllegalArgumentException("Supplied opcode cannot be null");
         }
-        if (opcode == Builder.Opcode.TEXT) {
-            return new Framedata(Builder.Opcode.TEXT);
+        if (Builder.TEXT.equals(opcode)) {
+            return new Framedata(Builder.TEXT);
         }
         throw new IllegalArgumentException("Supplied opcode is invalid");
     }
@@ -330,7 +330,7 @@ public class Framedata {
         this.fin = fin;
     }
 
-    public Builder.Opcode getOpcode() {
+    public String getOpcode() {
         return optcode;
     }
 

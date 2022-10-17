@@ -68,6 +68,9 @@ import java.util.stream.Collectors;
  */
 public class Browser extends EventEmitter {
 
+    /**
+     * 当前实例
+     */
     public static Browser INSTANCE;
     /**
      * 浏览器对应的websocket client包装类，用于发送和接受消息

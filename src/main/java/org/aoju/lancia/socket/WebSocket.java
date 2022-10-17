@@ -25,12 +25,15 @@
  ********************************************************************************/
 package org.aoju.lancia.socket;
 
-import org.aoju.lancia.Builder;
-
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
+/**
+ * @author Kimi Liu
+ * @version 1.2.8
+ * @since JDK 1.8+
+ */
 public interface WebSocket {
 
     /**
@@ -96,12 +99,12 @@ public interface WebSocket {
      * If the first frame you send is also the last then it is not a fragmented frame and will
      * received via onMessage instead of onFragmented even though it was send by this method.
      *
-     * @param op     This is only important for the first frame in the sequence. Opcode.TEXT,
-     *               Opcode.BINARY are allowed.
+     * @param op     This is only important for the first frame in the sequence. TEXT,
+     *               BINARY are allowed.
      * @param buffer The buffer which contains the payload. It may have no bytes remaining.
      * @param fin    true means the current frame is the last in the sequence.
      **/
-    void sendFragmentedFrame(Builder.Opcode op, ByteBuffer buffer, boolean fin);
+    void sendFragmentedFrame(String op, ByteBuffer buffer, boolean fin);
 
     /**
      * Checks if the websocket has buffered data
@@ -161,7 +164,7 @@ public interface WebSocket {
      *
      * @return Returns '0 = CONNECTING', '1 = OPEN', '2 = CLOSING' or '3 = CLOSED'
      */
-    Builder.ReadyState getReadyState();
+    ReadyState getReadyState();
 
     /**
      * Getter for the connection attachment.
@@ -178,13 +181,5 @@ public interface WebSocket {
      * @param <T>        The type of the attachment
      **/
     <T> void setAttachment(T attachment);
-
-    /**
-     * Returns the used Sec-WebSocket-SocketProtocol for this websocket connection
-     *
-     * @return the Sec-WebSocket-SocketProtocol or null, if no draft available
-     * @throws IllegalArgumentException the underlying draft does not support a Sec-WebSocket-SocketProtocol
-     */
-    SocketProtocol getProtocol();
 
 }

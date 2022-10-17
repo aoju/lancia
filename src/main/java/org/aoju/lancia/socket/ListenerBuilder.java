@@ -37,6 +37,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Base class for additional implementations for the server as well as the client
+ *
+ * @author Kimi Liu
+ * @version 1.2.8
+ * @since JDK 1.8+
  */
 public abstract class ListenerBuilder implements SocketListener {
 

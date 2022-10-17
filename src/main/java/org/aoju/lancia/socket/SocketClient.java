@@ -25,7 +25,6 @@
  ********************************************************************************/
 package org.aoju.lancia.socket;
 
-import org.aoju.lancia.Builder;
 import org.aoju.lancia.worker.exception.SocketException;
 
 import javax.net.SocketFactory;
@@ -49,6 +48,10 @@ import java.util.concurrent.CountDownLatch;
  * <var>onMessage</var> to be useful. At runtime the user is expected to establish a connection via
  * {@link #connect()}, then receive events like {@link #onMessage(String)} via the overloaded
  * methods and to {@link #send(String)} data to the server.
+ *
+ * @author Kimi Liu
+ * @version 1.2.8
+ * @since JDK 1.8+
  */
 public abstract class SocketClient extends ListenerBuilder implements Runnable, WebSocket {
 
@@ -411,7 +414,7 @@ public abstract class SocketClient extends ListenerBuilder implements Runnable, 
     /**
      * This represents the state of the connection.
      */
-    public Builder.ReadyState getReadyState() {
+    public ReadyState getReadyState() {
         return engine.getReadyState();
     }
 
@@ -564,7 +567,7 @@ public abstract class SocketClient extends ListenerBuilder implements Runnable, 
     }
 
     @Override
-    public void sendFragmentedFrame(Builder.Opcode op, ByteBuffer buffer, boolean fin) {
+    public void sendFragmentedFrame(String op, ByteBuffer buffer, boolean fin) {
         engine.sendFragmentedFrame(op, buffer, fin);
     }
 
@@ -626,11 +629,6 @@ public abstract class SocketClient extends ListenerBuilder implements Runnable, 
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return engine.getRemoteSocketAddress();
-    }
-
-    @Override
-    public SocketProtocol getProtocol() {
-        return engine.getProtocol();
     }
 
     /**

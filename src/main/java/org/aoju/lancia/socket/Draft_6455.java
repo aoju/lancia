@@ -42,8 +42,7 @@ import java.security.SecureRandom;
 import java.util.*;
 
 /**
- * Implementation for the RFC 6455 websocket socketProtocol This is the recommended class for your
- * websocket connection
+ * RFC 6455网络套接字的实现这是网络套接符连接的推荐类
  *
  * @author Kimi Liu
  * @version 1.2.8
@@ -52,59 +51,45 @@ import java.util.*;
 public class Draft_6455 {
 
     /**
-     * HandshakeBuilder specific field for the key
+     * 密钥的HandshakeBuilder特定字段
      */
     private static final String SEC_WEB_SOCKET_KEY = "Sec-WebSocket-Key";
-
     /**
-     * HandshakeBuilder specific field for the socketProtocol
-     */
-    private static final String SEC_WEB_SOCKET_PROTOCOL = "Sec-WebSocket-SocketProtocol";
-
-    /**
-     * Handshake specific field for the extension
+     * 扩展的握手特定字段
      */
     private static final String SEC_WEB_SOCKET_EXTENSIONS = "Sec-WebSocket-Extensions";
 
     /**
-     * Handshake specific field for the accept
+     * 用于接受的握手特定字段
      */
     private static final String SEC_WEB_SOCKET_ACCEPT = "Sec-WebSocket-Accept";
 
     /**
-     * Handshake specific field for the upgrade
+     * 用于升级的握手特定字段
      */
     private static final String UPGRADE = "Upgrade";
 
     /**
-     * Handshake specific field for the connection
+     * 用于连接的握手特定字段
      */
     private static final String CONNECTION = "Connection";
     /**
-     * Attribute for the reusable random instance
+     * 可重用随机实例的属性
      */
     private final SecureRandom reuseableRandom = new SecureRandom();
     /**
-     * Attribute for all available extension in this draft
+     * 属性的所有可用扩展名
      */
     private final List<String> knownExtensions;
     /**
-     * Attribute for all available protocols in this draft
-     */
-    private final List<SocketProtocol> knownSocketProtocols;
-    /**
-     * Attribute for the maximum allowed size of a frame
+     * 属性的最大允许大小
      */
     private final int maxFrameSize;
-    protected Builder.Opcode continuousFrameType = null;
+    protected String continuousFrameType = null;
     /**
-     * Attribute for the used extension in this draft
+     * 属性用于本协议中使用的扩展
      */
     private String negotiatedExtension;
-    /**
-     * Attribute for the used socketProtocol in this draft
-     */
-    private SocketProtocol socketProtocol;
     /**
      * Attribute for the current incomplete frame
      */
@@ -118,41 +103,28 @@ public class Draft_6455 {
     }
 
     /**
-     * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions
+     * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions and
+     * protocols
      *
      * @param inputExtensions the extensions which should be used for this draft
      */
     public Draft_6455(List<String> inputExtensions) {
-        this(inputExtensions, Collections.singletonList(new SocketProtocol("")));
+        this(inputExtensions, Integer.MAX_VALUE);
     }
 
     /**
      * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions and
      * protocols
      *
-     * @param inputExtensions      the extensions which should be used for this draft
-     * @param inputSocketProtocols the protocols which should be used for this draft
+     * @param inputExtensions   the extensions which should be used for this draft
+     * @param inputMaxFrameSize the maximum allowed size of a frame (the real payload size, decoded
+     *                          frames can be bigger)
      */
-    public Draft_6455(List<String> inputExtensions, List<SocketProtocol> inputSocketProtocols) {
-        this(inputExtensions, inputSocketProtocols, Integer.MAX_VALUE);
-    }
-
-    /**
-     * Constructor for the websocket socketProtocol specified by RFC 6455 with custom extensions and
-     * protocols
-     *
-     * @param inputExtensions      the extensions which should be used for this draft
-     * @param inputSocketProtocols the protocols which should be used for this draft
-     * @param inputMaxFrameSize    the maximum allowed size of a frame (the real payload size, decoded
-     *                             frames can be bigger)
-     */
-    public Draft_6455(List<String> inputExtensions, List<SocketProtocol> inputSocketProtocols,
-                      int inputMaxFrameSize) {
-        if (inputExtensions == null || inputSocketProtocols == null || inputMaxFrameSize < 1) {
+    public Draft_6455(List<String> inputExtensions, int inputMaxFrameSize) {
+        if (inputExtensions == null || inputMaxFrameSize < 1) {
             throw new IllegalArgumentException();
         }
         knownExtensions = new ArrayList<>(inputExtensions.size());
-        knownSocketProtocols = new ArrayList<>(inputSocketProtocols.size());
         boolean hasDefault = false;
         for (String inputExtension : inputExtensions) {
             if (inputExtension.getClass().equals(String.class)) {
@@ -165,7 +137,6 @@ public class Draft_6455 {
         if (!hasDefault) {
             knownExtensions.add(this.knownExtensions.size(), negotiatedExtension);
         }
-        knownSocketProtocols.addAll(inputSocketProtocols);
         maxFrameSize = inputMaxFrameSize;
     }
 
@@ -265,36 +236,19 @@ public class Draft_6455 {
         return s;
     }
 
-    /**
-     * Check if the requested socketProtocol is part of this draft
-     *
-     * @param requestedProtocol the requested socketProtocol
-     * @return MATCHED if it is matched, otherwise NOT_MATCHED
-     */
-    private Builder.HandshakeState containsRequestedProtocol(String requestedProtocol) {
-        for (SocketProtocol knownSocketProtocol : knownSocketProtocols) {
-            if (knownSocketProtocol.accept(requestedProtocol)) {
-                socketProtocol = knownSocketProtocol;
-                Logger.trace("acceptHandshake - Matching socketProtocol found: {}", socketProtocol);
-                return Builder.HandshakeState.MATCHED;
-            }
-        }
-        return Builder.HandshakeState.NOT_MATCHED;
-    }
-
     protected boolean basicAccept(HandshakeBuilder handshake) {
         return handshake.getFieldValue("Upgrade").equalsIgnoreCase("websocket") && handshake.getFieldValue("Connection").toLowerCase(Locale.ENGLISH).contains("upgrade");
     }
 
-    public Builder.HandshakeState acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) {
+    public String acceptHandshakeAsClient(HandshakeBuilder request, HandshakeBuilder response) {
         if (!basicAccept(response)) {
             Logger.trace("acceptHandshakeAsClient - Missing/wrong upgrade or connection in handshake.");
-            return Builder.HandshakeState.NOT_MATCHED;
+            return Builder.NOT_MATCHED;
         }
         if (!request.hasFieldValue(SEC_WEB_SOCKET_KEY) || !response
                 .hasFieldValue(SEC_WEB_SOCKET_ACCEPT)) {
             Logger.trace("acceptHandshakeAsClient - Missing Sec-WebSocket-Key or Sec-WebSocket-Accept");
-            return Builder.HandshakeState.NOT_MATCHED;
+            return Builder.NOT_MATCHED;
         }
 
         String seckeyAnswer = response.getFieldValue(SEC_WEB_SOCKET_ACCEPT);
@@ -303,40 +257,20 @@ public class Draft_6455 {
 
         if (!seckeyChallenge.equals(seckeyAnswer)) {
             Logger.trace("acceptHandshakeAsClient - Wrong key for Sec-WebSocket-Key.");
-            return Builder.HandshakeState.NOT_MATCHED;
+            return Builder.NOT_MATCHED;
         }
-        Builder.HandshakeState extensionState = Builder.HandshakeState.NOT_MATCHED;
+        String extensionState = Builder.NOT_MATCHED;
         for (String knownExtension : knownExtensions) {
             negotiatedExtension = knownExtension;
-            extensionState = Builder.HandshakeState.MATCHED;
+            extensionState = Builder.MATCHED;
             Logger.trace("acceptHandshakeAsClient - Matching extension found: {}", negotiatedExtension);
             break;
         }
-        Builder.HandshakeState protocolState = containsRequestedProtocol(
-                response.getFieldValue(SEC_WEB_SOCKET_PROTOCOL));
-        if (protocolState == Builder.HandshakeState.MATCHED && extensionState == Builder.HandshakeState.MATCHED) {
-            return Builder.HandshakeState.MATCHED;
+        if (Builder.MATCHED.equals(extensionState)) {
+            return Builder.MATCHED;
         }
         Logger.trace("acceptHandshakeAsClient - No matching extension or socketProtocol found.");
-        return Builder.HandshakeState.NOT_MATCHED;
-    }
-
-    /**
-     * Getter for the socketProtocol which is used by this draft
-     *
-     * @return the socketProtocol which is used or null, if handshake is not yet done or no valid protocols
-     */
-    public SocketProtocol getProtocol() {
-        return socketProtocol;
-    }
-
-    /**
-     * Getter for all available protocols for this draft
-     *
-     * @return the protocols which are enabled for this draft
-     */
-    public List<SocketProtocol> getKnownProtocols() {
-        return knownSocketProtocols;
+        return Builder.NOT_MATCHED;
     }
 
     public HandshakeBuilder postProcessHandshakeRequestAsClient(
@@ -351,27 +285,11 @@ public class Draft_6455 {
         if (requestedExtensions.length() != 0) {
             request.put(SEC_WEB_SOCKET_EXTENSIONS, requestedExtensions.toString());
         }
-        StringBuilder requestedProtocols = new StringBuilder();
-        for (SocketProtocol knownSocketProtocol : knownSocketProtocols) {
-            if (knownSocketProtocol.getProvided().length() != 0) {
-                if (requestedProtocols.length() > 0) {
-                    requestedProtocols.append(", ");
-                }
-                requestedProtocols.append(knownSocketProtocol.getProvided());
-            }
-        }
-        if (requestedProtocols.length() != 0) {
-            request.put(SEC_WEB_SOCKET_PROTOCOL, requestedProtocols.toString());
-        }
         return request;
     }
 
     public Draft_6455 copyInstance() {
-        List<SocketProtocol> newSocketProtocols = new ArrayList<>();
-        for (SocketProtocol knownSocketProtocol : getKnownProtocols()) {
-            newSocketProtocols.add(knownSocketProtocol.copyInstance());
-        }
-        return new Draft_6455(new ArrayList<>(), newSocketProtocols, maxFrameSize);
+        return new Draft_6455(new ArrayList<>(), maxFrameSize);
     }
 
     public ByteBuffer createBinaryFrame(Framedata framedata) {
@@ -391,14 +309,14 @@ public class Draft_6455 {
         return createHandshake(handshake, true);
     }
 
-    public List<Framedata> continuousFrame(Builder.Opcode op, ByteBuffer buffer, boolean fin) {
-        if (op != Builder.Opcode.BINARY && op != Builder.Opcode.TEXT) {
-            throw new IllegalArgumentException("Only Opcode.BINARY or  Opcode.TEXT are allowed");
+    public List<Framedata> continuousFrame(String type, ByteBuffer buffer, boolean fin) {
+        if (!Builder.BINARY.equals(type) && !Builder.TEXT.equals(type)) {
+            throw new IllegalArgumentException("Only BINARY or TEXT are allowed");
         }
         Framedata bui = null;
-        continuousFrameType = op;
-        if (op == Builder.Opcode.TEXT) {
-            bui = new Framedata(Builder.Opcode.TEXT);
+        continuousFrameType = type;
+        if (Builder.TEXT.equals(type)) {
+            bui = new Framedata(Builder.TEXT);
 
         }
         bui.setPayload(buffer);
@@ -406,12 +324,12 @@ public class Draft_6455 {
         try {
             bui.isValid();
         } catch (SocketException e) {
-            throw new IllegalArgumentException(e); // can only happen when one builds close frames(Opcode.Close)
+            throw new IllegalArgumentException(e); // can only happen when one builds close frames(Close)
         }
         if (fin) {
             continuousFrameType = null;
         } else {
-            continuousFrameType = op;
+            continuousFrameType = type;
         }
         return Collections.singletonList(bui);
     }
@@ -508,7 +426,7 @@ public class Draft_6455 {
         byte b2 = buffer.get(/*1*/);
         boolean mask = (b2 & -128) != 0;
         int payloadlength = (byte) (b2 & ~(byte) 128);
-        Builder.Opcode optcode = toOpcode((byte) (b1 & 15));
+        String optcode = toOpcode((byte) (b1 & 15));
 
         if (!(payloadlength >= 0 && payloadlength <= 125)) {
             TranslatedPayloadMetaData payloadData = translateSingleFramePayloadLength(buffer, optcode,
@@ -569,11 +487,11 @@ public class Draft_6455 {
      * @throws SocketException if the maxpacketsize is smaller than the realpackagesize
      */
     private TranslatedPayloadMetaData translateSingleFramePayloadLength(ByteBuffer buffer,
-                                                                        Builder.Opcode optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize)
-            throws SocketException {
+                                                                        String optcode, int oldPayloadlength, int maxpacketsize, int oldRealpacketsize)
+    throws SocketException {
         int payloadlength = oldPayloadlength;
         int realpacketsize = oldRealpacketsize;
-        if (optcode == Builder.Opcode.PING || optcode == Builder.Opcode.PONG || optcode == Builder.Opcode.CLOSING) {
+        if (Builder.PING.equals(optcode) || Builder.PONG.equals(optcode) || Builder.CLOSING.equals(optcode)) {
             Logger.trace("Invalid frame: more than 125 octets");
             throw new SocketException(Framedata.PROTOCOL_ERROR, "more than 125 octets");
         }
@@ -733,7 +651,7 @@ public class Draft_6455 {
     }
 
     public List<Framedata> createFrames(String text) {
-        Framedata curframe = new Framedata(Builder.Opcode.TEXT);
+        Framedata curframe = new Framedata(Builder.TEXT);
         curframe.setPayload(ByteBuffer.wrap(text.getBytes(Charset.UTF_8)));
         try {
             curframe.isValid();
@@ -746,7 +664,7 @@ public class Draft_6455 {
     public void reset() {
         incompleteframe = null;
         negotiatedExtension = "";
-        socketProtocol = null;
+        // socketProtocol = null;
     }
 
     /**
@@ -776,38 +694,38 @@ public class Draft_6455 {
         return buffer;
     }
 
-    private byte fromOpcode(Builder.Opcode opcode) {
-        if (opcode == Builder.Opcode.CONTINUOUS) {
+    private byte fromOpcode(String opcode) {
+        if (Builder.CONTINUOUS.equals(opcode)) {
             return 0;
-        } else if (opcode == Builder.Opcode.TEXT) {
+        } else if (Builder.TEXT.equals(opcode)) {
             return 1;
-        } else if (opcode == Builder.Opcode.BINARY) {
+        } else if (Builder.BINARY.equals(opcode)) {
             return 2;
-        } else if (opcode == Builder.Opcode.CLOSING) {
+        } else if (Builder.CLOSING.equals(opcode)) {
             return 8;
-        } else if (opcode == Builder.Opcode.PING) {
+        } else if (Builder.PING.equals(opcode)) {
             return 9;
-        } else if (opcode == Builder.Opcode.PONG) {
+        } else if (Builder.PONG.equals(opcode)) {
             return 10;
         }
-        throw new IllegalArgumentException("Don't know how to handle " + opcode.toString());
+        throw new IllegalArgumentException("Don't know how to handle " + opcode);
     }
 
-    private Builder.Opcode toOpcode(byte opcode) throws SocketException {
+    private String toOpcode(byte opcode) throws SocketException {
         switch (opcode) {
             case 0:
-                return Builder.Opcode.CONTINUOUS;
+                return Builder.CONTINUOUS;
             case 1:
-                return Builder.Opcode.TEXT;
+                return Builder.TEXT;
             case 2:
-                return Builder.Opcode.BINARY;
+                return Builder.BINARY;
             // 3-7 are not yet defined
             case 8:
-                return Builder.Opcode.CLOSING;
+                return Builder.CLOSING;
             case 9:
-                return Builder.Opcode.PING;
+                return Builder.PING;
             case 10:
-                return Builder.Opcode.PONG;
+                return Builder.PONG;
             // 11-15 are not yet defined
             default:
                 throw new SocketException(Framedata.PROTOCOL_ERROR, "Unknown opcode " + (short) opcode);
@@ -816,8 +734,7 @@ public class Draft_6455 {
 
     public void processFrame(SocketBuilder socketBuilder, Framedata frame)
             throws SocketException {
-        Builder.Opcode curop = frame.getOpcode();
-        if (curop == Builder.Opcode.TEXT) {
+        if (Builder.TEXT.equals(frame.getOpcode())) {
             processFrameText(socketBuilder, frame);
         } else {
             Logger.error("non control or continious frame expected");
@@ -843,8 +760,8 @@ public class Draft_6455 {
         }
     }
 
-    public Builder.CloseHandshakeType getCloseHandshakeType() {
-        return Builder.CloseHandshakeType.TWOWAY;
+    public String getCloseHandshakeType() {
+        return Builder.TWOWAY;
     }
 
     private class TranslatedPayloadMetaData {

@@ -42,6 +42,10 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Represents one end (client or server) of a single SocketBuilder connection. Takes care of the
  * "handshake" phase, then allows for easy sending of text frames, and receiving frames through an
  * event-based model.
+ *
+ * @author Kimi Liu
+ * @version 1.2.8
+ * @since JDK 1.8+
  */
 public class SocketBuilder implements WebSocket {
 
@@ -86,7 +90,7 @@ public class SocketBuilder implements WebSocket {
     /**
      * The current state of the connection
      */
-    private volatile Builder.ReadyState readyState = Builder.ReadyState.NOT_YET_CONNECTED;
+    private volatile ReadyState readyState = ReadyState.NOT_YET_CONNECTED;
     /**
      * The draft which is used by this websocket
      */
@@ -142,8 +146,8 @@ public class SocketBuilder implements WebSocket {
                 (socketBuffer.remaining() > 1000 ? "too big to display"
                         : new String(socketBuffer.array(), socketBuffer.position(), socketBuffer.remaining())));
 
-        if (readyState != Builder.ReadyState.NOT_YET_CONNECTED) {
-            if (readyState == Builder.ReadyState.OPEN) {
+        if (readyState != ReadyState.NOT_YET_CONNECTED) {
+            if (readyState == ReadyState.OPEN) {
                 decodeFrames(socketBuffer);
             }
         } else {
@@ -183,7 +187,7 @@ public class SocketBuilder implements WebSocket {
         socketBuffer.mark();
         try {
             HandshakeBuilder tmphandshake = draft.translateHandshake(socketBuffer);
-            if (Builder.HandshakeState.MATCHED == draft.acceptHandshakeAsClient(handshakerequest, tmphandshake)) {
+            if (Builder.MATCHED == draft.acceptHandshakeAsClient(handshakerequest, tmphandshake)) {
                 try {
                     wsl.onWebsocketHandshakeReceivedAsClient(this, handshakerequest, tmphandshake);
                 } catch (SocketException e) {
@@ -249,15 +253,15 @@ public class SocketBuilder implements WebSocket {
     }
 
     public synchronized void close(int code, String message, boolean remote) {
-        if (readyState != Builder.ReadyState.CLOSING && readyState != Builder.ReadyState.CLOSED) {
-            if (readyState == Builder.ReadyState.OPEN) {
+        if (readyState != ReadyState.CLOSING && readyState != ReadyState.CLOSED) {
+            if (readyState == ReadyState.OPEN) {
                 if (code == Framedata.ABNORMAL_CLOSE) {
                     assert (!remote);
-                    readyState = Builder.ReadyState.CLOSING;
+                    readyState = ReadyState.CLOSING;
                     flushAndClose(code, message, false);
                     return;
                 }
-                if (draft.getCloseHandshakeType() != Builder.CloseHandshakeType.NONE) {
+                if (!Builder.NONE.equals(draft.getCloseHandshakeType())) {
                     try {
                         if (!remote) {
                             try {
@@ -267,7 +271,7 @@ public class SocketBuilder implements WebSocket {
                             }
                         }
                         if (isOpen()) {
-                            Framedata closeFrame = new Framedata(Builder.Opcode.CLOSING);
+                            Framedata closeFrame = new Framedata(Builder.CLOSING);
                             closeFrame.setReason(message);
                             closeFrame.setCode(code);
                             closeFrame.isValid();
@@ -288,7 +292,7 @@ public class SocketBuilder implements WebSocket {
             } else {
                 flushAndClose(Framedata.NEVER_CONNECTED, message, false);
             }
-            readyState = Builder.ReadyState.CLOSING;
+            readyState = ReadyState.CLOSING;
             tmpHandshakeBytes = null;
         }
     }
@@ -325,13 +329,13 @@ public class SocketBuilder implements WebSocket {
      *                <code>code</code>. <br>
      **/
     public synchronized void closeConnection(int code, String message, boolean remote) {
-        if (readyState == Builder.ReadyState.CLOSED) {
+        if (readyState == ReadyState.CLOSED) {
             return;
         }
         //Methods like eot() call this method without calling onClose(). Due to that reason we have to adjust the ReadyState manually
-        if (readyState == Builder.ReadyState.OPEN) {
+        if (readyState == ReadyState.OPEN) {
             if (code == Framedata.ABNORMAL_CLOSE) {
-                readyState = Builder.ReadyState.CLOSING;
+                readyState = ReadyState.CLOSING;
             }
         }
         try {
@@ -344,7 +348,7 @@ public class SocketBuilder implements WebSocket {
             draft.reset();
         }
         handshakerequest = null;
-        readyState = Builder.ReadyState.CLOSED;
+        readyState = ReadyState.CLOSED;
     }
 
     public synchronized void flushAndClose(int code, String message, boolean remote) {
@@ -372,13 +376,13 @@ public class SocketBuilder implements WebSocket {
     }
 
     public void eot() {
-        if (readyState == Builder.ReadyState.NOT_YET_CONNECTED) {
+        if (readyState == ReadyState.NOT_YET_CONNECTED) {
             closeConnection(Framedata.NEVER_CONNECTED, true);
         } else if (flushandclosestate) {
             closeConnection(closecode, closemessage, closedremotely);
-        } else if (draft.getCloseHandshakeType() == Builder.CloseHandshakeType.NONE) {
+        } else if (Builder.NONE.equals(draft.getCloseHandshakeType())) {
             closeConnection(Framedata.NORMAL, true);
-        } else if (draft.getCloseHandshakeType() == Builder.CloseHandshakeType.ONEWAY) {
+        } else if (Builder.ONEWAY.equals(draft.getCloseHandshakeType())) {
             closeConnection(Framedata.NORMAL, true);
         } else {
             closeConnection(Framedata.ABNORMAL_CLOSE, true);
@@ -413,7 +417,7 @@ public class SocketBuilder implements WebSocket {
     }
 
     @Override
-    public void sendFragmentedFrame(Builder.Opcode op, ByteBuffer buffer, boolean fin) {
+    public void sendFragmentedFrame(String op, ByteBuffer buffer, boolean fin) {
         send(draft.continuousFrame(op, buffer, fin));
     }
 
@@ -482,7 +486,7 @@ public class SocketBuilder implements WebSocket {
 
     private void open(HandshakeBuilder d) {
         Logger.trace("open using draft: {}", draft);
-        readyState = Builder.ReadyState.OPEN;
+        readyState = ReadyState.OPEN;
         updateLastPong();
         try {
             wsl.onWebsocketOpen(this, d);
@@ -493,12 +497,12 @@ public class SocketBuilder implements WebSocket {
 
     @Override
     public boolean isOpen() {
-        return readyState == Builder.ReadyState.OPEN;
+        return readyState == ReadyState.OPEN;
     }
 
     @Override
     public boolean isClosing() {
-        return readyState == Builder.ReadyState.CLOSING;
+        return readyState == ReadyState.CLOSING;
     }
 
     @Override
@@ -508,11 +512,11 @@ public class SocketBuilder implements WebSocket {
 
     @Override
     public boolean isClosed() {
-        return readyState == Builder.ReadyState.CLOSED;
+        return readyState == ReadyState.CLOSED;
     }
 
     @Override
-    public Builder.ReadyState getReadyState() {
+    public ReadyState getReadyState() {
         return readyState;
     }
 
@@ -564,17 +568,6 @@ public class SocketBuilder implements WebSocket {
     @Override
     public <T> void setAttachment(T attachment) {
         this.attachment = attachment;
-    }
-
-    @Override
-    public SocketProtocol getProtocol() {
-        if (draft == null) {
-            return null;
-        }
-        if (!(draft instanceof Draft_6455)) {
-            throw new IllegalArgumentException("This draft does not support Sec-WebSocket-SocketProtocol");
-        }
-        return draft.getProtocol();
     }
 
 }
