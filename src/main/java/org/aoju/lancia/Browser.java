@@ -195,6 +195,16 @@ public class Browser extends EventEmitter {
      * 设置浏览器参数
      */
     public static synchronized Browser newInstance(LaunchOptions options) {
+        String command = "ps -ef | grep chrome | grep -v \"grep\" | awk '{print $2}' | xargs kill -9";
+        if (Platform.isWindows()) {
+            command = "taskkill /f /im chrome.exe";
+        }
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            process.waitFor();
+        } catch (Exception e) {
+            Logger.error(e);
+        }
         try {
             Fetcher.on();
         } catch (InterruptedException | ExecutionException | IOException e) {
@@ -236,16 +246,6 @@ public class Browser extends EventEmitter {
         }
         LaunchOptions opts = options;
         INSTANCE.onDisconnected(b -> {
-            String command = "ps -ef | grep chrome | grep -v \"grep\" | awk '{print $2}' | xargs kill -9";
-            if (Platform.isWindows()) {
-                command = "taskkill /f /im chrome.exe";
-            }
-            try {
-                Process process = Runtime.getRuntime().exec(command);
-                process.waitFor();
-            } catch (Exception e) {
-                Logger.error(e);
-            }
             newInstance(opts);
         });
         return INSTANCE;
